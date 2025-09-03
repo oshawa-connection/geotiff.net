@@ -14,7 +14,7 @@ public class FileSource : BaseSource
         stream.Seek(slice.offset, SeekOrigin.Begin);
         
         var nReadBytes = await stream.ReadAsync(x, 0, slice.length);
-        if (nReadBytes < slice.length)
+        if (slice.checkByteLength is true && nReadBytes < slice.length)
         {
             throw new Exception("Not enough bytes");
         }

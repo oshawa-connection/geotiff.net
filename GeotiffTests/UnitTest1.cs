@@ -6,6 +6,7 @@ namespace GeotiffTests;
 [TestClass]
 public class UnitTest1
 {
+    CancellationTokenSource cts = new CancellationTokenSource();
     string GetDataFolderPath()
     {
         // Start from the directory where the test assembly is located
@@ -47,6 +48,9 @@ public class UnitTest1
         bbox.YMin.ShouldBe(44.833, 0.001);
         bbox.XMax.ShouldBe(-55.916, 0.001);
         bbox.YMax.ShouldBe(63, 0.001);
+        
+        var readResult = await image.ReadRasters(cts.Token);
+        Console.WriteLine(readResult.Count);
     }
 
     [TestMethod]
@@ -67,5 +71,24 @@ public class UnitTest1
         bbox.YMin.ShouldBe(23.75, 0.001);
         bbox.XMax.ShouldBe(-79.75, 0.001);
         bbox.YMax.ShouldBe(32, 0.001);
+        var nPixels = image.GetHeight() * image.GetWidth();
+    }
+    
+    [TestMethod]
+    public async Task TestRawTiffNoCompression()
+    {
+        string usNoaaTif = Path.Combine(GetDataFolderPath(), "no_compression.tif");
+        await using var fsSource = new FileStream(usNoaaTif,FileMode.Open, FileAccess.Read);
+        var geotiff = await GeoTIFF.FromStream(fsSource);
+        var count = await geotiff.GetImageCount();
+        count.ShouldBe(1);
+        
+        var image = await geotiff.GetImage();
+        var origin = image.GetOrigin();
+        var bbox = image.GetBoundingBox();
+        
+        var nPixels = image.GetHeight() * image.GetWidth();
+        var readResult = await image.ReadRasters(cts.Token);
+        Console.WriteLine(readResult.Count);
     }
 }

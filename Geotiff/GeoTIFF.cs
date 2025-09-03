@@ -50,7 +50,7 @@ public class GeoTIFF
     public async Task<DataSlice> GetSlice(int offset, int? size = null) {
         var fallbackSize = this.bigTiff ? 4048 : 1024;
         var sizeToUse = size is null ? fallbackSize : (int)size;
-        var slice = new Slice(offset, sizeToUse);
+        var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
         var results = await this.source.Fetch(slices);
         
@@ -88,7 +88,6 @@ public class GeoTIFF
                 value = offset;
             } else {
                 value = fileDirectory[location]; // TODO: could throw, error out if so.
-                // TODO: Check that resulting object has property "subarray"
                 if (value is null)
                 {
                     throw new Exception($"Could not get value of geoKey '{key}'");
@@ -98,17 +97,18 @@ public class GeoTIFF
                     var cast = (string)value;
                     value = cast.Substring(offset, offset + count - 1);
                 }
+                else if (value is List<object>)
+                {
+                    // value = value.subarray(offset, offset + count);
+                    if (count == 1)
+                    {
+                        value = ((List<object>)value).First();
+                    }
+                }
                 else
                 {
-                    throw new Exception("Subarray not supported");
-                } 
-                // TODO: Handle this case.
-                // else if (value.subarray) {
-                //     value = value.subarray(offset, offset + count);
-                //     if (count === 1) {
-                //         value = value[0];
-                //     }
-                // }
+                    throw new NotImplementedException("Unsupported tag type");
+                }
             }
             geoKeyDirectory[key] = value;
         }

@@ -22,10 +22,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Data\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\Geotiff\Geotiff.csproj" />
     </ItemGroup>
 

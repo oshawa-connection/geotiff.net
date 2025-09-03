@@ -4,6 +4,8 @@ public static class IEnumerableExtensions
 {
     public static IEnumerable<T> UnboxAll<T>(this IEnumerable<object> list)
     {
-        return list.Select(d => (T)d);
+        var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+
+        return list.Select(d => (T)Convert.ChangeType(d, targetType));
     }
 }

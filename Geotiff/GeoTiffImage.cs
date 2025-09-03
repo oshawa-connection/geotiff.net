@@ -25,15 +25,21 @@ public class GeoTiffImage
 
     this.isTiled = fileDirectory.FileDirectory.ContainsKey("StripOffsets") is false;
     var planarConfiguration = fileDirectory.GetFileDirectoryValue<ushort?>(FieldTypes.PlanarConfiguration);
+    
     if (planarConfiguration is null)
     {
       this.planarConfiguration = 1;
     }
+    else
+    {
+      this.planarConfiguration = (ushort)planarConfiguration;
+    }
+    
     // var planarConfiguration = fileDirectory.PlanarConfiguration;
     // this.planarConfiguration = (typeof planarConfiguration == 'undefined') ? 1 : planarConfiguration;
-    // if (this.planarConfiguration != 1 && this.planarConfiguration != 2) {
-    //     throw new Error('Invalid planar configuration.');
-    // }
+    if (this.planarConfiguration != 1 && this.planarConfiguration != 2) {
+        throw new Exception("Invalid planar configuration.");
+    }
 
     this.source = source;
   }
@@ -451,7 +457,7 @@ public class GeoTiffImage
     return this.ArrayForType(format, bitsPerSample, buffer);
   }
 
-  public async Task ReadRasters()
+  public async Task<List<Array>> ReadRasters(CancellationToken cancellationToken)
   {
     var imageWindow = new uint[] { 0, 0, this.GetWidth(), this.GetHeight() };
     if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
@@ -471,6 +477,10 @@ public class GeoTiffImage
       var valueArray = this.GetArrayForSample(samples[i], numPixels);
       valueArrays.Add(valueArray);
     }
+
+    var poolOrDecoder = new DecoderRegistry();
+    return await this._ReadRaster(imageWindow, samples, valueArrays, false, poolOrDecoder, null, null, cancellationToken);
+    
   }
 
 
@@ -532,7 +542,7 @@ public class GeoTiffImage
   /// <param name="height">TODO: consider that this can be null</param>
   /// <param name="cancellationToken"></param>
   /// <exception cref="NotImplementedException"></exception>
-  public async Task<List<Array>> _ReadRaster(uint[] imageWindow, int[] samples, List<Array> valueArrays, bool interleave, DecoderRegistry decoder, uint width, uint height, CancellationToken cancellationToken)
+  public async Task<List<Array>> _ReadRaster(uint[] imageWindow, int[] samples, List<Array> valueArrays, bool interleave, DecoderRegistry decoder, uint? width, uint? height, CancellationToken cancellationToken)
   {
     var tileWidth = this.GetTileWidth();
     var tileHeight = this.GetTileHeight();
@@ -829,8 +839,8 @@ public class GeoTiffImage
       request = async () =>
       {
           // TODO: need to actually decode
-        // var data = await poolOrDecoder.decode(this.fileDirectory, slice);
-        var data = slice;
+        var data = await poolOrDecoder.Decode(this.fileDirectory, slice);
+        // var data = slice;
         var sampleFormat = this.GetSampleFormat();
         var bitsPerSample = this.GetBitsPerSample();
         if (needsNormalization(sampleFormat, (int)bitsPerSample))
