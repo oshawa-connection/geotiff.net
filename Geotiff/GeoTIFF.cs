@@ -173,16 +173,16 @@ public class GeoTIFF
         
             // Unpack single values from the array
             if (typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTag)
-                && !(fieldTypeName == FieldTypes.RATIONAL || fieldTypeName == FieldTypes.SRATIONAL) || fieldTypeName == FieldTypes.ASCII)
+                && !(fieldTypeName == FieldTypes.SRATIONAL) || fieldTypeName == FieldTypes.ASCII)
             {
                 value = fieldValues.GetFirstElement();
                 // value = (fieldValues as Array)?[0] ?? fieldValues;
             }
             else
             {
-                if (fieldTypeName == FieldTypes.RATIONAL || fieldTypeName == FieldTypes.SRATIONAL)
+                if (fieldTypeName == FieldTypes.SRATIONAL)
                 {
-                    throw new NotImplementedException($"Rationals not supported: {fieldTypeName}");    
+                    throw new NotImplementedException($"SRationals not supported: {fieldTypeName}");    
                 }
 
                 value = fieldValues.GetListOfElements();

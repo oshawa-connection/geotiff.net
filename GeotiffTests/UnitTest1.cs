@@ -101,7 +101,7 @@ public class UnitTest1
         };
         var readResult = await image.ReadRasters(window, cancellationToken: cts.Token);
         Console.WriteLine(readResult.Count);
-        var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
+        // var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
         Console.WriteLine("HELLO");
     }
 
@@ -128,5 +128,32 @@ public class UnitTest1
                     y.ShouldBe(lat);
             }
         }
+    }
+    
+    
+    [TestMethod]
+    public async Task TestSPCS27()
+    {
+        string lonLatTif = Path.Combine(GetDataFolderPath(), "spcs27.tif");
+        await using var fsSource = new FileStream(lonLatTif,FileMode.Open, FileAccess.Read);
+        var geotiff = await GeoTIFF.FromStream(fsSource);
+        var count = await geotiff.GetImageCount();
+        var image =await geotiff.GetImage();
+        var readResult = await image.ReadRasters();
+        Console.WriteLine("HELLO");
+        // count.ShouldBe(1);
+        //
+        // var image = await geotiff.GetImage();
+        // for (var lon = 0; lon < 50; lon++)
+        // {
+        //     for (var lat = 0; lat < 50; lat++)
+        //     {
+        //         var result = await image.ReadValueAtCoordinate(lon + 0.5, lat + 0.5); // add 0.5 to be in the centre of the pixel.
+        //         var x = result[1].GetValue(0);
+        //         var y = result[0].GetValue(0);
+        //         x.ShouldBe(lon);
+        //         y.ShouldBe(lat);
+        //     }
+        // }
     }
 }

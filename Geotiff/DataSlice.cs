@@ -1,4 +1,5 @@
 using Geotiff.JavaScriptCompatibility;
+using Geotiff.Primitives;
 
 namespace Geotiff;
 
@@ -48,8 +49,14 @@ public class DataSlice
     {
         return _dataView.getFloat64(offset - _sliceOffset, this.LittleEndian);
     }
-    
-    
+
+    public Rational ReadRational(int offset)
+    {
+        var numer = this.ReadUInt32(offset);
+        var denom = this.ReadUInt32(offset + 4);
+
+        return new Rational(numer, denom);
+    }
     
     public ushort ReadUInt16(int offset)
     {
@@ -180,10 +187,11 @@ public class DataSlice
             //     values = new Array(count); 
             //     readMethod = dataSlice.readInt64;
             //     break;
-            // case FieldTypes.RATIONAL:
-            //     values = new Uint32Array(count * 2); 
-            //     readMethod = dataSlice.readUint32;
-            //     break;
+            case FieldTypes.RATIONAL:
+                finalResult = GeotiffGetValuesResult.FromRational(ReadAll(this.ReadRational, count, offset, fieldTypeLength));
+                // values = new Uint32Array(count * 2); 
+                // readMethod = dataSlice.readUint32;
+                break;
             // case FieldTypes.SRATIONAL:
             //     values = new Int32Array(count * 2); 
             //     readMethod = dataSlice.readInt32;
