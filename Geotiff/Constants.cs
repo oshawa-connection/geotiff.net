@@ -6,7 +6,7 @@ public static class Constants
     public const UInt16 BOMBigEndian = 0x4D4D;
     public const UInt16 LittleTifMagicValue = 42;
     public const UInt16 BigTifMagicValue = 43;
-    
+    public const int WGS84_EPSG_CODE = 4326; 
 }
 
 
@@ -28,8 +28,7 @@ internal static class FieldTypes
     public const string LONG8 = "LONG8";
     public const string SLONG8 = "SLONG8";
     public const string IFD8 = "IFD8";
-
-
+    
     public static Dictionary<int, string> FieldTypeLookup = new Dictionary<int, string>()
     {
         { 0x0001, FieldTypes.BYTE },
@@ -262,7 +261,7 @@ internal static class FieldTypes
         { 4098, "VerticalDatumGeoKey" },
         { 4099, "VerticalUnitsGeoKey" },
     };
-
+    
     public static int GetFieldTypeLength(int fieldTypea)
     {
         var fieldType = FieldTypeLookup[fieldTypea];
@@ -281,6 +280,3 @@ internal static class FieldTypes
         }
     }
 }
-
-
-

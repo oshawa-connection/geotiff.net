@@ -2,8 +2,8 @@ namespace Geotiff;
 
 public class ImageWindow
 {
-    public uint MinX { get; set; }
-    public uint MinY { get; set; }
-    public uint MaxX { get; set; }
-    public uint MaxY { get; set; }
+    public uint left { get; set; }
+    public uint bottom { get; set; }
+    public uint right { get; set; }
+    public uint top { get; set; }
 }

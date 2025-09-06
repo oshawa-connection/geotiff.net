@@ -1,3 +1,4 @@
+using System.Text;
 using Shouldly;
 using Geotiff;
 
@@ -93,15 +94,39 @@ public class UnitTest1
         var nPixels = image.GetHeight() * image.GetWidth();
         var window = new ImageWindow()
         {
-            MinX = 0,
-            MaxX = 1,
-            MinY = 0,
-            MaxY = 1
+            left = 0,
+            right = 1,
+            bottom = 0,
+            top = 1
         };
         var readResult = await image.ReadRasters(window, cancellationToken: cts.Token);
         Console.WriteLine(readResult.Count);
+        var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
+        Console.WriteLine("HELLO");
+    }
 
 
-
+    [TestMethod]
+    public async Task TestReadAtLonLat()
+    {
+        
+        string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
+        await using var fsSource = new FileStream(lonLatTif,FileMode.Open, FileAccess.Read);
+        var geotiff = await GeoTIFF.FromStream(fsSource);
+        var count = await geotiff.GetImageCount();
+        count.ShouldBe(1);
+        
+        var image = await geotiff.GetImage();
+        for (var lon = 0; lon < 50; lon++)
+        {
+            for (var lat = 0; lat < 50; lat++)
+            {
+                    var result = await image.ReadValueAtCoordinate(lon + 0.5, lat + 0.5); // add 0.5 to be in the centre of the pixel.
+                    var x = result[1].GetValue(0);
+                    var y = result[0].GetValue(0);
+                    x.ShouldBe(lon);
+                    y.ShouldBe(lat);
+            }
+        }
     }
 }

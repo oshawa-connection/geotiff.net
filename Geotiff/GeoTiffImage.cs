@@ -4,6 +4,7 @@ using System.Runtime.InteropServices.JavaScript;
 using System.Threading.Tasks;
 using Geotiff.Compression;
 using Geotiff.JavaScriptCompatibility;
+using Geotiff.Projection;
 
 namespace Geotiff;
 
@@ -469,10 +470,10 @@ public class GeoTiffImage
 
     if (window is not null)
     {
-      imageWindow[0] = window.MinX;
-      imageWindow[1] = window.MinY;
-      imageWindow[2] = window.MaxX;
-      imageWindow[3] = window.MaxY;
+      imageWindow[0] = window.left;
+      imageWindow[1] = window.top ;
+      imageWindow[2] = window.right;
+      imageWindow[3] = window.bottom;
     }
     
     if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
@@ -583,7 +584,6 @@ public class GeoTiffImage
     {
       if (this.planarConfiguration == 1)
       {
-        srcSampleOffsets.Add(this.fileDirectory.BitsPerSample.Take(samples.ElementAt(i)).Sum() / 8);
         srcSampleOffsets.Add(sum(this.fileDirectory.BitsPerSample, 0, samples[i]) / 8);
       }
       else
@@ -753,9 +753,7 @@ public class GeoTiffImage
         }
         else if (bitsPerSample <= 32)
         {
-          throw new NotImplementedException();
-          // return (dv, offset) => dv.GetIn(offset);
-          // return DataView.prototype.getInt32;
+          return (dv, offset, endianNess) => dv.getInt32((int)offset, endianNess);
         }
         break;
       case 3:
@@ -1043,16 +1041,40 @@ public class GeoTiffImage
     return this.fileDirectory.GetGeoDirectoryValue<int?>("GeographicTypeGeoKey");
   }
 
+  /// <summary>
+  /// </summary>
+  /// <param name="x"></param>
+  /// <param name="y"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
   public async Task<List<Array>> ReadValueAtCoordinate(double x, double y, CancellationToken? cancellationToken = null)
   {
-    // Need to be translated to pixel space
+    var modelTransformationList = this.fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+    if (modelTransformationList is not null)
+    {
+      throw new NotImplementedException("Model transformations not yet supported");
+    }
+    
+    //TODO: Check not out of bounds
+    var origin = this.GetOrigin();
+    var res = this.GetResolution();
+    // If the user passed a low x, we want to be close to the orgin.
+    var left = (x - origin.X) / res.Item1;
+    var right = left + res.Item1;
+
+    // if the user passed a low y, be far away from the origin.
+
+    var top = (y - origin.Y) / res.Item2;
+    var bottom = top + 1;
+
     var window = new ImageWindow()
     {
-      MinX = (uint)x - 1,
-      MinY = (uint)y - 1,
-      MaxX = (uint)x + 1,
-      MaxY = (uint)y + 1
+      left = (uint)left,
+      right = (uint)right,
+      bottom = (uint)bottom,
+      top = (uint)top
     };
+    
     return await this.ReadRasters(window, cancellationToken);
   }
 }
