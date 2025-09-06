@@ -10,7 +10,6 @@ which uses and extends LibTiff
 
 ## TODO list
 - Resampling
-- Reading from projected or WGS84 rasters
 - Casting/ promoting read values if not ulong.
 - Support for more types other than float32
 - More sources e.g. COG.
