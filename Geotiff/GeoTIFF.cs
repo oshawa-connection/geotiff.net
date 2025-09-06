@@ -63,7 +63,7 @@ public class GeoTIFF
     }
 
 
-    public Dictionary<string, object>? ParseGeoKeyDirectory(Dictionary<string, object> fileDirectory)
+    private Dictionary<string, object>? ParseGeoKeyDirectory(Dictionary<string, object> fileDirectory)
     {
         var rawGeoKeyDirectoryResult = fileDirectory.TryGetValue("GeoKeyDirectory", out object rawGeoKeyDirectoryObj);
         

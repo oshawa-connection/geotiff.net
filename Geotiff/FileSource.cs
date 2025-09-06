@@ -23,13 +23,21 @@ public class FileSource : BaseSource
     }
     
     
-    public override async Task<byte[]> FetchSlice(Slice slice, CancellationToken cancellationToken)
+    public override async Task<byte[]> FetchSlice(Slice slice, CancellationToken? cancellationToken)
     {
         var x = new byte[slice.length];
         
         stream.Seek(slice.offset, SeekOrigin.Begin);
-        
-        var nReadBytes = await stream.ReadAsync(x, 0, slice.length, cancellationToken);
+
+        var nReadBytes = 0;
+        if (cancellationToken is null)
+        {
+            nReadBytes = await stream.ReadAsync(x, 0, slice.length);
+        }
+        else
+        {
+            nReadBytes = await stream.ReadAsync(x, 0, slice.length, (CancellationToken) cancellationToken);
+        }
         if (nReadBytes < slice.length)
         {
             throw new Exception("Not enough bytes");

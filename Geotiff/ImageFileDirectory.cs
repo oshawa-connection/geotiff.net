@@ -74,6 +74,18 @@ public class ImageFileDirectory
         return found.ToArray();
     }
 
+    public T GetGeoDirectoryValue<T>(string key)
+    {
+        if (this.GeoKeyDirectory.TryGetValue(key, out object obj))
+        {
+            var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            var converted = Convert.ChangeType(obj, targetType);
+            return (T)converted;
+        }
+        return default!;
+    }
+    
+    
     public T GetFileDirectoryValue<T>(string key)
     {
         if (this.FileDirectory.TryGetValue(key, out object obj))

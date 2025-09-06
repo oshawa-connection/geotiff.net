@@ -11,7 +11,7 @@ public abstract class BaseSource
         return completedTasks;
     }
     
-    public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices, CancellationToken cancellationToken)
+    public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices, CancellationToken? cancellationToken)
     {
         var taskList = slices.Select(slice => this.FetchSlice(slice, cancellationToken));
         var completedTasks = await Task.WhenAll(taskList);
@@ -32,7 +32,7 @@ public abstract class BaseSource
      * @param {Slice} slice
      * @returns {ArrayBuffer}
      */
-    public virtual async Task<byte[]> FetchSlice(Slice slice, CancellationToken cancellationToken) {
+    public virtual async Task<byte[]> FetchSlice(Slice slice, CancellationToken? cancellationToken) {
         throw new Exception("fetching of slice not possible, not implemented");
     }
     

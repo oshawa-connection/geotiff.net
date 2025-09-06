@@ -9,7 +9,7 @@ namespace Geotiff;
 
 public class GeoTiffImage
 {
-  private readonly ImageFileDirectory fileDirectory;
+  protected readonly ImageFileDirectory fileDirectory;
   private readonly bool littleEndian;
   private readonly bool cache;
   private readonly BaseSource source;
@@ -126,14 +126,14 @@ public class GeoTiffImage
   }
 
 
-  /**
-* Returns the image bounding box as an array of 4 values: min-x, min-y,
-* max-x and max-y. When the image has no affine transformation, then an
-* exception is thrown.
-* @param {boolean} [tilegrid=false] If true return extent for a tilegrid
-*                                   without adjustment for ModelTransformation.
-* @returns {Array<number>} The bounding box
-*/
+  /// <summary>
+  /// Returns the image bounding box as an array of 4 values: min-x, min-y,
+  /// max-x and max-y. When the image has no affine transformation, then an
+  /// exception is thrown.
+  /// 
+  /// </summary>
+  /// <param name="tilegrid">If true return extent for a tilegrid without adjustment for ModelTransformation.</param>
+  /// <returns>The bounding box</returns>
   public BoundingBox GetBoundingBox(bool tilegrid = false)
   {
     var height = this.GetHeight();
@@ -457,9 +457,24 @@ public class GeoTiffImage
     return this.ArrayForType(format, bitsPerSample, buffer);
   }
 
-  public async Task<List<Array>> ReadRasters(CancellationToken cancellationToken)
+  /// <summary>
+  /// 
+  /// </summary>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <exception cref="Exception"></exception>
+  public async Task<List<Array>> ReadRasters(ImageWindow? window = null, CancellationToken? cancellationToken = null)
   {
     var imageWindow = new uint[] { 0, 0, this.GetWidth(), this.GetHeight() };
+
+    if (window is not null)
+    {
+      imageWindow[0] = window.MinX;
+      imageWindow[1] = window.MinY;
+      imageWindow[2] = window.MaxX;
+      imageWindow[3] = window.MaxY;
+    }
+    
     if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
     {
       throw new Exception("Invalid subsets");
@@ -542,7 +557,7 @@ public class GeoTiffImage
   /// <param name="height">TODO: consider that this can be null</param>
   /// <param name="cancellationToken"></param>
   /// <exception cref="NotImplementedException"></exception>
-  public async Task<List<Array>> _ReadRaster(uint[] imageWindow, int[] samples, List<Array> valueArrays, bool interleave, DecoderRegistry decoder, uint? width, uint? height, CancellationToken cancellationToken)
+  private async Task<List<Array>> _ReadRaster(uint[] imageWindow, int[] samples, List<Array> valueArrays, bool interleave, DecoderRegistry decoder, uint? width, uint? height, CancellationToken? cancellationToken)
   {
     var tileWidth = this.GetTileWidth();
     var tileHeight = this.GetTileHeight();
@@ -772,7 +787,7 @@ public class GeoTiffImage
  *                               to be aborted
  * @returns {Promise.<{x: number, y: number, sample: number, data: ArrayBuffer}>} the decoded strip or tile
  */
-  async Task<TileOrStripResult> getTileOrStrip(int x, int y, int sample, DecoderRegistry poolOrDecoder, CancellationToken signal)
+  async Task<TileOrStripResult> getTileOrStrip(int x, int y, int sample, DecoderRegistry poolOrDecoder, CancellationToken? signal)
   {
     var numTilesPerRow = (int) Math.Ceiling((int)this.GetWidth() / (double)this.GetTileWidth());
     var numTilesPerCol = (int)Math.Ceiling((double)this.GetHeight() / (double)this.GetTileHeight());
@@ -1017,7 +1032,29 @@ public class GeoTiffImage
 
     return outArray.ToArrayBuffer();
   }
+  
+  
+  /// <summary>
+  /// Not part of GeoTiff.js
+  /// </summary>
+  /// <returns></returns>
+  public int? GetProjectionString()
+  {
+    return this.fileDirectory.GetGeoDirectoryValue<int?>("GeographicTypeGeoKey");
+  }
 
+  public async Task<List<Array>> ReadValueAtCoordinate(double x, double y, CancellationToken? cancellationToken = null)
+  {
+    // Need to be translated to pixel space
+    var window = new ImageWindow()
+    {
+      MinX = (uint)x - 1,
+      MinY = (uint)y - 1,
+      MaxX = (uint)x + 1,
+      MaxY = (uint)y + 1
+    };
+    return await this.ReadRasters(window, cancellationToken);
+  }
 }
 
 

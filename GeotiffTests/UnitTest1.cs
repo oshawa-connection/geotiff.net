@@ -49,8 +49,11 @@ public class UnitTest1
         bbox.XMax.ShouldBe(-55.916, 0.001);
         bbox.YMax.ShouldBe(63, 0.001);
         
-        var readResult = await image.ReadRasters(cts.Token);
-        Console.WriteLine(readResult.Count);
+        var readResult = await image.ReadRasters(cancellationToken: cts.Token);
+        // Console.WriteLine(readResult.Count);
+        
+        Console.WriteLine(image.GetProjectionString());
+        
     }
 
     [TestMethod]
@@ -88,7 +91,17 @@ public class UnitTest1
         var bbox = image.GetBoundingBox();
         
         var nPixels = image.GetHeight() * image.GetWidth();
-        var readResult = await image.ReadRasters(cts.Token);
+        var window = new ImageWindow()
+        {
+            MinX = 0,
+            MaxX = 1,
+            MinY = 0,
+            MaxY = 1
+        };
+        var readResult = await image.ReadRasters(window, cancellationToken: cts.Token);
         Console.WriteLine(readResult.Count);
+
+
+
     }
 }
