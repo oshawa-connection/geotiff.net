@@ -10,7 +10,7 @@ namespace Geotiff;
 
 public class GeoTiffImage
 {
-  protected readonly ImageFileDirectory fileDirectory;
+  public readonly ImageFileDirectory fileDirectory;
   private readonly bool littleEndian;
   private readonly bool cache;
   private readonly BaseSource source;

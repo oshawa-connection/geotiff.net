@@ -92,14 +92,8 @@ public class UnitTest1
         var bbox = image.GetBoundingBox();
         
         var nPixels = image.GetHeight() * image.GetWidth();
-        var window = new ImageWindow()
-        {
-            left = 0,
-            right = 1,
-            bottom = 0,
-            top = 1
-        };
-        var readResult = await image.ReadRasters(window, cancellationToken: cts.Token);
+
+        var readResult = await image.ReadRasters(cancellationToken: cts.Token);
         Console.WriteLine(readResult.Count);
         // var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
         Console.WriteLine("HELLO");

@@ -1,3 +1,4 @@
+using Geotiff.Exceptions;
 using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff;
@@ -32,7 +33,11 @@ public class GeoTIFF
         }
         
         var isBigTiffValue = dv.getUint16(2, isLittleEndian);
-        var firstIDFOffset = dv.getUint16(4, isLittleEndian);
+        if (isBigTiffValue != 42)
+        {
+            throw new NotImplementedException("BigTiff support is not implemented");
+        }
+        var firstIDFOffset = dv.getInt32(4, isLittleEndian);
         memoryStream.Position = 0;
         var source = new FileSource(memoryStream);
         return new GeoTIFF(source, isLittleEndian, false, firstIDFOffset);
@@ -95,7 +100,7 @@ public class GeoTIFF
                 if (value is string)
                 {
                     var cast = (string)value;
-                    value = cast.Substring(offset, offset + count - 1);
+                    value = cast.JSSubString(offset, offset + count - 1);
                 }
                 else if (value is List<object>)
                 {
@@ -226,6 +231,10 @@ public class GeoTIFF
         }
 
         var currentIFD = ImageFileDirectories[index - 1];
+        if (currentIFD.NextIFDByteOffset == 0)
+        {
+            throw new GeoTIFFImageIndexError(index);
+        }
         var result2 = await this.ParseFileDirectoryAt(currentIFD.NextIFDByteOffset);
         ImageFileDirectories.Add(index, result2);
         return result2;
@@ -236,10 +245,14 @@ public class GeoTIFF
         // loop until we run out of IFDs
         var hasNext = true;
         while (hasNext) {
-            try {
+            try
+            {
                 await this.RequestIFD(index);
                 ++index;
-            } catch (Exception e) { // TODO: handle exceptions here properly
+            }
+            catch (GeoTIFFImageIndexError e)
+            {
+                // TODO: handle exceptions here properly
                 hasNext = false;
                 // throw;
                 // if (e instanceof GeoTIFFImageIndexError) {
@@ -247,6 +260,10 @@ public class GeoTIFF
                 // } else {
                 //     throw e;
                 // }
+            }
+            catch
+            {
+                throw;
             }
         }
         return index;

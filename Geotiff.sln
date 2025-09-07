@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geotiff", "Geotiff\Geotiff.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeotiffTests", "GeotiffTests\GeotiffTests.csproj", "{80D6952B-BD70-48C0-85E7-C1726E3165DF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConformanceTests", "ConformanceTests\ConformanceTests.csproj", "{77B38760-C983-46F8-80DC-C8018770E01C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{80D6952B-BD70-48C0-85E7-C1726E3165DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{80D6952B-BD70-48C0-85E7-C1726E3165DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{80D6952B-BD70-48C0-85E7-C1726E3165DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77B38760-C983-46F8-80DC-C8018770E01C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77B38760-C983-46F8-80DC-C8018770E01C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77B38760-C983-46F8-80DC-C8018770E01C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77B38760-C983-46F8-80DC-C8018770E01C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

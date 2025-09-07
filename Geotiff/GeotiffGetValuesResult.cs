@@ -1,25 +1,27 @@
 using System;
 using System.Collections;
+using Geotiff.Primitives;
 
 namespace Geotiff;
 
 public class GeotiffGetValuesResult
 {
     private string? _decodedAsciiResult;
+    
     private double[]? _resultFloat64;
     private float[]? _resultFloat32;
     private ulong[]? _resultUInt64;
     private uint[]? _resultUInt32;
-
     public ushort[]? _resultUInt16;
-    // Add more types as needed
+    private Rational[]? _resultRational;
+    
     public bool IsString => _decodedAsciiResult is not null;
     public bool IsFloat64 => _resultFloat64 is not null;
     public bool IsFloat32 => _resultFloat32 is not null;
     public bool IsUint16 => _resultUInt16 is not null;
     public bool IsUInt64 => _resultUInt64 != null;
     public bool IsUInt32 => _resultUInt32 != null;
-
+    public bool IsRational => _resultRational != null;
 
     public ulong[] ResultUInt64 => _resultUInt64 ?? throw new InvalidOperationException("Result is not a UInt64 array.");
     public uint[] ResultUInt32 => _resultUInt32 ?? throw new InvalidOperationException("Result is not a UInt32 array.");
@@ -29,6 +31,7 @@ public class GeotiffGetValuesResult
     public static GeotiffGetValuesResult FromUInt32(uint[] data) => new GeotiffGetValuesResult { _resultUInt32 = data };
     public static GeotiffGetValuesResult FromFloat32(float[] data) => new GeotiffGetValuesResult { _resultFloat32 = data };
     public static GeotiffGetValuesResult FromFloat64(double[] data) => new GeotiffGetValuesResult { _resultFloat64 = data };
+    public static GeotiffGetValuesResult FromRational(Rational[] data) => new GeotiffGetValuesResult { _resultRational = data };
 
     public static GeotiffGetValuesResult FromString(string data) =>
         new GeotiffGetValuesResult() { _decodedAsciiResult = data };
@@ -59,6 +62,11 @@ public class GeotiffGetValuesResult
         if (IsString)
         {
             return new string[] { this._decodedAsciiResult };
+        }
+
+        if (IsRational)
+        {
+            return this._resultRational;
         }
 
         throw new InvalidOperationException("No result array is set.");

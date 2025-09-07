@@ -1,0 +1,16 @@
+{
+  "name": "conformancetests",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "geotiff": "^2.1.4-beta.0",
+    "quick-lru": "^7.1.0"
+  }
+}
