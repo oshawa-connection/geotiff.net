@@ -9,6 +9,24 @@ import path from 'path';
  */
 const writeResult = [];
 
+
+/**
+ * Transform typed arrays into raw arrays for better serialization
+ * @param {*} fileDirectory 
+ */
+function serializeTags(fileDirectory) {
+  const result = {};
+  Object.keys(fileDirectory).forEach(key => {
+    let value = fileDirectory[key];
+    if (ArrayBuffer.isView(value)) {
+      value = Array.from(value);
+    }
+    result[key] = value;
+  })
+  return result;
+}
+
+
 async function produceStats(filePath) {
     const data = await promises.readFile(filePath);
     
@@ -38,8 +56,8 @@ async function produceStats(filePath) {
         
         const pixelInfo = {x: pixelX, y: pixelY, bandInfo: readResult.map(d => d[0])};
         
-        
-        currentWriteResult.images.push({tags: image.fileDirectory, pixels: [pixelInfo]});
+        const finalTags = serializeTags(image.fileDirectory);
+        currentWriteResult.images.push({tags: finalTags, pixels: [pixelInfo]});
     }
     
     

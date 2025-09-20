@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Text.Json;
+
 namespace ConformanceTests;
 
 using System.Text.Json.Serialization;
@@ -18,7 +20,7 @@ public class PixelInfo
 public class GeotiffImage
 {
     [JsonPropertyName("tags")]
-    public Dictionary<string, object> Tags { get; set; } = new Dictionary<string, object>();
+    public Dictionary<string, JsonElement> Tags { get; set; } = new Dictionary<string, JsonElement>();
 
     [JsonPropertyName("pixels")]
     public List<PixelInfo> Pixels { get; set; } = new List<PixelInfo>();

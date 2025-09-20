@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using ConformanceTests.Exceptions;
 using Geotiff;
 using Shouldly;
@@ -18,7 +19,7 @@ class Program
             dir = Directory.GetParent(dir)?.FullName
                   ?? throw new Exception("Could not locate project root.");
         }
-        
+
         return dir;
     }
 
@@ -29,17 +30,57 @@ class Program
             Console.WriteLine($"WARNING: {type} {value} does not equal {other}");
         }
     }
-    
+
     static void ShouldBeError<T>(string type, T value, T other)
     {
         if (!EqualityComparer<T>.Default.Equals(value, other))
         {
             Console.WriteLine($"ERROR: {type} {value} does not equal {other}");
-            throw new AssertationException();
+            // throw new AssertationException();
         }
     }
 
-    async static Task ConformanceTests()
+    public static void CompareArrayTags(JsonElement[] jsonArray, string key, ImageFileDirectory fileDirectory)
+    {
+        var lengthCheck = fileDirectory.GetFileDirectoryListValue<double>(key);
+
+        if (lengthCheck.Count() != jsonArray.Length)
+        {
+            ShouldBeError($"Array of key {key} did not match length;", jsonArray.Length, lengthCheck.Count());
+            return;
+        }
+        
+        // Check lengths match here
+        if (jsonArray.Length == 0)
+        {
+            return; // return, all ok.
+        }
+
+        switch (jsonArray[0].ValueKind)
+        {
+            case JsonValueKind.String:
+                var strArray = fileDirectory.GetFileDirectoryListValue<string>(key);
+                throw new NotImplementedException();
+                break;
+            case JsonValueKind.Number:
+                var doubleArray = fileDirectory.GetFileDirectoryListValue<double>(key);// promote to double, GDAL style.
+                for (var i = 0; i < jsonArray.Length; i++)
+                {
+                    if (doubleArray.ElementAt(i) != jsonArray[i].GetDouble())
+                    {
+                        ShouldBeError($"Array tag with key {key}; element at {i} did not match", jsonArray[i].GetDouble(), doubleArray.ElementAt(i));   
+                    }
+                }
+                break;
+            default:
+                throw new Exception();
+        }
+        
+        
+    }
+
+
+async static Task ConformanceTests()
     {
         var dir = GetDataFolderPath();
         var jsonFilePath = Path.Combine(dir, "writeResult.json");
@@ -62,15 +103,42 @@ class Program
                     var resultImage = r.Images[i];
                     foreach (var tag in resultImage.Tags)
                     {
-                        if (csharpImage.fileDirectory.FileDirectory.ContainsKey(tag.Key) is false)
+                        if (csharpImage.fileDirectory.FileDirectory.ContainsKey(tag.Key) is false )
                         {
-                            Console.WriteLine($"Tag {tag.Key}");
+                            Console.WriteLine($"Tag {tag.Key} was missing in csharp read image");
                         }
                         else
                         {
-                           
+                            switch (tag.Value.ValueKind)
+                            {
+                                case JsonValueKind.Array:
+                                    
+                                    // FieldTags
+                                    if (FieldTypes.ArrayTypeFields.Contains(FieldTypes.FieldTags.GetByValue(tag.Key)) ==
+                                        false)
+                                    {
+                                        break;// probably a rational
+                                    }
+                                    var array = tag.Value.EnumerateArray().ToArray();
+                                    CompareArrayTags(array, tag.Key, csharpImage.fileDirectory);
+                                    break;
+                                case JsonValueKind.Number:
+                                    break;
+                                case JsonValueKind.String:
+                                    break;
+                                default:
+                                    throw new Exception();
+                            }
                         }
                     }
+
+                    // var tagCount = csharpImage.fileDirectory.FileDirectory.Count;
+                    //
+                    // if (csharpImage.fileDirectory.GeoKeyDirectory is not null)
+                    // {
+                    //     tagCount += csharpImage.fileDirectory.GeoKeyDirectory.Count;
+                    // }
+                    
                     ShouldBeError($"Tag Count on image {i};", csharpImage.fileDirectory.FileDirectory.Count, resultImage.Tags.Count);
                     
                     

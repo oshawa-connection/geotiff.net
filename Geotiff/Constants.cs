@@ -10,7 +10,7 @@ public static class Constants
 }
 
 
-internal static class FieldTypes
+public static class FieldTypes
 {
     public const string BYTE = "BYTE";
     public const string ASCII = "ASCII";

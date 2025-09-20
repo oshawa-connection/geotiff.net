@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace Geotiff;
 
-internal class BiDirectionalDictionary<TKey, TValue>: IEnumerable where TKey : notnull
+public class BiDirectionalDictionary<TKey, TValue>: IEnumerable where TKey : notnull
 {
     private readonly Dictionary<TKey, TValue> _forward = new();
     private readonly Dictionary<TValue, TKey> _reverse = new();

@@ -197,7 +197,7 @@ public class DataSlice
             //     readMethod = dataSlice.readInt32;
             //     break;
             
-            case FieldTypes.ASCII:
+            case FieldTypes.ASCII: case FieldTypes.BYTE : case FieldTypes.UNDEFINED:
                 var asciiBytes = ReadAll(this.ReadByte, count, offset, fieldTypeLength);
                 var decodedString = System.Text.Encoding.ASCII.GetString(asciiBytes);
                 finalResult =GeotiffGetValuesResult.FromString(decodedString);
