@@ -2,6 +2,7 @@
 using System.Text.Json.Nodes;
 using ConformanceTests.Exceptions;
 using Geotiff;
+using Geotiff.Primitives;
 using Shouldly;
 
 namespace ConformanceTests;
@@ -40,6 +41,30 @@ class Program
         }
     }
 
+    public static void CompareNumberTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
+    {
+        var doubleValue = fileDirectory.GetFileDirectoryValue<double>(key);// promote to double, GDAL style.
+        var jsonValue = element.GetDouble();
+        if (doubleValue != element.GetDouble())
+        {
+            ShouldBeError($"Number tag with key {key} did not match", jsonValue, doubleValue);
+        }
+    }
+    
+    public static void CompareRationalTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
+    {
+        var csharpValue = fileDirectory.GetFileDirectoryValue<Rational>(key);// promote to double, GDAL style.
+        var jsonValue = element.EnumerateArray().ToArray();
+        
+        var x = new Rational(jsonValue[0].GetInt32(), jsonValue[1].GetInt32());
+        
+        if (csharpValue != x)
+        {
+            ShouldBeError($"Number tag with key {key} did not match", x, csharpValue);
+        }
+    }
+    
+    
     public static void CompareArrayTags(JsonElement[] jsonArray, string key, ImageFileDirectory fileDirectory)
     {
         var lengthCheck = fileDirectory.GetFileDirectoryListValue<double>(key);
@@ -60,7 +85,7 @@ class Program
         {
             case JsonValueKind.String:
                 var strArray = fileDirectory.GetFileDirectoryListValue<string>(key);
-                throw new NotImplementedException();
+                throw new NotImplementedException(); // 99% sure all array tags are arrays of numbers, at least 
                 break;
             case JsonValueKind.Number:
                 var doubleArray = fileDirectory.GetFileDirectoryListValue<double>(key);// promote to double, GDAL style.
@@ -117,12 +142,14 @@ async static Task ConformanceTests()
                                     if (FieldTypes.ArrayTypeFields.Contains(FieldTypes.FieldTags.GetByValue(tag.Key)) ==
                                         false)
                                     {
+                                        CompareRationalTags(tag.Value, tag.Key, csharpImage.fileDirectory);
                                         break;// probably a rational
                                     }
                                     var array = tag.Value.EnumerateArray().ToArray();
                                     CompareArrayTags(array, tag.Key, csharpImage.fileDirectory);
                                     break;
                                 case JsonValueKind.Number:
+                                    CompareNumberTags(tag.Value, tag.Key, csharpImage.fileDirectory);
                                     break;
                                 case JsonValueKind.String:
                                     break;
@@ -153,6 +180,7 @@ async static Task ConformanceTests()
 
     async static Task DebugSingle()
     {
+        double x;
         var dir = GetDataFolderPath();
         var tiffPath = Path.Combine(dir, "tiffData", "erdas_spnad83.tif");
         

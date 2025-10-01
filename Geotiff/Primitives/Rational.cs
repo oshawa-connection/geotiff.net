@@ -1,6 +1,6 @@
 namespace Geotiff.Primitives;
 
-public readonly struct Rational
+public readonly struct Rational : IEquatable<Rational>, IConvertible
 {
     public uint Numerator { get; }
     public uint Denominator { get; }
@@ -21,4 +21,110 @@ public readonly struct Rational
     public double ToDouble() => (double)Numerator / Denominator;
 
     public override string ToString() => $"{Numerator}/{Denominator}";
+
+    public bool Equals(Rational other)
+    {
+        return Numerator == other.Numerator && Denominator == other.Denominator;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Rational other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Numerator, Denominator);
+    }
+    
+    public static bool operator ==(Rational lhs, Rational rhs)
+    {
+        return lhs.Equals(rhs);
+    }
+
+    public static bool operator !=(Rational lhs, Rational rhs) => !(lhs == rhs);
+    public TypeCode GetTypeCode()
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool ToBoolean(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public byte ToByte(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public char ToChar(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public DateTime ToDateTime(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public decimal ToDecimal(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public double ToDouble(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public short ToInt16(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public int ToInt32(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public long ToInt64(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public sbyte ToSByte(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public float ToSingle(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public string ToString(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public object ToType(Type conversionType, IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ushort ToUInt16(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public uint ToUInt32(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ulong ToUInt64(IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
 }
