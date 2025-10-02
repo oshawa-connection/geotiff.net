@@ -1,0 +1,40 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Histograms>
+      <HistItem>
+        <HistMin>-0.49</HistMin>
+        <HistMax>49.49</HistMax>
+        <BucketCount>50</BucketCount>
+        <IncludeOutOfRange>0</IncludeOutOfRange>
+        <Approximate>0</Approximate>
+        <HistCounts>50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">49</MDI>
+      <MDI key="STATISTICS_MEAN">24.5</MDI>
+      <MDI key="STATISTICS_MINIMUM">0</MDI>
+      <MDI key="STATISTICS_STDDEV">14.430869689662</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="2">
+    <Histograms>
+      <HistItem>
+        <HistMin>-0.49</HistMin>
+        <HistMax>49.49</HistMax>
+        <BucketCount>50</BucketCount>
+        <IncludeOutOfRange>0</IncludeOutOfRange>
+        <Approximate>0</Approximate>
+        <HistCounts>50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50|50</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">49</MDI>
+      <MDI key="STATISTICS_MEAN">24.5</MDI>
+      <MDI key="STATISTICS_MINIMUM">0</MDI>
+      <MDI key="STATISTICS_STDDEV">14.430869689662</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>
