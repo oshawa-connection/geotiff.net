@@ -6,14 +6,7 @@ namespace Geotiff;
  */
 public abstract class BaseSource
 {
-    public async Task<IEnumerable<byte[]>> Fetch(IEnumerable<Slice> slices)
-    {
-        var taskList = slices.Select(slice => this.FetchSlice(slice));
-        var completedTasks = await Task.WhenAll(taskList);
-        return completedTasks;
-    }
-    
-    public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices, CancellationToken cancellationToken)
+    public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices, CancellationToken? cancellationToken = null)
     {
         var taskList = slices.Select(slice => this.FetchSlice(slice, cancellationToken));
         var completedTasks = await Task.WhenAll(taskList);
@@ -34,7 +27,7 @@ public abstract class BaseSource
      * @param {Slice} slice
      * @returns {ArrayBuffer}
      */
-    public virtual async Task<byte[]> FetchSlice(Slice slice, CancellationToken? cancellationToken) {
+    public virtual async Task<byte[]> FetchSlice(Slice slice, CancellationToken? cancellationToken = null) {
         throw new Exception("fetching of slice not possible, not implemented");
     }
     

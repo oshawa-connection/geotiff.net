@@ -1,42 +1,43 @@
 using System.Net;
-using System.Runtime.InteropServices.JavaScript;
+using Geotiff.Exceptions;
 using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff;
 
-public class RemoteSource : BaseSource {
-  
+public class RemoteSource : BaseSource
+{
+  private readonly string url;
   private int maxRanges { get; set; }
   private HttpClient client { get; set; }
   private bool allowFullFile { get; set; }
-  private int? _fileSize { get; set; }
+  private long? _fileSize { get; set; }
   /**
    * @param {BaseClient} client
    * @param {object} headers
    * @param {numbers} maxRanges
    * @param {boolean} allowFullFile
    */
-  RemoteSource(HttpClient client, int maxRanges, bool allowFullFile) {
+  public RemoteSource(string url, HttpClient client, int maxRanges, bool allowFullFile)
+  {
+    this.url = url;
     this.client = client;
     // this.headers = headers; // Let user do this on httpclient itself.
     this.maxRanges = maxRanges;
     this.allowFullFile = allowFullFile;
     this._fileSize = null;
   }
-
   
-  // public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices, CancellationToken? cancellationToken)
   /**
    *
    * @param {Slice[]} slices
    */
-  public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices, CancellationToken signal) {
+  public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices, CancellationToken? signal = null) {
     // if we allow multi-ranges, split the incoming request into that many sub-requests
     // and join them afterwards
     if (this.maxRanges >= slices.Count()) {
-      return this.fetchSlices(slices, signal);
+      return await this.FetchSlices(slices, signal);
     } else if (this.maxRanges > 0 && slices.Count() > 1) {
-      // TODO: split into multiple multi-range requests
+      // TODO: split into multiple multi-range requests - comment was in geotiff.js
 
       // const subSlicesRequests = [];
       // for (let i = 0; i < slices.length; i += this.maxRanges) {
@@ -46,36 +47,47 @@ public class RemoteSource : BaseSource {
       // }
       // return (await Promise.all(subSlicesRequests)).flat();
     }
-
+    
     // otherwise make a single request for each slice
-    return JSType.Promise<int>.All(
-      slices.map((slice) => this.fetchSlice(slice, signal)),
-    );
+    var myTasks = slices.Select(slice => this.fetchSlice(slice, signal));
+    return await Task.WhenAll(myTasks);
   }
 
-  private async Task<IEnumerable<ArrayBuffer>> fetchSlices(IEnumerable<Slice> slices, CancellationToken signal) {
+  public async Task<IEnumerable<ArrayBuffer>> FetchSlices(IEnumerable<Slice> slices, CancellationToken? signal = null) {
     using HttpRequestMessage request = new(
-      HttpMethod.Head, 
-      "https://www.example.com");
+      HttpMethod.Get,
+      this.url);
     var rangeHeaderValue = String.Join(',', slices
-      .Select((d) => $"{d.offset}-${d.offset + d.length}"));
+      .Select((d) => $"{d.offset}-{d.offset + d.length}"));
     
-    request.Headers.Add("Range", rangeHeaderValue);
-    var response = await this.client.SendAsync(request, signal);
+    request.Headers.Add("Range", $"bytes={rangeHeaderValue}");
+    HttpResponseMessage? response;
+    if (signal != null)
+    {
+      response = await this.client.SendAsync(request, (CancellationToken) signal);
+    }
+    else
+    {
+      response = await this.client.SendAsync(request);
+    }
 
+    response.EnsureSuccessStatusCode();
 
-    if (!response.ok) {
-      throw new JSType.Error('Error fetching data.');
-    } else if (response.status === 206) {
-      const { type, params } = parseContentType(response.getHeader('content-type'));
-      if (type === 'multipart/byteranges') {
-        const byteRanges = parseByteRanges(await response.getData(), params.boundary);
-        this._fileSize = byteRanges[0].fileSize || null;
-        return byteRanges;
+    if (response.StatusCode == HttpStatusCode.PartialContent)
+    {
+      var contentType = response.Headers.GetValues("content-type").First();
+      
+       
+      // const { type, params } = parseContentType(response.getHeader('content-type'));
+      if (contentType == "multipart/byteranges") {
+        throw new NotImplementedException();
+        // var byteRanges = parseByteRanges(await response.getData(), params.boundary);
+        // this._fileSize = byteRanges[0].fileSize || null;
+        // return byteRanges;
       }
-
-      const data = await response.getData();
-
+      
+      var data = await response.getData();
+      
       const { start, end, total } = parseContentRange(response.getHeader('content-range'));
       this._fileSize = total || null;
       const first = [{
@@ -83,12 +95,12 @@ public class RemoteSource : BaseSource {
         offset: start,
         length: end - start,
       }];
-
+      
       if (slices.length > 1) {
         // we requested more than one slice, but got only the first
         // unfortunately, some HTTP Servers don't support multi-ranges
         // and return only the first
-
+      
         // get the rest of the slices and fetch them iteratively
         const others = await JSType.Promise<>.all(slices.slice(1).map((slice) => this.fetchSlice(slice, signal)));
         return first.concat(others);
@@ -96,58 +108,93 @@ public class RemoteSource : BaseSource {
       return first;
     } else {
       if (!this.allowFullFile) {
-        throw new JSType.Error('Server responded with full file');
+        throw new GeotiffNetworkException("Server responded with full file. If this is intentional behaviour, call RemoteSource with allowFullFile = true");
       }
-      const data = await response.getData();
-      this._fileSize = data.byteLength;
-      return [{
-        data,
-        offset: 0,
-        length: data.byteLength,
-      }];
+
+      var ms = new MemoryStream();
+      if (signal != null)
+      {
+          await response.Content.CopyToAsync(ms, (CancellationToken)signal);  
+      }
+      else
+      {
+        await response.Content.CopyToAsync(ms);
+      }
+      
+      ms.Position = 0;
+      var ab = new ArrayBuffer(ms.ToArray());
+      this._fileSize = ms.Length;
+      return new[] { ab };
+      // return [{
+      //   data,
+      //   offset: 0,
+      //   length: data.byteLength,
+      // }];
     }
   }
 
-  async fetchSlice(slice, signal) {
-    const { offset, length } = slice;
-    const response = await this.client.request({
-      headers: {
-        ...this.headers,
-        Range: `bytes=${offset}-${offset + length}`,
-      },
-      signal,
-    });
+  public async Task<ArrayBuffer> fetchSlice(Slice slice, CancellationToken? signal = null)
+  {
+    var offset = slice.offset;
+    var length = slice.length;
+    using HttpRequestMessage request = new(
+      HttpMethod.Get,
+      this.url);
+    request.Headers.Add("Range", $"{slice.offset}-${slice.offset + slice.length}");
+    HttpResponseMessage? response;
 
+    if (signal != null)
+    {
+      response = await this.client.SendAsync(request, (CancellationToken)signal);
+    }
+    else
+    {
+      response = await this.client.SendAsync(request);
+    }
+    
+    
     // check the response was okay and if the server actually understands range requests
-    if (!response.ok) {
-      throw new JSType.Error('Error fetching data.');
-    } else if (response.status === 206) {
-      const data = await response.getData();
-
-      const { total } = parseContentRange(response.getHeader('content-range'));
-      this._fileSize = total || null;
-      return {
-        data,
-        offset,
-        length,
-      };
-    } else {
-      if (!this.allowFullFile) {
-        throw new JSType.Error('Server responded with full file');
-      }
-
-      const data = await response.getData();
-
-      this._fileSize = data.byteLength;
-      return {
-        data,
-        offset: 0,
-        length: data.byteLength,
-      };
+    response.EnsureSuccessStatusCode();
+    if (response.StatusCode == HttpStatusCode.PartialContent)
+    {
+      throw new NotImplementedException("Multi range not implemented yet");
+      //   const data = await response.getData();
+      //
+      //   const { total } = parseContentRange(response.getHeader('content-range'));
+      //   this._fileSize = total || null;
+      //   return {
+      //     data,
+      //     offset,
+      //     length,
+      //   };
+      } else {
+        if (!this.allowFullFile) {
+          throw new GeotiffNetworkException("Server responded with full file");
+        }
+      
+        var ms = new MemoryStream();
+        if (signal != null)
+        {
+          await response.Content.CopyToAsync(ms, (CancellationToken)signal);  
+        }
+        else
+        {
+          await response.Content.CopyToAsync(ms);
+        }
+        
+        ms.Position = 0;
+        
+        this._fileSize = ms.Length;
+        return new ArrayBuffer(ms.ToArray());
+      
+        // this._fileSize = data.byteLength;
+        // return {
+        //   data,
+        //   offset: 0,
+        //   length: data.byteLength,
+        // };
     }
   }
 
-  get fileSize() {
-    return this._fileSize;
-  }
+  public long? fileSize => this._fileSize;
 }

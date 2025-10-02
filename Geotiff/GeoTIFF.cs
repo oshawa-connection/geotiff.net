@@ -10,6 +10,43 @@ public class GeoTIFF
     private readonly int firstIFDOffset;
     private readonly bool littleEndian;
 
+    /// <summary>
+    /// This is temporary for development purposes only.
+    /// </summary>
+    /// <param name="httpClient"></param>
+    /// <param name="url"></param>
+    /// <returns></returns>
+    public async static Task<GeoTIFF> FromCOGURL(HttpClient httpClient, string url)
+    {
+        var source = new RemoteSource(url, httpClient, int.MaxValue, false);
+        var slices = await source.Fetch(new Slice[] { new Slice(0, 1024) });
+        
+        var dv = new DataView(slices.First());
+        var value = dv.getUint16(0, true);
+        var isLittleEndian = false;
+        if (value == Constants.BOMLittleEndian)
+        {
+            isLittleEndian = true;
+        }
+        else if (value == Constants.BOMBigEndian)
+        {
+            isLittleEndian = false;
+        }
+        else
+        {
+            throw new Exception("Unrecognised Tiff BOM marker");
+        }
+        
+        var isBigTiffValue = dv.getUint16(2, isLittleEndian);
+        if (isBigTiffValue != 42)
+        {
+            throw new NotImplementedException("BigTiff support is not implemented");
+        }
+        var firstIDFOffset = dv.getInt32(4, isLittleEndian);
+
+        return new GeoTIFF(source, isLittleEndian, false, firstIDFOffset);
+    }
+    
     public async static Task<GeoTIFF> FromStream(Stream stream)
     {
         var memoryStream = new MemoryStream();
@@ -60,7 +97,7 @@ public class GeoTIFF
         var results = await this.source.Fetch(slices);
         
         return new DataSlice(
-            results.Single(),
+            results.Single().GetAllBytes(), // TODO: Double check this.  
             offset,
             this.littleEndian,
             this.bigTiff

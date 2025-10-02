@@ -13,6 +13,11 @@ public class DataView
 
     public DataView(int size, string? type = null): this(new byte[size], type) { }
 
+    public DataView(ArrayBuffer buffer)
+    {
+        this.stream = buffer.GetAllBytes(); // TODO: Watch memory usage here. Might create a copy?
+    }
+    
     public ArrayBuffer ToArrayBuffer()
     {
         return new ArrayBuffer(stream);
@@ -40,10 +45,7 @@ public class DataView
         }
     }
     
-    public DataView(ArrayBuffer buffer)
-    {
-        this.stream = buffer.GetAllBytes(); // TODO: Watch memory usage here. Might create a copy?
-    }
+
     
     public int length
     {
