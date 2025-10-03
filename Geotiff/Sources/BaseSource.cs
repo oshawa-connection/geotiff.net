@@ -10,7 +10,7 @@ public abstract class BaseSource
     {
         var taskList = slices.Select(slice => this.FetchSlice(slice, cancellationToken));
         var completedTasks = await Task.WhenAll(taskList);
-        return completedTasks.Select(d => new ArrayBuffer(d));
+        return completedTasks.Select(d => d);
     }
 
     /**
@@ -18,18 +18,7 @@ public abstract class BaseSource
      * @param {Slice} slice
      * @returns {ArrayBuffer}
      */
-    public virtual async Task<byte[]> FetchSlice(Slice slice) {
-        throw new NotImplementedException("fetching of slice not possible, not implemented");
-    }
-    
-    /**
-     *
-     * @param {Slice} slice
-     * @returns {ArrayBuffer}
-     */
-    public virtual async Task<byte[]> FetchSlice(Slice slice, CancellationToken? cancellationToken = null) {
-        throw new Exception("fetching of slice not possible, not implemented");
-    }
+    public abstract Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? cancellationToken = null);
     
     /**
      * Returns the filesize if already determined and null otherwise

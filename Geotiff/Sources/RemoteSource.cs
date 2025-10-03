@@ -1,11 +1,16 @@
 using System.Net;
+using System.Text;
 using Geotiff.Exceptions;
+using Geotiff.Extensions;
 using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff;
 
 public class RemoteSource : BaseSource
 {
+  private const string CRLFCRLF = "\r\n\r\n";
+  public long? fileSize => this._fileSize;
+  
   private readonly string url;
   private int maxRanges { get; set; }
   private HttpClient client { get; set; }
@@ -49,7 +54,7 @@ public class RemoteSource : BaseSource
     }
     
     // otherwise make a single request for each slice
-    var myTasks = slices.Select(slice => this.fetchSlice(slice, signal));
+    var myTasks = slices.Select(slice => this.FetchSlice(slice, signal));
     return await Task.WhenAll(myTasks);
   }
 
@@ -75,56 +80,58 @@ public class RemoteSource : BaseSource
 
     if (response.StatusCode == HttpStatusCode.PartialContent)
     {
-      var contentType = response.Headers.GetValues("content-type").First();
       
-       
+      var found = response.Headers.TryGetValues("Content-Type", out var x);
+      
       // const { type, params } = parseContentType(response.getHeader('content-type'));
-      if (contentType == "multipart/byteranges") {
-        throw new NotImplementedException();
-        // var byteRanges = parseByteRanges(await response.getData(), params.boundary);
-        // this._fileSize = byteRanges[0].fileSize || null;
-        // return byteRanges;
+      if (found is true && x.First() == "multipart/byteranges")
+      {
+        var ms = new MemoryStream();
+        await response.Content.CopyToAsync(ms);
+        ms.Position = 0;
+        
+        var byteRanges = ParseByteRanges(ms.ToArray(), "params.boundary");
+        this._fileSize = byteRanges.First().Length != 0 ? byteRanges.First().Length : null;
+        return byteRanges;
+      }
+
+      var data = await ArrayBuffer.FromStream(response.Content.ReadAsStream(), signal);
+      
+      var contentRangeResult = response.Headers.ParseContentRange();
+      if (contentRangeResult is not null)
+      {
+        this._fileSize = contentRangeResult.total == 0 ? contentRangeResult.total : null;  
       }
       
-      var data = await response.getData();
+
       
-      const { start, end, total } = parseContentRange(response.getHeader('content-range'));
-      this._fileSize = total || null;
-      const first = [{
-        data,
-        offset: start,
-        length: end - start,
-      }];
+      // const first = [{
+      //   data,
+      //   offset: start,
+      //   length: end - start,
+      // }];
       
-      if (slices.length > 1) {
+      if (slices.Count() > 1)
+      {
+        throw new NotImplementedException("Server returned an invalid response to a multi-slice request");
         // we requested more than one slice, but got only the first
         // unfortunately, some HTTP Servers don't support multi-ranges
         // and return only the first
-      
+
         // get the rest of the slices and fetch them iteratively
-        const others = await JSType.Promise<>.all(slices.slice(1).map((slice) => this.fetchSlice(slice, signal)));
-        return first.concat(others);
+        // const others = await JSType.Promise<>.all(slices.slice(1).map((slice) => this.fetchSlice(slice, signal)));
+        // return first.concat(others);
       }
-      return first;
+      return new List<ArrayBuffer>() { data };
     } else {
       if (!this.allowFullFile) {
         throw new GeotiffNetworkException("Server responded with full file. If this is intentional behaviour, call RemoteSource with allowFullFile = true");
       }
-
-      var ms = new MemoryStream();
-      if (signal != null)
-      {
-          await response.Content.CopyToAsync(ms, (CancellationToken)signal);  
-      }
-      else
-      {
-        await response.Content.CopyToAsync(ms);
-      }
+  
+      var data = await ArrayBuffer.FromStream(response.Content.ReadAsStream(), signal);
       
-      ms.Position = 0;
-      var ab = new ArrayBuffer(ms.ToArray());
-      this._fileSize = ms.Length;
-      return new[] { ab };
+      this._fileSize = data.Length;
+      return new[] { data };
       // return [{
       //   data,
       //   offset: 0,
@@ -133,14 +140,14 @@ public class RemoteSource : BaseSource
     }
   }
 
-  public async Task<ArrayBuffer> fetchSlice(Slice slice, CancellationToken? signal = null)
+  public override async Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? signal = null)
   {
     var offset = slice.offset;
     var length = slice.length;
     using HttpRequestMessage request = new(
       HttpMethod.Get,
       this.url);
-    request.Headers.Add("Range", $"{slice.offset}-${slice.offset + slice.length}");
+    request.Headers.Add("Range", $"bytes={slice.offset}-{slice.offset + slice.length}");
     HttpResponseMessage? response;
 
     if (signal != null)
@@ -157,7 +164,9 @@ public class RemoteSource : BaseSource
     response.EnsureSuccessStatusCode();
     if (response.StatusCode == HttpStatusCode.PartialContent)
     {
-      throw new NotImplementedException("Multi range not implemented yet");
+      // TODO: Handle parseContentRange here
+      var data = await ArrayBuffer.FromStream(await response.Content.ReadAsStreamAsync(),signal);
+      return data;
       //   const data = await response.getData();
       //
       //   const { total } = parseContentRange(response.getHeader('content-range'));
@@ -167,7 +176,7 @@ public class RemoteSource : BaseSource
       //     offset,
       //     length,
       //   };
-      } else {
+    } else {
         if (!this.allowFullFile) {
           throw new GeotiffNetworkException("Server responded with full file");
         }
@@ -195,6 +204,66 @@ public class RemoteSource : BaseSource
         // };
     }
   }
+  
 
-  public long? fileSize => this._fileSize;
+  // Parse HTTP headers from a given string.
+  private static Dictionary<string, string> ParseHeaders(string text)
+  {
+    var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    var lines = text.Split(new[] { "\r\n" }, StringSplitOptions.None);
+    foreach (var line in lines)
+    {
+      var kv = line.Split(new[] { ':' }, 2);
+      if (kv.Length == 2)
+      {
+        headers[kv[0].Trim().ToLower()] = kv[1].Trim();
+      }
+    }
+    return headers;
+  }
+  
+  
+  public static IEnumerable<ArrayBuffer> ParseByteRanges(byte[] responseBytes, string boundary)
+  {
+    var parts = new List<ArrayBuffer>();
+    var boundaryString = $"--{boundary}";
+    var endBoundaryString = $"{boundaryString}--";
+    var responseText = System.Text.Encoding.ASCII.GetString(responseBytes);
+
+    var sections = responseText.Split(new[] { boundaryString }, StringSplitOptions.RemoveEmptyEntries);
+
+    foreach (var section in sections)
+    {
+      if (section.StartsWith("--")) // end boundary
+        continue;
+
+      var headerBodySplit = section.IndexOf("\r\n\r\n");
+      if (headerBodySplit < 0)
+        continue;
+
+      var headerText = section.Substring(0, headerBodySplit).Trim();
+      var bodyText = section.Substring(headerBodySplit + 4);
+
+      // Parse headers
+      var headers = headerText
+        .Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(line => line.Split(new[] { ':' }, 2))
+        .ToDictionary(kv => kv[0].Trim().ToLower(), kv => kv[1].Trim());
+
+      // Parse Content-Range
+      var contentRange = headers["content-range"];
+      var match = System.Text.RegularExpressions.Regex.Match(contentRange, @"bytes (\d+)-(\d+)/(\d+)");
+      var start = long.Parse(match.Groups[1].Value);
+      var end = long.Parse(match.Groups[2].Value);
+      var total = long.Parse(match.Groups[3].Value);
+
+      // Extract data bytes
+      var bodyBytes = System.Text.Encoding.ASCII.GetBytes(bodyText);
+      var length = end - start + 1;
+      
+      parts.Add(new ArrayBuffer(bodyBytes));
+    }
+
+    return parts;
+  }
 }

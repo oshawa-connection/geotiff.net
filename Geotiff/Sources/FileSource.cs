@@ -1,3 +1,5 @@
+using Geotiff.JavaScriptCompatibility;
+
 namespace Geotiff;
 
 public class FileSource : BaseSource
@@ -7,23 +9,8 @@ public class FileSource : BaseSource
     {
         this.stream = stream;
     }
-    public override async Task<byte[]> FetchSlice(Slice slice)
-    {
-        var x = new byte[slice.length];
-        
-        stream.Seek(slice.offset, SeekOrigin.Begin);
-        
-        var nReadBytes = await stream.ReadAsync(x, 0, slice.length);
-        if (slice.checkByteLength is true && nReadBytes < slice.length)
-        {
-            throw new Exception("Not enough bytes");
-        }
-
-        return x;
-    }
     
-    
-    public override async Task<byte[]> FetchSlice(Slice slice, CancellationToken? cancellationToken)
+    public override async Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? cancellationToken)
     {
         var x = new byte[slice.length];
         
@@ -43,6 +30,6 @@ public class FileSource : BaseSource
             throw new Exception("Not enough bytes");
         }
 
-        return x;
+        return new ArrayBuffer(x);
     }
 }

@@ -11,6 +11,23 @@ public class ArrayBuffer
     public Span<byte> AsSpan() => buffer.AsSpan();
 
     public Memory<byte> AsMemory() => buffer.AsMemory();
+
+    public static async Task<ArrayBuffer> FromStream(Stream stream, CancellationToken? signal)
+    {
+        var ms = new MemoryStream();
+        if (signal != null)
+        {
+            await stream.CopyToAsync(ms, (CancellationToken)signal); 
+        }
+        else
+        {
+            await stream.CopyToAsync(ms);
+        }
+
+        stream.Position = 0;
+        var ab = new ArrayBuffer(ms.ToArray());
+        return ab;
+    }
     
     public ArrayBuffer(byte[] backing)
     {
