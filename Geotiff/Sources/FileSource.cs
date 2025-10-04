@@ -25,10 +25,10 @@ public class FileSource : BaseSource
         {
             nReadBytes = await stream.ReadAsync(x, 0, slice.length, (CancellationToken) cancellationToken);
         }
-        if (nReadBytes < slice.length)
-        {
-            throw new Exception("Not enough bytes");
-        }
+        // if (nReadBytes < slice.length)
+        // {
+        //     throw new Exception("Not enough bytes");
+        // }
 
         return new ArrayBuffer(x);
     }

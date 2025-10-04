@@ -182,13 +182,6 @@ public class GeoTIFF
         for (long entryCount = 0; entryCount < numDirEntries; i += entrySize, ++entryCount)
         {
             ushort fieldTag = dataSlice.ReadUInt16(i);
-            if (FieldTypes.FieldTags.TryGetByKey(fieldTag, out string tagName2))
-            {
-                Console.WriteLine(tagName2);
-            }
-
-            
-            
             ushort fieldType = dataSlice.ReadUInt16(i + 2);
             int typeCount = this.bigTiff
                 ? (int)dataSlice.ReadUInt64(i + 4)

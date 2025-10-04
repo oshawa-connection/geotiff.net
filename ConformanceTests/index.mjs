@@ -37,7 +37,7 @@ async function produceStats(filePath) {
      */
     const currentWriteResult = {fileName: filePath, images: []};
     for(let i = 0; i < await result.getImageCount(); i++) {
-        const image = await result.getImage(0); // TODO: loop through the images
+        const image = await result.getImage(i);
 
         let pixelX = 10;
         let pixelY = 10;

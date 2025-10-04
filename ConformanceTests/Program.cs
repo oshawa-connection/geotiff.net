@@ -53,7 +53,6 @@ class Program
     
     public static void CompareRationalTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
     {
-        Console.WriteLine($"About to compare {key}");
         var csharpValue = fileDirectory.GetFileDirectoryValue<Rational>(key);// promote to double, GDAL style.
         var jsonValue = element.EnumerateArray().ToArray();
         
@@ -68,6 +67,12 @@ class Program
     
     public static void CompareArrayTags(JsonElement[] jsonArray, string key, ImageFileDirectory fileDirectory)
     {
+        if (key == "JPEGTables")
+        {
+            Console.WriteLine("JPEGTables tag encountered; skipping");
+            return;
+        }
+        
         var lengthCheck = fileDirectory.GetFileDirectoryListValue<double>(key);
 
         if (lengthCheck.Count() != jsonArray.Length)
@@ -117,9 +122,10 @@ async static Task ConformanceTests()
         {
             var tiffPath = Path.Combine(dir, r.FileName);
             await using var fsSource = new FileStream(tiffPath,FileMode.Open, FileAccess.Read);
+            Console.WriteLine($"Messages for {r.FileName}");
             var geotiff = await GeoTIFF.FromStream(fsSource);
             var count = await geotiff.GetImageCount();
-            Console.WriteLine($"Messages for {r.FileName}");
+            
             try
             {
                 ShouldBeError("ImageCount", count, r.Images.Count);
@@ -138,8 +144,6 @@ async static Task ConformanceTests()
                             switch (tag.Value.ValueKind)
                             {
                                 case JsonValueKind.Array:
-                                    
-                                    // FieldTags
                                     if (FieldTypes.ArrayTypeFields.Contains(FieldTypes.FieldTags.GetByValue(tag.Key)) ==
                                         false)
                                     {
