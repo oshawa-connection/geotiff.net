@@ -69,6 +69,9 @@ public static class FieldTypes
     public static string TileLength = "TileLength";
     public static string RowsPerStrip = "RowsPerStrip";
     public static string PlanarConfiguration = "PlanarConfiguration";
+    public static string PageNumber = "PageNumber";
+    public static string ColorMap = "ColorMap";
+    
     
     public static BiDirectionalDictionary<ushort, string> FieldTags = new BiDirectionalDictionary<ushort, string>()
     {
@@ -77,7 +80,7 @@ public static class FieldTypes
         { 0x0102, BitsPerSample },
         { 0x0109, "CellLength" },
         { 0x0108, "CellWidth" },
-        { 0x0140, "ColorMap" },
+        { 0x0140, ColorMap },
         { 0x0103, "Compression" },
         { 0x8298, "Copyright" },
         { 0x0132, "DateTime" },
@@ -123,7 +126,7 @@ public static class FieldTypes
         { 0x015A, "Indexed" },
         { 0x015B, "JPEGTables" },
         { 0x011D, "PageName" },
-        { 0x0129, "PageNumber" },
+        { 0x0129, PageNumber },
         { 0x013D, "Predictor" },
         { 0x013F, "PrimaryChromaticities" },
         { 0x0214, "ReferenceBlackWhite" },
@@ -208,6 +211,8 @@ public static class FieldTypes
         FieldTags.GetByValue(TileByteCounts),
         FieldTags.GetByValue(TileOffsets),
         FieldTags.GetByValue(SubIFDs),
+        FieldTags.GetByValue(PageNumber),
+        FieldTags.GetByValue(ColorMap),
     };
     
     

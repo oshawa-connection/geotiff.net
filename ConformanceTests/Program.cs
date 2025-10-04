@@ -53,6 +53,7 @@ class Program
     
     public static void CompareRationalTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
     {
+        Console.WriteLine($"About to compare {key}");
         var csharpValue = fileDirectory.GetFileDirectoryValue<Rational>(key);// promote to double, GDAL style.
         var jsonValue = element.EnumerateArray().ToArray();
         

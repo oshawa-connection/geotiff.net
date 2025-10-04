@@ -45,86 +45,121 @@ public readonly struct Rational : IEquatable<Rational>, IConvertible
     public static bool operator !=(Rational lhs, Rational rhs) => !(lhs == rhs);
     public TypeCode GetTypeCode()
     {
-        throw new NotImplementedException();
+        return TypeCode.Object;
     }
 
     public bool ToBoolean(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return ToDouble() != 0.0;
     }
 
     public byte ToByte(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToByte(ToDouble());
     }
 
     public char ToChar(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToChar(ToDouble());
     }
 
     public DateTime ToDateTime(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToDateTime(ToDouble());
     }
 
     public decimal ToDecimal(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToDecimal(ToDouble());
     }
 
     public double ToDouble(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return ToDouble();
     }
 
     public short ToInt16(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToInt16(ToDouble());
     }
 
     public int ToInt32(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToInt32(ToDouble());
     }
 
     public long ToInt64(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToInt64(ToDouble());
     }
 
     public sbyte ToSByte(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToSByte(ToDouble());
     }
 
     public float ToSingle(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToSingle(ToDouble());
     }
 
     public string ToString(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return ToString();
     }
 
     public object ToType(Type conversionType, IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        if (conversionType == typeof(Rational))
+            return this;
+        if (conversionType == typeof(double))
+            return ToDouble();
+        if (conversionType == typeof(float))
+            return (float)ToDouble();
+        if (conversionType == typeof(decimal))
+            return (decimal)ToDouble();
+        if (conversionType == typeof(int))
+            return (int)ToDouble();
+        if (conversionType == typeof(uint))
+            return (uint)ToDouble();
+        if (conversionType == typeof(long))
+            return (long)ToDouble();
+        if (conversionType == typeof(ulong))
+            return (ulong)ToDouble();
+        if (conversionType == typeof(short))
+            return (short)ToDouble();
+        if (conversionType == typeof(ushort))
+            return (ushort)ToDouble();
+        if (conversionType == typeof(byte))
+            return (byte)ToDouble();
+        if (conversionType == typeof(sbyte))
+            return (sbyte)ToDouble();
+        if (conversionType == typeof(string))
+            return ToString(provider);
+
+        throw new InvalidCastException($"Cannot convert Rational to {conversionType.Name}.");
     }
+
+
+    // public object ToType(Type conversionType, IFormatProvider? provider)
+    // {
+    //     if (conversionType == typeof(Rational))
+    //         return this;
+    //     return Convert.ChangeType(ToDouble(), conversionType, provider);
+    // }
 
     public ushort ToUInt16(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToUInt16(ToDouble());
     }
 
     public uint ToUInt32(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToUInt32(ToDouble());
     }
 
     public ulong ToUInt64(IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        return Convert.ToUInt64(ToDouble());
     }
 }

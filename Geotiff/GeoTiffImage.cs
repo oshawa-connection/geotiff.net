@@ -851,7 +851,6 @@ public class GeoTiffImage
       // resolve each request by potentially applying array normalization
       request = async () =>
       {
-          // TODO: need to actually decode
         var data = await poolOrDecoder.Decode(this.fileDirectory, slice);
         // var data = slice;
         var sampleFormat = this.GetSampleFormat();
