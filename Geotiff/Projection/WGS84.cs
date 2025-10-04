@@ -2,6 +2,24 @@ namespace Geotiff.Projection;
 
 internal static class WGS84
 {
+    // No filepath: user decides where to place this code
+
+    private const double EarthRadius = 6378137.0;
+
+    /// <summary>
+    /// Converts (longitude, latitude) in degrees to (x, y) in meters (Web Mercator).
+    /// Has not been tested or used yet. 
+    /// </summary>
+    /// <param name="lon"></param>
+    /// <param name="lat"></param>
+    /// <returns></returns>
+    
+    public static (double x, double y) Wgs84ToWebMercator(double lon, double lat)
+    {
+        double x = EarthRadius * DegreesToRadians(lon);
+        double y = EarthRadius * Math.Log(Math.Tan(Math.PI / 4 + DegreesToRadians(lat) / 2));
+        return (x, y);
+    }
     
     public static double Haversine(double lat1, double lat2, double lon1, double lon2)
     {

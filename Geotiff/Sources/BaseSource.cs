@@ -1,10 +1,8 @@
 using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff;
-/**
- * TODO: Make this IDisposable. Can hold onto file handles and HTTPClients
- */
-public abstract class BaseSource
+
+public abstract class BaseSource 
 {
     public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices, CancellationToken? cancellationToken = null)
     {

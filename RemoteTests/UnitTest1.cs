@@ -1,4 +1,5 @@
 using Geotiff;
+using Geotiff.RemoteClients;
 
 namespace RemoteTests;
 
@@ -11,8 +12,8 @@ public class UnitTest1
     {
         using var client = new HttpClient();
 
-
-        var cog = await GeoTIFF.FromCOGURL(client, baseURL);
+        var httpClient = new GeotiffHTTPClient(baseURL, client, false);
+        var cog = await GeoTIFF.FromCOGURL(httpClient, baseURL);
         var image = await cog.GetImage();
         Console.WriteLine("HELLO WORLD");
     }

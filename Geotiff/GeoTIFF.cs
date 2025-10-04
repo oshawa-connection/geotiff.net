@@ -1,5 +1,6 @@
 using Geotiff.Exceptions;
 using Geotiff.JavaScriptCompatibility;
+using Geotiff.RemoteClients;
 
 namespace Geotiff;
 
@@ -16,9 +17,9 @@ public class GeoTIFF
     /// <param name="httpClient"></param>
     /// <param name="url"></param>
     /// <returns></returns>
-    public async static Task<GeoTIFF> FromCOGURL(HttpClient httpClient, string url)
+    public async static Task<GeoTIFF> FromCOGURL(IGeotiffRemoteClient client, string url)
     {
-        var source = new RemoteSource(url, httpClient, int.MaxValue, false);
+        var source = new RemoteSource(url, client, int.MaxValue, false);
         var slices = await source.Fetch(new Slice[] { new Slice(0, 1024) });
         
         var dv = new DataView(slices.First());
