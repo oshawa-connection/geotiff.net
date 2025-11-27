@@ -23,9 +23,8 @@ public class RemoteSource : BaseSource
    * @param {numbers} maxRanges
    * @param {boolean} allowFullFile
    */
-  public RemoteSource(string url, IGeotiffRemoteClient client, int maxRanges, bool allowFullFile)
+  public RemoteSource(IGeotiffRemoteClient client, int maxRanges, bool allowFullFile)
   {
-    this.url = url;
     this.client = client;
     // this.headers = headers; // Let user do this on httpclient itself.
     this.maxRanges = maxRanges;

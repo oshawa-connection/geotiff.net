@@ -4,7 +4,7 @@ using Geotiff.RemoteClients;
 namespace RemoteTests;
 
 [TestClass]
-public class UnitTest1
+public class HttpTests
 {
     public string baseURL = "http://localhost:8000/TCI.tif";
     [TestMethod]
@@ -13,7 +13,7 @@ public class UnitTest1
         using var client = new HttpClient();
 
         var httpClient = new GeotiffHTTPClient(baseURL, client, false);
-        var cog = await GeoTIFF.FromCOGURL(httpClient, baseURL);
+        var cog = await GeoTIFF.FromRemoteClient(httpClient);
         var image = await cog.GetImage();
         Console.WriteLine("HELLO WORLD");
     }

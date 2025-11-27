@@ -24,7 +24,7 @@ public class ArrayBuffer
             await stream.CopyToAsync(ms);
         }
 
-        stream.Position = 0;
+        // stream.Position = 0;
         var ab = new ArrayBuffer(ms.ToArray());
         return ab;
     }

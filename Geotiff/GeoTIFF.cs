@@ -17,9 +17,9 @@ public class GeoTIFF
     /// <param name="httpClient"></param>
     /// <param name="url"></param>
     /// <returns></returns>
-    public async static Task<GeoTIFF> FromCOGURL(IGeotiffRemoteClient client, string url)
+    public async static Task<GeoTIFF> FromRemoteClient(IGeotiffRemoteClient client)
     {
-        var source = new RemoteSource(url, client, int.MaxValue, false);
+        var source = new RemoteSource(client, int.MaxValue, false);
         var slices = await source.Fetch(new Slice[] { new Slice(0, 1024) });
         
         var dv = new DataView(slices.First());
@@ -47,6 +47,8 @@ public class GeoTIFF
 
         return new GeoTIFF(source, isLittleEndian, false, firstIDFOffset);
     }
+    
+    
     
     public async static Task<GeoTIFF> FromStream(Stream stream)
     {
