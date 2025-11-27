@@ -54,7 +54,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
           return byteRanges;
         }
 
-        var data = await ArrayBuffer.FromStream(response.Content.ReadAsStream(), signal);
+        var data = await ArrayBuffer.FromStream(await response.Content.ReadAsStreamAsync(), signal);
         
         var contentRangeResult = response.Headers.ParseContentRange();
         if (contentRangeResult is not null)
@@ -77,8 +77,8 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
         if (!this.allowFullFile) {
           throw new GeotiffNetworkException("Server responded with full file. If this is intentional behaviour, call RemoteSource with allowFullFile = true");
         }
-    
-        var data = await ArrayBuffer.FromStream(response.Content.ReadAsStream(), signal);
+        
+        var data = await ArrayBuffer.FromStream(await response.Content.ReadAsStreamAsync(), signal);
         
         // this._fileSize = data.Length;
         return new[] { data };
@@ -132,7 +132,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
         var ms = new MemoryStream();
         if (signal != null)
         {
-          await response.Content.CopyToAsync(ms, (CancellationToken)signal);
+          await response.Content.CopyToAsync(ms);// CancellationToken not available here in netstadnard2.1
         }
         else
         {

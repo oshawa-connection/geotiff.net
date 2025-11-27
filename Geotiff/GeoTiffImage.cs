@@ -1,6 +1,6 @@
 using System;
 using System.Numerics;
-using System.Runtime.InteropServices.JavaScript;
+// using System.Runtime.InteropServices.JavaScript;
 using System.Threading.Tasks;
 using Geotiff.Compression;
 using Geotiff.JavaScriptCompatibility;
@@ -584,7 +584,8 @@ public class GeoTiffImage
     {
       if (this.planarConfiguration == 1)
       {
-        srcSampleOffsets.Add(sum(this.fileDirectory.BitsPerSample, 0, samples[i]) / 8);
+        srcSampleOffsets.Add(this.fileDirectory.BitsPerSample.Skip(0).Take(samples[i] / 8).Sum());
+        // srcSampleOffsets.Add(sum(this.fileDirectory.BitsPerSample, 0, samples[i]) / 8);
       }
       else
       {
@@ -711,13 +712,13 @@ public class GeoTiffImage
   /** @typedef {import("./geotiff.js").TypedArray} TypedArray */
   /** @typedef {import("./geotiff.js").ReadRasterResult} ReadRasterResult */
 
-  private T sum<T>(IEnumerable<T> array, int start, int end) where T : INumber<T> {
-    T s = T.AdditiveIdentity;
-    for (var i = start; i < end; ++i) {
-      s += array.ElementAt(i);
-    }
-    return s;
-  }
+  // private T sum<T>(IEnumerable<T> array, int start, int end) where T : INumber<T> {
+  //   T s = T.AdditiveIdentity;
+  //   for (var i = start; i < end; ++i) {
+  //     s += array.ElementAt(i);
+  //   }
+  //   return s;
+  // }
   
   
   public Func<DataView, long, bool, object> getReaderForSample(int sampleIndex)
