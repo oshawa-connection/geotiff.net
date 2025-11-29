@@ -1,4 +1,3 @@
-//using System.IO.Compression;
 using Geotiff.JavaScriptCompatibility;
 using SharpCompress.Compressors.Deflate;
 using SharpCompress.Compressors;

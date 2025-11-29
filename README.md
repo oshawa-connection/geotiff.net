@@ -23,9 +23,10 @@ This project is a WIP, new contributors are very welcome. If you’d like to get
 
 - Image resampling
 - JPEG compression and decompression
+- User examples
 - More user friendly handling of overviews during reading
 - Writing, particularly to COG format with overviews
-- The AWS and Azure source classes
+- The Azure source classes
 - More spatial operation support - currently only `ReadValueAtCoordinate` is supported
 - Benchmarking
 
