@@ -13,7 +13,7 @@ public class SparseList<T>
 
     public T this[int index]
     {
-        get => _dict.TryGetValue(index, out var value) ? value : default;
+        get => _dict.TryGetValue(index, out T? value) ? value : default;
         set => _dict[index] = value;
     }
 }

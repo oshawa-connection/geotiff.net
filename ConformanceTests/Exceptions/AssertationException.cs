@@ -1,6 +1,5 @@
 namespace ConformanceTests.Exceptions;
 
-public class AssertationException :Exception
+public class AssertationException : Exception
 {
-    
 }

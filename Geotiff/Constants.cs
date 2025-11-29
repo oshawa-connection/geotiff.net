@@ -2,13 +2,12 @@ namespace Geotiff;
 
 public static class Constants
 {
-    public const UInt16 BOMLittleEndian = 0x4949;
-    public const UInt16 BOMBigEndian = 0x4D4D;
-    public const UInt16 LittleTifMagicValue = 42;
-    public const UInt16 BigTifMagicValue = 43;
-    public const int WGS84_EPSG_CODE = 4326; 
+    public const ushort BOMLittleEndian = 0x4949;
+    public const ushort BOMBigEndian = 0x4D4D;
+    public const ushort LittleTifMagicValue = 42;
+    public const ushort BigTifMagicValue = 43;
+    public const int WGS84_EPSG_CODE = 4326;
 }
-
 
 public static class FieldTypes
 {
@@ -28,25 +27,25 @@ public static class FieldTypes
     public const string LONG8 = "LONG8";
     public const string SLONG8 = "SLONG8";
     public const string IFD8 = "IFD8";
-    
-    public static Dictionary<int, string> FieldTypeLookup = new Dictionary<int, string>()
+
+    public static Dictionary<int, string> FieldTypeLookup = new()
     {
-        { 0x0001, FieldTypes.BYTE },
-        { 0x0002, FieldTypes.ASCII },
-        { 0x0003, FieldTypes.SHORT },
-        { 0x0004, FieldTypes.LONG },
-        { 0x0005, FieldTypes.RATIONAL },
-        { 0x0006, FieldTypes.SBYTE },
-        { 0x0007, FieldTypes.UNDEFINED },
-        { 0x0008, FieldTypes.SSHORT },
-        { 0x0009, FieldTypes.SLONG },
-        { 0x000A, FieldTypes.SRATIONAL },
-        { 0x000B, FieldTypes.FLOAT },
-        { 0x000C, FieldTypes.DOUBLE },
-        { 0x000D, FieldTypes.IFD },
-        { 0x0010, FieldTypes.LONG8 },
-        { 0x0011, FieldTypes.SLONG8 },
-        { 0x0012, FieldTypes.IFD8 }
+        { 0x0001, BYTE },
+        { 0x0002, ASCII },
+        { 0x0003, SHORT },
+        { 0x0004, LONG },
+        { 0x0005, RATIONAL },
+        { 0x0006, SBYTE },
+        { 0x0007, UNDEFINED },
+        { 0x0008, SSHORT },
+        { 0x0009, SLONG },
+        { 0x000A, SRATIONAL },
+        { 0x000B, FLOAT },
+        { 0x000C, DOUBLE },
+        { 0x000D, IFD },
+        { 0x0010, LONG8 },
+        { 0x0011, SLONG8 },
+        { 0x0012, IFD8 }
     };
 
 
@@ -171,8 +170,8 @@ public static class FieldTypes
     public static string CFAPattern = "CFAPattern";
     public static string DeviceSettingDescription = "DeviceSettingDescription";
     public static string JPEGTables = "JPEGTables";
-    
-    public static BiDirectionalDictionary<ushort, string> FieldTags = new BiDirectionalDictionary<ushort, string>()
+
+    public static BiDirectionalDictionary<ushort, string> FieldTags = new()
     {
         // TIFF Baseline
         { 0x013B, "Artist" },
@@ -292,86 +291,86 @@ public static class FieldTypes
         { 0x8482, ModelTiepoint },
         { 0x85D8, ModelTransformation },
         { 0x87AF, GeoKeyDirectory },
-        {0x87B0, GeoDoubleParamsTag },
+        { 0x87B0, GeoDoubleParamsTag },
         { 0x87B1, "GeoAsciiParams" },
 
         // LERC
         { 0xC5F2, "LercParameters" },
         // Added because they are array fields
-        {0x0156, TransferRange },
-        {0x01B5, JPEG_tables },
-        {0x0205, JPEGLosslessPredictors },
-        {0x0206, JPEGPointTransforms },
-        {0x0207, JPEGQTables },
-        {0x0208, JPEGDCTables },
-        {0x0209, JPEGACTables },
-        {0x80E3, Matteing },
-        {0x80E4, DataType },
-        {0x80E5, ImageDepth },
-        {0x80E6, TileDepth },
-        {0x828D, CFARepeatPatternDim },
-        {0x828E, CFAPattern },
-        {0x8480, IntergraphMatrixTag },
-        {0x84E6, ColorTable },
-        {0x84EB, PixelInensityRange },
-        {0x87AC, ImageLayer },
-        {0x8827, ISOSpeedRatings },
-        {0x8828, OECF },
-        {0x882A, TimeZoneOffset },
-        {0x885C, FaxRecvParams },
-        {0x885D, FaxSubAddress },
-        {0x885E, FaxRecvTime },
-        {0x9203, BrightnessValue },
-        {0x9204, ExposureBiasValue },
-        {0x9206, SubjectDistance },
-        {0x920A, FocalLength },
-        {0x920B, FlashEnergy },
-        {0x920C, SpatialFrequencyResponse },
-        {0x920D, Noise },
-        {0x9215, ExposureIndex },
-        {0x9216, TIFF_EPStandardID },
-        {0x923F, StoNits },
-        {0x935C, ImageSourceData },
-        {0xC44F, PhotoshopAnnotations },
-        {0xC612, DNGVersion },
-        {0xC613, DNGBackwardVersion },
-        {0xC615, LocalizedCameraModel },
-        {0xC616, CFAPlaneColor },
-        {0xC618, LinearizationTable },
-        {0xC619, BlackLevelRepeatDim },
-        {0xC61A, BlackLevel },
-        {0xC61B, BlackLevelDeltaH },
-        {0xC61C, BlackLevelDeltaV },
-        {0xC61D, WhiteLevel },
-        {0xC61E, DefaultScale },
-        {0xC61F, DefaultCropOrigin },
-        {0xC620, DefaultCropSize },
-        {0xC621, ColorMatrix1 },
-        {0xC622, ColorMatrix2 },
-        {0xC623, CameraCalibration1 },
-        {0xC624, CameraCalibration2 },
-        {0xC625, ReductionMatrix1 },
-        {0xC626, ReductionMatrix2 },
-        {0xC627, AnalogBalnace },
-        {0xC628, AsShortNeutral },
-        {0xC629, AsShortWhiteXY },
-        {0xC630, LensInfo },
-        {0xC634, DNGPrivateDatea },
-        {0x0000, GPSVersionID },
-        {0x0002, GPSLatitude },
-        {0x0004, GPSLongitude },
-        {0x0007, GPSTimeStamp },
-        {0x0014, GPSDestLatitude },
-        {0x0016, GPSDestLongitude },
-        {0x001B, GPSProcessingMethod },
-        {0x001C, GPSAreaInformation },
-        {0x9101, ComponentsConfiguration },
-        {0x9214, SubjectArea },
-        {0xA214, SubjectLocation },
-        {0xA40B, DeviceSettingDescription }
+        { 0x0156, TransferRange },
+        { 0x01B5, JPEG_tables },
+        { 0x0205, JPEGLosslessPredictors },
+        { 0x0206, JPEGPointTransforms },
+        { 0x0207, JPEGQTables },
+        { 0x0208, JPEGDCTables },
+        { 0x0209, JPEGACTables },
+        { 0x80E3, Matteing },
+        { 0x80E4, DataType },
+        { 0x80E5, ImageDepth },
+        { 0x80E6, TileDepth },
+        { 0x828D, CFARepeatPatternDim },
+        { 0x828E, CFAPattern },
+        { 0x8480, IntergraphMatrixTag },
+        { 0x84E6, ColorTable },
+        { 0x84EB, PixelInensityRange },
+        { 0x87AC, ImageLayer },
+        { 0x8827, ISOSpeedRatings },
+        { 0x8828, OECF },
+        { 0x882A, TimeZoneOffset },
+        { 0x885C, FaxRecvParams },
+        { 0x885D, FaxSubAddress },
+        { 0x885E, FaxRecvTime },
+        { 0x9203, BrightnessValue },
+        { 0x9204, ExposureBiasValue },
+        { 0x9206, SubjectDistance },
+        { 0x920A, FocalLength },
+        { 0x920B, FlashEnergy },
+        { 0x920C, SpatialFrequencyResponse },
+        { 0x920D, Noise },
+        { 0x9215, ExposureIndex },
+        { 0x9216, TIFF_EPStandardID },
+        { 0x923F, StoNits },
+        { 0x935C, ImageSourceData },
+        { 0xC44F, PhotoshopAnnotations },
+        { 0xC612, DNGVersion },
+        { 0xC613, DNGBackwardVersion },
+        { 0xC615, LocalizedCameraModel },
+        { 0xC616, CFAPlaneColor },
+        { 0xC618, LinearizationTable },
+        { 0xC619, BlackLevelRepeatDim },
+        { 0xC61A, BlackLevel },
+        { 0xC61B, BlackLevelDeltaH },
+        { 0xC61C, BlackLevelDeltaV },
+        { 0xC61D, WhiteLevel },
+        { 0xC61E, DefaultScale },
+        { 0xC61F, DefaultCropOrigin },
+        { 0xC620, DefaultCropSize },
+        { 0xC621, ColorMatrix1 },
+        { 0xC622, ColorMatrix2 },
+        { 0xC623, CameraCalibration1 },
+        { 0xC624, CameraCalibration2 },
+        { 0xC625, ReductionMatrix1 },
+        { 0xC626, ReductionMatrix2 },
+        { 0xC627, AnalogBalnace },
+        { 0xC628, AsShortNeutral },
+        { 0xC629, AsShortWhiteXY },
+        { 0xC630, LensInfo },
+        { 0xC634, DNGPrivateDatea },
+        { 0x0000, GPSVersionID },
+        { 0x0002, GPSLatitude },
+        { 0x0004, GPSLongitude },
+        { 0x0007, GPSTimeStamp },
+        { 0x0014, GPSDestLatitude },
+        { 0x0016, GPSDestLongitude },
+        { 0x001B, GPSProcessingMethod },
+        { 0x001C, GPSAreaInformation },
+        { 0x9101, ComponentsConfiguration },
+        { 0x9214, SubjectArea },
+        { 0xA214, SubjectLocation },
+        { 0xA40B, DeviceSettingDescription }
     };
 
-    public static List<ushort> ArrayTypeFields = new List<ushort>()
+    public static List<ushort> ArrayTypeFields = new()
     {
         FieldTags.GetByValue(BitsPerSample),
         FieldTags.GetByValue(StripOffsets),
@@ -486,9 +485,8 @@ public static class FieldTypes
         FieldTags.GetByValue(GeoKeyDirectory),
         FieldTags.GetByValue(ModelTransformation),
         FieldTags.GetByValue(JPEGTables)
-        
-        
-        
+
+
         // FieldTags.GetByValue(BitsPerSample),
         // FieldTags.GetByValue(ExtraSamples),
         // FieldTags.GetByValue(SampleFormat),
@@ -501,9 +499,9 @@ public static class FieldTypes
         // FieldTags.GetByValue(PageNumber),
         // FieldTags.GetByValue(ColorMap),
     };
-    
-    
-    public static BiDirectionalDictionary<ushort, string> GeoKeyNames = new BiDirectionalDictionary<ushort, string>
+
+
+    public static BiDirectionalDictionary<ushort, string> GeoKeyNames = new()
     {
         { 1024, "GTModelTypeGeoKey" },
         { 1025, "GTRasterTypeGeoKey" },
@@ -551,21 +549,33 @@ public static class FieldTypes
         { 4096, "VerticalCSTypeGeoKey" },
         { 4097, "VerticalCitationGeoKey" },
         { 4098, "VerticalDatumGeoKey" },
-        { 4099, "VerticalUnitsGeoKey" },
+        { 4099, "VerticalUnitsGeoKey" }
     };
-    
+
     public static int GetFieldTypeLength(int fieldTypea)
     {
-        var fieldType = FieldTypeLookup[fieldTypea];
-        switch (fieldType) {
-            case FieldTypes.BYTE: case FieldTypes.ASCII: case FieldTypes.SBYTE: case FieldTypes.UNDEFINED:
+        string? fieldType = FieldTypeLookup[fieldTypea];
+        switch (fieldType)
+        {
+            case BYTE:
+            case ASCII:
+            case SBYTE:
+            case UNDEFINED:
                 return 1;
-            case FieldTypes.SHORT: case FieldTypes.SSHORT:
+            case SHORT:
+            case SSHORT:
                 return 2;
-            case FieldTypes.LONG: case FieldTypes.SLONG: case FieldTypes.FLOAT: case FieldTypes.IFD:
+            case LONG:
+            case SLONG:
+            case FLOAT:
+            case IFD:
                 return 4;
-            case FieldTypes.RATIONAL: case FieldTypes.SRATIONAL: case FieldTypes.DOUBLE:
-            case FieldTypes.LONG8: case FieldTypes.SLONG8: case FieldTypes.IFD8:
+            case RATIONAL:
+            case SRATIONAL:
+            case DOUBLE:
+            case LONG8:
+            case SLONG8:
+            case IFD8:
                 return 8;
             default:
                 throw new Exception($"Invalid field type: {fieldType}");

@@ -7,12 +7,12 @@ using Shouldly;
 
 namespace ConformanceTests;
 
-class Program
+internal class Program
 {
-    static string GetDataFolderPath()
+    private static string GetDataFolderPath()
     {
         // Start from the directory where the test assembly is located
-        var dir = AppContext.BaseDirectory;
+        string? dir = AppContext.BaseDirectory;
 
         // Walk up until we find the project root (i.e., contains .csproj or known marker)
         while (!Directory.GetFiles(dir, "*.csproj").Any())
@@ -24,7 +24,7 @@ class Program
         return dir;
     }
 
-    static void ShouldBeWarn<T>(string type, T value, T other)
+    private static void ShouldBeWarn<T>(string type, T value, T other)
     {
         if (!EqualityComparer<T>.Default.Equals(value, other))
         {
@@ -32,7 +32,7 @@ class Program
         }
     }
 
-    static void ShouldBeError<T>(string type, T value, T other)
+    private static void ShouldBeError<T>(string type, T value, T other)
     {
         if (!EqualityComparer<T>.Default.Equals(value, other))
         {
@@ -43,28 +43,28 @@ class Program
 
     public static void CompareNumberTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
     {
-        var doubleValue = fileDirectory.GetFileDirectoryValue<double>(key);// promote to double, GDAL style.
-        var jsonValue = element.GetDouble();
+        double doubleValue = fileDirectory.GetFileDirectoryValue<double>(key); // promote to double, GDAL style.
+        double jsonValue = element.GetDouble();
         if (doubleValue != element.GetDouble())
         {
             ShouldBeError($"Number tag with key {key} did not match", jsonValue, doubleValue);
         }
     }
-    
+
     public static void CompareRationalTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
     {
-        var csharpValue = fileDirectory.GetFileDirectoryValue<Rational>(key);// promote to double, GDAL style.
-        var jsonValue = element.EnumerateArray().ToArray();
-        
+        var csharpValue = fileDirectory.GetFileDirectoryValue<Rational>(key); // promote to double, GDAL style.
+        JsonElement[]? jsonValue = element.EnumerateArray().ToArray();
+
         var x = new Rational(jsonValue[0].GetInt32(), jsonValue[1].GetInt32());
-        
+
         if (csharpValue != x)
         {
             ShouldBeError($"Number tag with key {key} did not match", x, csharpValue);
         }
     }
-    
-    
+
+
     public static void CompareArrayTags(JsonElement[] jsonArray, string key, ImageFileDirectory fileDirectory)
     {
         if (key == "JPEGTables")
@@ -72,15 +72,15 @@ class Program
             Console.WriteLine("JPEGTables tag encountered; skipping");
             return;
         }
-        
-        var lengthCheck = fileDirectory.GetFileDirectoryListValue<double>(key);
+
+        IEnumerable<double>? lengthCheck = fileDirectory.GetFileDirectoryListValue<double>(key);
 
         if (lengthCheck.Count() != jsonArray.Length)
         {
             ShouldBeError($"Array of key {key} did not match length;", jsonArray.Length, lengthCheck.Count());
             return;
         }
-        
+
         // Check lengths match here
         if (jsonArray.Length == 0)
         {
@@ -90,52 +90,54 @@ class Program
         switch (jsonArray[0].ValueKind)
         {
             case JsonValueKind.String:
-                var strArray = fileDirectory.GetFileDirectoryListValue<string>(key);
+                IEnumerable<string>? strArray = fileDirectory.GetFileDirectoryListValue<string>(key);
                 throw new NotImplementedException(); // 99% sure all array tags are arrays of numbers, at least 
                 break;
             case JsonValueKind.Number:
-                var doubleArray = fileDirectory.GetFileDirectoryListValue<double>(key);// promote to double, GDAL style.
-                for (var i = 0; i < jsonArray.Length; i++)
+                IEnumerable<double>?
+                    doubleArray =
+                        fileDirectory.GetFileDirectoryListValue<double>(key); // promote to double, GDAL style.
+                for (int i = 0; i < jsonArray.Length; i++)
                 {
                     if (doubleArray.ElementAt(i) != jsonArray[i].GetDouble())
                     {
-                        ShouldBeError($"Array tag with key {key}; element at {i} did not match", jsonArray[i].GetDouble(), doubleArray.ElementAt(i));   
+                        ShouldBeError($"Array tag with key {key}; element at {i} did not match",
+                            jsonArray[i].GetDouble(), doubleArray.ElementAt(i));
                     }
                 }
+
                 break;
             default:
                 throw new Exception();
         }
-        
-        
     }
 
 
-async static Task ConformanceTests()
+    private static async Task ConformanceTests()
     {
-        var dir = GetDataFolderPath();
-        var jsonFilePath = Path.Combine(dir, "writeResult.json");
-        var text = File.ReadAllText(jsonFilePath);
+        string? dir = GetDataFolderPath();
+        string? jsonFilePath = Path.Combine(dir, "writeResult.json");
+        string? text = File.ReadAllText(jsonFilePath);
         var result = JsonSerializer.Deserialize<List<GeotiffDump>>(text);
 
-        foreach (var r in result)
+        foreach (GeotiffDump? r in result)
         {
-            var tiffPath = Path.Combine(dir, r.FileName);
-            await using var fsSource = new FileStream(tiffPath,FileMode.Open, FileAccess.Read);
+            string? tiffPath = Path.Combine(dir, r.FileName);
+            await using var fsSource = new FileStream(tiffPath, FileMode.Open, FileAccess.Read);
             Console.WriteLine($"Messages for {r.FileName}");
-            var geotiff = await GeoTIFF.FromStream(fsSource);
-            var count = await geotiff.GetImageCount();
-            
+            GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
+            int count = await geotiff.GetImageCount();
+
             try
             {
                 ShouldBeError("ImageCount", count, r.Images.Count);
-                for (var i = 0; i < r.Images.Count; i++)
+                for (int i = 0; i < r.Images.Count; i++)
                 {
-                    var csharpImage = await geotiff.GetImage(i);
-                    var resultImage = r.Images[i];
-                    foreach (var tag in resultImage.Tags)
+                    GeoTiffImage? csharpImage = await geotiff.GetImage(i);
+                    GeotiffImage? resultImage = r.Images[i];
+                    foreach (KeyValuePair<string, JsonElement> tag in resultImage.Tags)
                     {
-                        if (csharpImage.fileDirectory.FileDirectory.ContainsKey(tag.Key) is false )
+                        if (csharpImage.fileDirectory.FileDirectory.ContainsKey(tag.Key) is false)
                         {
                             Console.WriteLine($"Tag {tag.Key} was missing in csharp read image");
                         }
@@ -148,9 +150,10 @@ async static Task ConformanceTests()
                                         false)
                                     {
                                         CompareRationalTags(tag.Value, tag.Key, csharpImage.fileDirectory);
-                                        break;// probably a rational
+                                        break; // probably a rational
                                     }
-                                    var array = tag.Value.EnumerateArray().ToArray();
+
+                                    JsonElement[]? array = tag.Value.EnumerateArray().ToArray();
                                     CompareArrayTags(array, tag.Key, csharpImage.fileDirectory);
                                     break;
                                 case JsonValueKind.Number:
@@ -170,31 +173,29 @@ async static Task ConformanceTests()
                     // {
                     //     tagCount += csharpImage.fileDirectory.GeoKeyDirectory.Count;
                     // }
-                    
-                    ShouldBeError($"Tag Count on image {i};", csharpImage.fileDirectory.FileDirectory.Count, resultImage.Tags.Count);
-                    
-                    
+
+                    ShouldBeError($"Tag Count on image {i};", csharpImage.fileDirectory.FileDirectory.Count,
+                        resultImage.Tags.Count);
                 }
             }
             catch (AssertationException e)
             {
-                
             }
         }
     }
 
-    async static Task DebugSingle()
+    private static async Task DebugSingle()
     {
         double x;
-        var dir = GetDataFolderPath();
-        var tiffPath = Path.Combine(dir, "tiffData", "erdas_spnad83.tif");
-        
-        await using var fsSource = new FileStream(tiffPath,FileMode.Open, FileAccess.Read);
-        var geotiff = await GeoTIFF.FromStream(fsSource);
-        var count = await geotiff.GetImageCount();
+        string? dir = GetDataFolderPath();
+        string? tiffPath = Path.Combine(dir, "tiffData", "erdas_spnad83.tif");
+
+        await using var fsSource = new FileStream(tiffPath, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
+        int count = await geotiff.GetImageCount();
     }
-    
-    async static Task Main(string[] args)
+
+    private static async Task Main(string[] args)
     {
         await ConformanceTests();
     }

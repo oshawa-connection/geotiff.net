@@ -12,7 +12,7 @@ public class Slice
         this.length = length;
     }
 
-    public Slice(int offset, int length, bool checkByteLength): this(offset, length)
+    public Slice(int offset, int length, bool checkByteLength) : this(offset, length)
     {
         this.checkByteLength = checkByteLength;
     }

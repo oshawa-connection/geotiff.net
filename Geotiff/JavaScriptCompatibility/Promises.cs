@@ -10,9 +10,9 @@ public static class Promises
     /// <typeparam name="T">input type</typeparam>
     /// <typeparam name="TV">Return type</typeparam>
     /// <returns></returns>
-    public static async Task<TV> Then<T,TV>(this Task<T> task, Func<T,TV> then)
+    public static async Task<TV> Then<T, TV>(this Task<T> task, Func<T, TV> then)
     {
-        var result = await task;
+        T? result = await task;
         return then(result);
     }
 }

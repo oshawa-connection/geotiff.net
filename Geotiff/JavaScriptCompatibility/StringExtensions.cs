@@ -4,7 +4,10 @@ public static class StringExtensions
 {
     public static string JSSubString(this string str, int startIndex, int endIndex)
     {
-        if (str == null) return null;
+        if (str == null)
+        {
+            return null;
+        }
 
         // Clamp indices
         int len = str.Length;

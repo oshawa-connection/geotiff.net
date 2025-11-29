@@ -1,6 +1,7 @@
 using Geotiff.JavaScriptCompatibility;
 using SharpCompress.Compressors.Deflate;
 using SharpCompress.Compressors;
+
 namespace Geotiff.Compression;
 
 public class DeflateGeotiffDecoder : GeotiffDecoder

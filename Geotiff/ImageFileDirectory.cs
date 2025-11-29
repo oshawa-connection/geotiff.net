@@ -54,17 +54,18 @@ public class ImageFileDirectory
     public IEnumerable<T>? GetFileDirectoryListValue<T>(string key)
     {
         IEnumerable<T>? finalResult = null;
-        var listReadResult = this.FileDirectory.TryGetValue(key, out object listOfObjects);
+        bool listReadResult = FileDirectory.TryGetValue(key, out object listOfObjects);
         if (listReadResult is true)
         {
             finalResult = ((List<object>)listOfObjects).UnboxAll<T>();
         }
+
         return finalResult;
     }
-    
+
     public T[]? GetFileDirectoryArrayValue<T>(string key)
     {
-        var found = this.GetFileDirectoryListValue<T>(key);
+        IEnumerable<T>? found = GetFileDirectoryListValue<T>(key);
 
         if (found is null)
         {
@@ -76,31 +77,32 @@ public class ImageFileDirectory
 
     public T GetGeoDirectoryValue<T>(string key)
     {
-        if (this.GeoKeyDirectory.TryGetValue(key, out object obj))
+        if (GeoKeyDirectory.TryGetValue(key, out object obj))
         {
-            var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-            var converted = Convert.ChangeType(obj, targetType);
+            Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            object? converted = Convert.ChangeType(obj, targetType);
             return (T)converted;
         }
+
         return default!;
     }
-    
-    
+
+
     public T GetFileDirectoryValue<T>(string key)
     {
-        if (this.FileDirectory.TryGetValue(key, out object obj))
+        if (FileDirectory.TryGetValue(key, out object obj))
         {
-            var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-            var converted = Convert.ChangeType(obj, targetType);
+            Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            object? converted = Convert.ChangeType(obj, targetType);
             return (T)converted;
         }
+
         return default!;
     }
-    
-    public int[] BitsPerSample => this.GetFileDirectoryArrayValue<int>("BitsPerSample");
 
-    public int[]? SampleFormat => this.GetFileDirectoryArrayValue<int>("SampleFormat");
+    public int[] BitsPerSample => GetFileDirectoryArrayValue<int>("BitsPerSample");
 
-    public string? GDAL_NODATA => this.GetFileDirectoryValue<string>("GDAL_NODATA");
-    
+    public int[]? SampleFormat => GetFileDirectoryArrayValue<int>("SampleFormat");
+
+    public string? GDAL_NODATA => GetFileDirectoryValue<string>("GDAL_NODATA");
 }

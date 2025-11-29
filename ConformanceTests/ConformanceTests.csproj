@@ -9,11 +9,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Geotiff\Geotiff.csproj" />
+        <ProjectReference Include="..\Geotiff\Geotiff.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Shouldly" Version="4.3.0" />
+        <PackageReference Include="Shouldly" Version="4.3.0"/>
     </ItemGroup>
 
 </Project>

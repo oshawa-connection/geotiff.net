@@ -21,11 +21,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Geotiff\Geotiff.csproj" />
+        <ProjectReference Include="..\Geotiff\Geotiff.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="tiffData\" />
+        <Folder Include="tiffData\"/>
     </ItemGroup>
 
 </Project>

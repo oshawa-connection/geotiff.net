@@ -17,14 +17,14 @@ public class GeoTIFF
     /// <param name="httpClient"></param>
     /// <param name="url"></param>
     /// <returns></returns>
-    public async static Task<GeoTIFF> FromRemoteClient(IGeotiffRemoteClient client)
+    public static async Task<GeoTIFF> FromRemoteClient(IGeotiffRemoteClient client)
     {
         var source = new RemoteSource(client, int.MaxValue, false);
-        var slices = await source.Fetch(new Slice[] { new Slice(0, 1024) });
-        
+        IEnumerable<ArrayBuffer>? slices = await source.Fetch(new Slice[] { new(0, 1024) });
+
         var dv = new DataView(slices.First());
-        var value = dv.getUint16(0, true);
-        var isLittleEndian = false;
+        ushort value = dv.getUint16(0, true);
+        bool isLittleEndian = false;
         if (value == Constants.BOMLittleEndian)
         {
             isLittleEndian = true;
@@ -37,28 +37,28 @@ public class GeoTIFF
         {
             throw new Exception("Unrecognised Tiff BOM marker");
         }
-        
-        var isBigTiffValue = dv.getUint16(2, isLittleEndian);
+
+        ushort isBigTiffValue = dv.getUint16(2, isLittleEndian);
         if (isBigTiffValue != 42)
         {
             throw new NotImplementedException("BigTiff support is not implemented");
         }
-        var firstIDFOffset = dv.getInt32(4, isLittleEndian);
+
+        int firstIDFOffset = dv.getInt32(4, isLittleEndian);
 
         return new GeoTIFF(source, isLittleEndian, false, firstIDFOffset);
     }
-    
-    
-    
-    public async static Task<GeoTIFF> FromStream(Stream stream)
+
+
+    public static async Task<GeoTIFF> FromStream(Stream stream)
     {
         var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream);
         memoryStream.Position = 0;
-        var arr = memoryStream.ToArray();
+        byte[]? arr = memoryStream.ToArray();
         var dv = new DataView(arr);
-        var value = dv.getUint16(0, true);
-        var isLittleEndian = false;
+        ushort value = dv.getUint16(0, true);
+        bool isLittleEndian = false;
         if (value == Constants.BOMLittleEndian)
         {
             isLittleEndian = true;
@@ -71,19 +71,20 @@ public class GeoTIFF
         {
             throw new Exception("Unrecognised Tiff BOM marker");
         }
-        
-        var isBigTiffValue = dv.getUint16(2, isLittleEndian);
+
+        ushort isBigTiffValue = dv.getUint16(2, isLittleEndian);
         if (isBigTiffValue != 42)
         {
             throw new NotImplementedException("BigTiff support is not implemented");
         }
-        var firstIDFOffset = dv.getInt32(4, isLittleEndian);
+
+        int firstIDFOffset = dv.getInt32(4, isLittleEndian);
         memoryStream.Position = 0;
         var source = new FileSource(memoryStream);
         return new GeoTIFF(source, isLittleEndian, false, firstIDFOffset);
     }
-    
-    
+
+
     private GeoTIFF(BaseSource source, bool littleEndian, bool bigTiff, int firstIFDOffset)
     {
         this.source = source;
@@ -91,55 +92,63 @@ public class GeoTIFF
         this.bigTiff = bigTiff;
         this.firstIFDOffset = firstIFDOffset;
     }
-    
-    public async Task<DataSlice> GetSlice(int offset, int? size = null) {
-        var fallbackSize = this.bigTiff ? 4048 : 1024;
-        var sizeToUse = size is null ? fallbackSize : (int)size;
+
+    public async Task<DataSlice> GetSlice(int offset, int? size = null)
+    {
+        int fallbackSize = bigTiff ? 4048 : 1024;
+        int sizeToUse = size is null ? fallbackSize : (int)size;
         var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
-        var results = await this.source.Fetch(slices);
-        
+        IEnumerable<ArrayBuffer>? results = await source.Fetch(slices);
+
         return new DataSlice(
             results.Single().GetAllBytes(), // TODO: Double check this.  
             offset,
-            this.littleEndian,
-            this.bigTiff
+            littleEndian,
+            bigTiff
         );
     }
 
 
     private Dictionary<string, object>? ParseGeoKeyDirectory(Dictionary<string, object> fileDirectory)
     {
-        var rawGeoKeyDirectoryResult = fileDirectory.TryGetValue("GeoKeyDirectory", out object rawGeoKeyDirectoryObj);
-        
-        if (!rawGeoKeyDirectoryResult) {
+        bool rawGeoKeyDirectoryResult = fileDirectory.TryGetValue("GeoKeyDirectory", out object rawGeoKeyDirectoryObj);
+
+        if (!rawGeoKeyDirectoryResult)
+        {
             return null;
         }
 
-        var rawGeoKeyDirectory = ((List<object>)rawGeoKeyDirectoryObj).UnboxAll<ushort>().ToArray();
-        
+        ushort[]? rawGeoKeyDirectory = ((List<object>)rawGeoKeyDirectoryObj).UnboxAll<ushort>().ToArray();
+
         Dictionary<string, object> geoKeyDirectory = new();
-        for (var i = 4; i <= rawGeoKeyDirectory[3] * 4; i += 4)
+        for (int i = 4; i <= rawGeoKeyDirectory[3] * 4; i += 4)
         {
             string key = FieldTypes.GeoKeyNames.GetByKey(rawGeoKeyDirectory[i]);
             // string key = FieldTypes.GeoKeyNames[rawGeoKeyDirectory[i]];
             // TODO: try find a tif where this is 0. Not clear what value it should be, perhaps undefined in JS means array isn't set?
-            var location = rawGeoKeyDirectory[i + 1] != 0 ? (FieldTypes.FieldTags.GetByKey(rawGeoKeyDirectory[i + 1])) : null;
-            var count = rawGeoKeyDirectory[i + 2];
-            var offset = rawGeoKeyDirectory[i + 3];
-    
+            string? location = rawGeoKeyDirectory[i + 1] != 0
+                ? FieldTypes.FieldTags.GetByKey(rawGeoKeyDirectory[i + 1])
+                : null;
+            ushort count = rawGeoKeyDirectory[i + 2];
+            ushort offset = rawGeoKeyDirectory[i + 3];
+
             object? value = null;
-            if (location is null) {
+            if (location is null)
+            {
                 value = offset;
-            } else {
+            }
+            else
+            {
                 value = fileDirectory[location]; // TODO: could throw, error out if so.
                 if (value is null)
                 {
                     throw new Exception($"Could not get value of geoKey '{key}'");
                 }
+
                 if (value is string)
                 {
-                    var cast = (string)value;
+                    string? cast = (string)value;
                     value = cast.JSSubString(offset, offset + count - 1);
                 }
                 else if (value is List<object>)
@@ -155,24 +164,26 @@ public class GeoTIFF
                     throw new NotImplementedException("Unsupported tag type");
                 }
             }
+
             geoKeyDirectory[key] = value;
         }
+
         return geoKeyDirectory;
     }
-    
+
     private async Task<ImageFileDirectory> ParseFileDirectoryAt(int offset)
     {
-        int entrySize = this.bigTiff ? 20 : 12;
-        int offsetSize = this.bigTiff ? 8 : 2;
+        int entrySize = bigTiff ? 20 : 12;
+        int offsetSize = bigTiff ? 8 : 2;
 
-        var dataSlice = await GetSlice(offset);
-        
-        int numDirEntries = this.bigTiff
+        DataSlice? dataSlice = await GetSlice(offset);
+
+        int numDirEntries = bigTiff
             ? (int)dataSlice.ReadUInt64(offset)
             : dataSlice.ReadUInt16(offset);
 
         // Ensure the slice covers the whole IFD
-        int byteSize = ((int)numDirEntries * (int)entrySize) + (this.bigTiff ? 16 : 6);
+        int byteSize = ((int)numDirEntries * (int)entrySize) + (bigTiff ? 16 : 6);
         if (!dataSlice.Covers(offset, byteSize))
         {
             dataSlice = await GetSlice(offset, byteSize);
@@ -181,22 +192,22 @@ public class GeoTIFF
         var fileDirectory = new Dictionary<string, object>();
         var rawFileDirectory = new Dictionary<int, object>();
 
-        int i = offset + (this.bigTiff ? 8 : 2);
+        int i = offset + (bigTiff ? 8 : 2);
         for (long entryCount = 0; entryCount < numDirEntries; i += entrySize, ++entryCount)
         {
             ushort fieldTag = dataSlice.ReadUInt16(i);
             ushort fieldType = dataSlice.ReadUInt16(i + 2);
-            int typeCount = this.bigTiff
+            int typeCount = bigTiff
                 ? (int)dataSlice.ReadUInt64(i + 4)
                 : (int)dataSlice.ReadUInt32(i + 4);
 
             GeotiffGetValuesResult fieldValues;
             object value;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
-            var fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
-            long valueOffset = i + (this.bigTiff ? 12 : 8);
+            string? fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
+            long valueOffset = i + (bigTiff ? 12 : 8);
             // Check if the value is directly encoded or refers to another byte range
-            if (fieldTypeLength * typeCount <= (this.bigTiff ? 8 : 4))
+            if (fieldTypeLength * typeCount <= (bigTiff ? 8 : 4))
             {
                 fieldValues = dataSlice.getValues(fieldType, typeCount, (int)valueOffset);
             }
@@ -204,21 +215,21 @@ public class GeoTIFF
             {
                 long actualOffset = dataSlice.ReadOffset((int)valueOffset);
                 long length = FieldTypes.GetFieldTypeLength(fieldType) * typeCount;
-            
+
                 if (dataSlice.Covers((int)actualOffset, (int)length))
                 {
-                    fieldValues = dataSlice.getValues( fieldType, typeCount, (int)actualOffset);
+                    fieldValues = dataSlice.getValues(fieldType, typeCount, (int)actualOffset);
                 }
                 else
                 {
-                    var fieldDataSlice = await GetSlice((int)actualOffset, (int)length);
-                    fieldValues = fieldDataSlice.getValues(fieldType, typeCount,(int) actualOffset);
+                    DataSlice? fieldDataSlice = await GetSlice((int)actualOffset, (int)length);
+                    fieldValues = fieldDataSlice.getValues(fieldType, typeCount, (int)actualOffset);
                 }
             }
-        
+
             // Unpack single values from the array
-            if (typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTag)
-                && !(fieldTypeName == FieldTypes.SRATIONAL) || fieldTypeName == FieldTypes.ASCII)
+            if ((typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTag)
+                                && !(fieldTypeName == FieldTypes.SRATIONAL)) || fieldTypeName == FieldTypes.ASCII)
             {
                 value = fieldValues.GetFirstElement();
                 // value = (fieldValues as Array)?[0] ?? fieldValues;
@@ -227,25 +238,26 @@ public class GeoTIFF
             {
                 if (fieldTypeName == FieldTypes.SRATIONAL)
                 {
-                    throw new NotImplementedException($"SRationals not supported: {fieldTypeName}");    
+                    throw new NotImplementedException($"SRationals not supported: {fieldTypeName}");
                 }
 
                 value = fieldValues.GetListOfElements();
             }
-            
+
             // Write the tag's value to the file directory
             if (FieldTypes.FieldTags.TryGetByKey(fieldTag, out string tagName))
             {
                 fileDirectory[tagName] = value;
             }
+
             rawFileDirectory[fieldTag] = value;
         }
-        
-        var geoKeyDirectory = ParseGeoKeyDirectory(fileDirectory);
+
+        Dictionary<string, object>? geoKeyDirectory = ParseGeoKeyDirectory(fileDirectory);
         int nextIFDByteOffset = dataSlice.ReadOffset(
             offset + offsetSize + (entrySize * numDirEntries)
         );
-        
+
         return new ImageFileDirectory(
             fileDirectory,
             rawFileDirectory,
@@ -253,7 +265,7 @@ public class GeoTIFF
             nextIFDByteOffset
         );
     }
-    
+
     private SparseList<ImageFileDirectory> ImageFileDirectories = new();
 
 
@@ -263,31 +275,35 @@ public class GeoTIFF
         {
             return ImageFileDirectories[index];
         }
+
         if (index == 0)
         {
-            var result = await this.ParseFileDirectoryAt(this.firstIFDOffset);
+            ImageFileDirectory? result = await ParseFileDirectoryAt(firstIFDOffset);
             ImageFileDirectories.Add(index, result);
             return result;
         }
 
-        var currentIFD = ImageFileDirectories[index - 1];
+        ImageFileDirectory? currentIFD = ImageFileDirectories[index - 1];
         if (currentIFD.NextIFDByteOffset == 0)
         {
             throw new GeoTIFFImageIndexError(index);
         }
-        var result2 = await this.ParseFileDirectoryAt(currentIFD.NextIFDByteOffset);
+
+        ImageFileDirectory? result2 = await ParseFileDirectoryAt(currentIFD.NextIFDByteOffset);
         ImageFileDirectories.Add(index, result2);
         return result2;
     }
-    
-    public async Task<int> GetImageCount() {
-        var index = 0;
+
+    public async Task<int> GetImageCount()
+    {
+        int index = 0;
         // loop until we run out of IFDs
-        var hasNext = true;
-        while (hasNext) {
+        bool hasNext = true;
+        while (hasNext)
+        {
             try
             {
-                await this.RequestIFD(index);
+                await RequestIFD(index);
                 ++index;
             }
             catch (GeoTIFFImageIndexError e)
@@ -306,24 +322,26 @@ public class GeoTIFF
                 throw;
             }
         }
+
         return index;
     }
-    
-    
-    public async Task<GeoTiffImage> GetImage(int index = 0) {
-        
-        if (this.ImageFileDirectories[index] is null)
+
+
+    public async Task<GeoTiffImage> GetImage(int index = 0)
+    {
+        if (ImageFileDirectories[index] is null)
         {
-            var i = 0;
+            int i = 0;
             while (i < index)
             {
-                await this.RequestIFD(i); // populate cache
+                await RequestIFD(i); // populate cache
                 i++;
             }
         }
-        var ifd = await this.RequestIFD(index);
+
+        ImageFileDirectory? ifd = await RequestIFD(index);
         return new GeoTiffImage(
-            ifd, this.littleEndian, false, this.source
+            ifd, littleEndian, false, source
         );
     }
 }

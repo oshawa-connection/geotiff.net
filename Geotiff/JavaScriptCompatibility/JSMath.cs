@@ -1,4 +1,5 @@
 namespace Geotiff.JavaScriptCompatibility;
+
 /// <summary>
 /// JS like Math functions from https://stackoverflow.com/a/6800845
 /// </summary>
@@ -28,18 +29,18 @@ public static class JSMath
     {
         return Enumerable.Max(values);
     }
-    
+
     // public static int Min(params int[] values)
     // {
     //     return Enumerable.Min(values);
     // }
-    
+
     public static T Min<T>(params T[] values)
     {
         return Enumerable.Min(values);
     }
-    
-    
+
+
     // public static ulong Min(params ulong[] values)
     // {
     //     return Enumerable.Min(values);

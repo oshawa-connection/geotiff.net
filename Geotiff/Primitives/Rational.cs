@@ -8,19 +8,25 @@ public readonly struct Rational : IEquatable<Rational>, IConvertible
     public Rational(uint numerator, uint denominator)
     {
         Numerator = numerator;
-        Denominator = denominator == 0 
+        Denominator = denominator == 0
             ? throw new DivideByZeroException("Denominator cannot be zero.")
             : denominator;
     }
-    
-    
-    public Rational(int numerator, int denominator): this((uint) numerator, (uint) denominator)
+
+
+    public Rational(int numerator, int denominator) : this((uint)numerator, (uint)denominator)
     {
     }
 
-    public double ToDouble() => (double)Numerator / Denominator;
+    public double ToDouble()
+    {
+        return (double)Numerator / Denominator;
+    }
 
-    public override string ToString() => $"{Numerator}/{Denominator}";
+    public override string ToString()
+    {
+        return $"{Numerator}/{Denominator}";
+    }
 
     public bool Equals(Rational other)
     {
@@ -36,13 +42,17 @@ public readonly struct Rational : IEquatable<Rational>, IConvertible
     {
         return HashCode.Combine(Numerator, Denominator);
     }
-    
+
     public static bool operator ==(Rational lhs, Rational rhs)
     {
         return lhs.Equals(rhs);
     }
 
-    public static bool operator !=(Rational lhs, Rational rhs) => !(lhs == rhs);
+    public static bool operator !=(Rational lhs, Rational rhs)
+    {
+        return !(lhs == rhs);
+    }
+
     public TypeCode GetTypeCode()
     {
         return TypeCode.Object;
@@ -111,31 +121,69 @@ public readonly struct Rational : IEquatable<Rational>, IConvertible
     public object ToType(Type conversionType, IFormatProvider? provider)
     {
         if (conversionType == typeof(Rational))
+        {
             return this;
+        }
+
         if (conversionType == typeof(double))
+        {
             return ToDouble();
+        }
+
         if (conversionType == typeof(float))
+        {
             return (float)ToDouble();
+        }
+
         if (conversionType == typeof(decimal))
+        {
             return (decimal)ToDouble();
+        }
+
         if (conversionType == typeof(int))
+        {
             return (int)ToDouble();
+        }
+
         if (conversionType == typeof(uint))
+        {
             return (uint)ToDouble();
+        }
+
         if (conversionType == typeof(long))
+        {
             return (long)ToDouble();
+        }
+
         if (conversionType == typeof(ulong))
+        {
             return (ulong)ToDouble();
+        }
+
         if (conversionType == typeof(short))
+        {
             return (short)ToDouble();
+        }
+
         if (conversionType == typeof(ushort))
+        {
             return (ushort)ToDouble();
+        }
+
         if (conversionType == typeof(byte))
+        {
             return (byte)ToDouble();
+        }
+
         if (conversionType == typeof(sbyte))
+        {
             return (sbyte)ToDouble();
+        }
+
         if (conversionType == typeof(string))
+        {
             return ToString(provider);
+        }
 
         throw new InvalidCastException($"Cannot convert Rational to {conversionType.Name}.");
     }

@@ -7,12 +7,7 @@ namespace Geotiff.Compression;
 /// </summary>
 public class DecoderRegistry
 {
-    
-    private static List<GeotiffDecoder> _register = new List<GeotiffDecoder>()
-    {
-        new DeflateGeotiffDecoder(),
-        new RawGeotiffDecoder()
-    };
+    private static List<GeotiffDecoder> _register = new() { new DeflateGeotiffDecoder(), new RawGeotiffDecoder() };
 
     /// <summary>
     /// TODO: check no clash of codes
@@ -25,18 +20,18 @@ public class DecoderRegistry
 
     public GeotiffDecoder GetDecoder(ImageFileDirectory fileDirectory)
     {
-        var compressionCode = fileDirectory.GetFileDirectoryValue<int?>("Compression");
+        int? compressionCode = fileDirectory.GetFileDirectoryValue<int?>("Compression");
         if (compressionCode is null)
         {
             return new RawGeotiffDecoder();
         }
+
         return _register.First(d => d.codes.Contains((int)compressionCode));
     }
 
     public async Task<ArrayBuffer> Decode(ImageFileDirectory fileDirectory, ArrayBuffer buffer)
     {
-        var decoder = this.GetDecoder(fileDirectory);
+        GeotiffDecoder? decoder = GetDecoder(fileDirectory);
         return await decoder.DecodeBlock(buffer);
     }
-    
 }

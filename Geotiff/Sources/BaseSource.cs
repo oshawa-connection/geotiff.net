@@ -2,12 +2,13 @@ using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff;
 
-public abstract class BaseSource 
+public abstract class BaseSource
 {
-    public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices, CancellationToken? cancellationToken = null)
+    public async Task<IEnumerable<ArrayBuffer>> Fetch(IEnumerable<Slice> slices,
+        CancellationToken? cancellationToken = null)
     {
-        var taskList = slices.Select(slice => this.FetchSlice(slice, cancellationToken));
-        var completedTasks = await Task.WhenAll(taskList);
+        IEnumerable<Task<ArrayBuffer>>? taskList = slices.Select(slice => FetchSlice(slice, cancellationToken));
+        ArrayBuffer[]? completedTasks = await Task.WhenAll(taskList);
         return completedTasks.Select(d => d);
     }
 
@@ -17,11 +18,12 @@ public abstract class BaseSource
      * @returns {ArrayBuffer}
      */
     public abstract Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? cancellationToken = null);
-    
+
     /**
      * Returns the filesize if already determined and null otherwise
      */
-    public int? getFileSize() {
+    public int? getFileSize()
+    {
         return null;
     }
 }

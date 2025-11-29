@@ -38,36 +38,36 @@ public class DataSlice
     {
         return _dataView.getUint8(offset - _sliceOffset);
     }
-    
+
     public float ReadFloat32(int offset)
     {
-        return _dataView.getFloat32(offset - _sliceOffset, this.LittleEndian);
+        return _dataView.getFloat32(offset - _sliceOffset, LittleEndian);
     }
-    
-    
+
+
     public double ReadFloat64(int offset)
     {
-        return _dataView.getFloat64(offset - _sliceOffset, this.LittleEndian);
+        return _dataView.getFloat64(offset - _sliceOffset, LittleEndian);
     }
 
     public Rational ReadRational(int offset)
     {
-        var numer = this.ReadUInt32(offset);
-        var denom = this.ReadUInt32(offset + 4);
+        uint numer = ReadUInt32(offset);
+        uint denom = ReadUInt32(offset + 4);
 
         return new Rational(numer, denom);
     }
-    
+
     public ushort ReadUInt16(int offset)
     {
-        return _dataView.getUint16(offset - _sliceOffset, this.LittleEndian);
+        return _dataView.getUint16(offset - _sliceOffset, LittleEndian);
     }
-    
+
     public uint ReadUInt32(int offset)
     {
-        return _dataView.getUint32(offset - _sliceOffset, this.LittleEndian);
+        return _dataView.getUint32(offset - _sliceOffset, LittleEndian);
     }
-    
+
     public ulong ReadUInt64(int offset)
     {
         uint left = ReadUInt32(offset);
@@ -118,6 +118,7 @@ public class DataSlice
                     b = (byte)(~b & 0xff);
                 }
             }
+
             value += (long)b << (8 * i);
         }
 
@@ -134,28 +135,29 @@ public class DataSlice
         return _bigTiff ? (int)ReadUInt64(offset) : (int)ReadUInt32(offset);
     }
 
-    public T[] ReadAll<T>(Func<int,T> a, int count, int offset, int fieldTypeLength)
+    public T[] ReadAll<T>(Func<int, T> a, int count, int offset, int fieldTypeLength)
     {
         var values = new T[count];
-        for (var i = 0; i < count; ++i)
+        for (int i = 0; i < count; ++i)
         {
-            values[i] = a(offset + i * fieldTypeLength);
+            values[i] = a(offset + (i * fieldTypeLength));
         }
 
         return values;
     }
-    
-    
+
+
     public GeotiffGetValuesResult getValues(ushort fieldType, int count, int offset)
     {
         GeotiffGetValuesResult finalResult;
-        
-        var fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
-        var fieldTypeStr = FieldTypes.FieldTypeLookup[fieldType];
-        
-        switch (fieldTypeStr) {
+
+        int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
+        string? fieldTypeStr = FieldTypes.FieldTypeLookup[fieldType];
+
+        switch (fieldTypeStr)
+        {
             case FieldTypes.FLOAT:
-                finalResult = GeotiffGetValuesResult.FromFloat32(ReadAll(this.ReadFloat32, count, offset, fieldTypeLength));
+                finalResult = GeotiffGetValuesResult.FromFloat32(ReadAll(ReadFloat32, count, offset, fieldTypeLength));
                 break;
             // case FieldTypes.BYTE: case FieldTypes.ASCII: case FieldTypes.UNDEFINED:
             //     values = new Uint8Array(count); 
@@ -166,13 +168,14 @@ public class DataSlice
             //     readMethod = dataSlice.readInt8;
             //     break;
             case FieldTypes.SHORT:
-                finalResult = GeotiffGetValuesResult.FromUInt16(ReadAll(this.ReadUInt16, count, offset, fieldTypeLength));
+                finalResult = GeotiffGetValuesResult.FromUInt16(ReadAll(ReadUInt16, count, offset, fieldTypeLength));
                 break;
             // case FieldTypes.SSHORT:
             //     values = new Int16Array(count); 
             //     readMethod = dataSlice.readInt16;
             //     break;
-            case FieldTypes.LONG: case FieldTypes.IFD:
+            case FieldTypes.LONG:
+            case FieldTypes.IFD:
                 finalResult = GeotiffGetValuesResult.FromUInt32(ReadAll(ReadUInt32, count, offset, fieldTypeLength));
                 break;
             // case FieldTypes.SLONG:
@@ -188,7 +191,8 @@ public class DataSlice
             //     readMethod = dataSlice.readInt64;
             //     break;
             case FieldTypes.RATIONAL:
-                finalResult = GeotiffGetValuesResult.FromRational(ReadAll(this.ReadRational, count, offset, fieldTypeLength));
+                finalResult =
+                    GeotiffGetValuesResult.FromRational(ReadAll(ReadRational, count, offset, fieldTypeLength));
                 // values = new Uint32Array(count * 2); 
                 // readMethod = dataSlice.readUint32;
                 break;
@@ -196,16 +200,18 @@ public class DataSlice
             //     values = new Int32Array(count * 2); 
             //     readMethod = dataSlice.readInt32;
             //     break;
-            
-            case FieldTypes.ASCII: case FieldTypes.BYTE : case FieldTypes.UNDEFINED:
-                var asciiBytes = ReadAll(this.ReadByte, count, offset, fieldTypeLength);
-                var decodedString = System.Text.Encoding.ASCII.GetString(asciiBytes);
-                finalResult =GeotiffGetValuesResult.FromString(decodedString);
+
+            case FieldTypes.ASCII:
+            case FieldTypes.BYTE:
+            case FieldTypes.UNDEFINED:
+                byte[]? asciiBytes = ReadAll(ReadByte, count, offset, fieldTypeLength);
+                string? decodedString = System.Text.Encoding.ASCII.GetString(asciiBytes);
+                finalResult = GeotiffGetValuesResult.FromString(decodedString);
                 break;
             case FieldTypes.DOUBLE:
-                finalResult = GeotiffGetValuesResult.FromFloat64(ReadAll(this.ReadFloat64, count, offset, fieldTypeLength));
+                finalResult = GeotiffGetValuesResult.FromFloat64(ReadAll(ReadFloat64, count, offset, fieldTypeLength));
                 break;
-            default: 
+            default:
                 throw new Exception($"Invalid field type: {fieldTypeStr}");
         }
 

@@ -13,14 +13,13 @@ internal static class WGS84
     /// <param name="lon"></param>
     /// <param name="lat"></param>
     /// <returns></returns>
-    
     public static (double x, double y) Wgs84ToWebMercator(double lon, double lat)
     {
         double x = EarthRadius * DegreesToRadians(lon);
-        double y = EarthRadius * Math.Log(Math.Tan(Math.PI / 4 + DegreesToRadians(lat) / 2));
+        double y = EarthRadius * Math.Log(Math.Tan((Math.PI / 4) + (DegreesToRadians(lat) / 2)));
         return (x, y);
     }
-    
+
     public static double Haversine(double lat1, double lat2, double lon1, double lon2)
     {
         lat1 = DegreesToRadians(lat1);
@@ -28,15 +27,15 @@ internal static class WGS84
         lon1 = DegreesToRadians(lon1);
         lon2 = DegreesToRadians(lon2);
         const double r = 6378100; // meters
-            
-        var sdlat = Math.Sin((lat2 - lat1) / 2);
-        var sdlon = Math.Sin((lon2 - lon1) / 2);
-        var q = sdlat * sdlat + Math.Cos(lat1) * Math.Cos(lat2) * sdlon * sdlon;
-        var d = 2 * r * Math.Asin(Math.Sqrt(q));
+
+        double sdlat = Math.Sin((lat2 - lat1) / 2);
+        double sdlon = Math.Sin((lon2 - lon1) / 2);
+        double q = (sdlat * sdlat) + (Math.Cos(lat1) * Math.Cos(lat2) * sdlon * sdlon);
+        double d = 2 * r * Math.Asin(Math.Sqrt(q));
 
         return d;
     }
-    
+
     /// <summary>
     /// 
     /// </summary>
@@ -68,9 +67,10 @@ internal static class WGS84
 
         return (xPercent, yPercent);
     }
-    
-    
-    public static double DegreesToRadians(double degrees) {
+
+
+    public static double DegreesToRadians(double degrees)
+    {
         return degrees * Math.PI / 180;
     }
 }
