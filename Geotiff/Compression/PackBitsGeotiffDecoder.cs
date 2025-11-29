@@ -13,10 +13,10 @@ public class PackBitsGeotiffDecoder : GeotiffDecoder
 
         for (int i = 0; i < buffer.Length; ++i)
         {
-            byte header = dataView.getInt8(i);
+            byte header = dataView.GetUint8(i);
             if (header < 0)
             {
-                byte next = dataView.getUint8(i + 1);
+                byte next = dataView.GetUint8(i + 1);
                 header = (byte)-(int)header; // Ignore narrowing conversion
                 for (int j = 0; j <= header; ++j)
                 {
@@ -29,7 +29,7 @@ public class PackBitsGeotiffDecoder : GeotiffDecoder
             {
                 for (int j = 0; j <= header; ++j)
                 {
-                    outbytes.Add(dataView.getUint8(i + j + 1));
+                    outbytes.Add(dataView.GetUint8(i + j + 1));
                 }
 
                 i += header + 1;

@@ -7,13 +7,23 @@ namespace Geotiff;
 public class GeoTIFF
 {
     private readonly BaseSource source;
-    private readonly bool bigTiff;
+    private readonly bool _bigTiff;
     private readonly ulong firstIFDOffset;
     private readonly bool littleEndian;
 
+    public bool IsBifTIFF => _bigTiff; 
+    
+    private GeoTIFF(BaseSource source, bool littleEndian, bool bigTiff, ulong firstIFDOffset)
+    {
+        this.source = source;
+        this.littleEndian = littleEndian;
+        this._bigTiff = bigTiff;
+        this.firstIFDOffset = firstIFDOffset;
+    }
+    
     private static bool GetBomMarker(DataView dv)
     {
-        ushort value = dv.getUint16(0, true);
+        ushort value = dv.GetUint16(0, true);
         bool isLittleEndian = false;
         if (value == Constants.BOMLittleEndian)
         {
@@ -33,7 +43,7 @@ public class GeoTIFF
 
     private static bool GetBigTiffMarker(DataView dv, bool isLittleEndian)
     {
-        ushort isBigTiffValue = dv.getUint16(2, isLittleEndian);
+        ushort isBigTiffValue = dv.GetUint16(2, isLittleEndian);
         if (isBigTiffValue == 42)
         {
             return false;
@@ -44,7 +54,7 @@ public class GeoTIFF
             return true;
         }
         
-        var offsetByteSize = dv.getUint16(4, isLittleEndian);
+        var offsetByteSize = dv.GetUint16(4, isLittleEndian);
         if (offsetByteSize != 8) {
             throw new Exception("Unsupported offset byte-size.");
         }
@@ -52,27 +62,21 @@ public class GeoTIFF
         throw new Exception("Invalid tiff magic number.");
     }
     
-    public static ulong GetFirstIFDOffset(DataView dv, bool isLittleEndian, bool isBigTiff)
+    private static ulong GetFirstIFDOffset(DataView dv, bool isLittleEndian, bool isBigTiff)
     {
         // This is used to 
         return isBigTiff
-            ? dv.getUint64(8, isLittleEndian)
-            : dv.getUint32(4, isLittleEndian);
+            ? dv.GetUint64(8, isLittleEndian)
+            : dv.GetUint32(4, isLittleEndian);
     }
     
-    /// <summary>
-    /// This is temporary for development purposes only.
-    /// </summary>
-    /// <param name="httpClient"></param>
-    /// <param name="url"></param>
-    /// <returns></returns>
     public static async Task<GeoTIFF> FromRemoteClient(IGeotiffRemoteClient client)
     {
         var source = new RemoteSource(client, int.MaxValue, false);
         IEnumerable<ArrayBuffer>? slices = await source.Fetch(new Slice[] { new(0, 1024) });
 
         var dv = new DataView(slices.First());
-        ushort value = dv.getUint16(0, true);
+        ushort value = dv.GetUint16(0, true);
         bool isLittleEndian = GetBomMarker(dv);
 
         bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
@@ -80,10 +84,7 @@ public class GeoTIFF
         var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
         return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
-
-
     
-
     public static async Task<GeoTIFF> FromStream(Stream stream)
     {
         var memoryStream = new MemoryStream();
@@ -91,7 +92,7 @@ public class GeoTIFF
         memoryStream.Position = 0;
         byte[]? arr = memoryStream.ToArray();
         var dv = new DataView(arr);
-        ushort value = dv.getUint16(0, true);
+        ushort value = dv.GetUint16(0, true);
         bool isLittleEndian = GetBomMarker(dv);
 
         bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
@@ -103,17 +104,11 @@ public class GeoTIFF
     }
 
 
-    private GeoTIFF(BaseSource source, bool littleEndian, bool bigTiff, ulong firstIFDOffset)
-    {
-        this.source = source;
-        this.littleEndian = littleEndian;
-        this.bigTiff = bigTiff;
-        this.firstIFDOffset = firstIFDOffset;
-    }
 
-    public async Task<DataSlice> GetSlice(int offset, int? size = null)
+
+    private async Task<DataSlice> GetSlice(int offset, int? size = null)
     {
-        int fallbackSize = bigTiff ? 4048 : 1024;
+        int fallbackSize = _bigTiff ? 4048 : 1024;
         int sizeToUse = size is null ? fallbackSize : (int)size;
         var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
@@ -123,7 +118,7 @@ public class GeoTIFF
             results.Single().GetAllBytes(), // TODO: Double check this.  
             offset,
             littleEndian,
-            bigTiff
+            _bigTiff
         );
     }
 
@@ -191,17 +186,17 @@ public class GeoTIFF
 
     private async Task<ImageFileDirectory> ParseFileDirectoryAt(int offset)
     {
-        int entrySize = bigTiff ? 20 : 12;
-        int offsetSize = bigTiff ? 8 : 2;
+        int entrySize = _bigTiff ? 20 : 12;
+        int offsetSize = _bigTiff ? 8 : 2;
 
         DataSlice? dataSlice = await GetSlice(offset);
 
-        int numDirEntries = bigTiff
+        int numDirEntries = _bigTiff
             ? (int)dataSlice.ReadUInt64(offset)
             : dataSlice.ReadUInt16(offset);
 
         // Ensure the slice covers the whole IFD
-        int byteSize = ((int)numDirEntries * (int)entrySize) + (bigTiff ? 16 : 6);
+        int byteSize = ((int)numDirEntries * (int)entrySize) + (_bigTiff ? 16 : 6);
         if (!dataSlice.Covers(offset, byteSize))
         {
             dataSlice = await GetSlice(offset, byteSize);
@@ -210,12 +205,12 @@ public class GeoTIFF
         var fileDirectory = new Dictionary<string, object>();
         var rawFileDirectory = new Dictionary<int, object>();
 
-        int i = offset + (bigTiff ? 8 : 2);
+        int i = offset + (_bigTiff ? 8 : 2);
         for (long entryCount = 0; entryCount < numDirEntries; i += entrySize, ++entryCount)
         {
             ushort fieldTag = dataSlice.ReadUInt16(i);
             ushort fieldType = dataSlice.ReadUInt16(i + 2);
-            int typeCount = bigTiff
+            int typeCount = _bigTiff
                 ? (int)dataSlice.ReadUInt64(i + 4)
                 : (int)dataSlice.ReadUInt32(i + 4);
 
@@ -223,9 +218,9 @@ public class GeoTIFF
             object value;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
             string? fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
-            long valueOffset = i + (bigTiff ? 12 : 8);
+            long valueOffset = i + (_bigTiff ? 12 : 8);
             // Check if the value is directly encoded or refers to another byte range
-            if (fieldTypeLength * typeCount <= (bigTiff ? 8 : 4))
+            if (fieldTypeLength * typeCount <= (_bigTiff ? 8 : 4))
             {
                 fieldValues = dataSlice.getValues(fieldType, typeCount, (int)valueOffset);
             }
@@ -256,7 +251,7 @@ public class GeoTIFF
             {
                 if (fieldTypeName == FieldTypes.SRATIONAL)
                 {
-                    throw new NotImplementedException($"SRationals not supported: {fieldTypeName}");
+                    throw new NotImplementedException($"SRationals not supported: {fieldTypeName}"); // TODO: Is this true anymore?
                 }
 
                 value = fieldValues.GetListOfElements();
@@ -304,7 +299,7 @@ public class GeoTIFF
         ImageFileDirectory? currentIFD = ImageFileDirectories[index - 1];
         if (currentIFD.NextIFDByteOffset == 0)
         {
-            throw new GeoTIFFImageIndexError(index);
+            throw new GeoTiffImageIndexError(index);
         }
 
         ImageFileDirectory? result2 = await ParseFileDirectoryAt(currentIFD.NextIFDByteOffset);
@@ -324,7 +319,7 @@ public class GeoTIFF
                 await RequestIFD(index);
                 ++index;
             }
-            catch (GeoTIFFImageIndexError e)
+            catch (GeoTiffImageIndexError e)
             {
                 // TODO: handle exceptions here properly
                 hasNext = false;

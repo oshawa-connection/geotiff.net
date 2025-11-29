@@ -1,8 +1,8 @@
 namespace Geotiff.Exceptions;
 
-public class GeoTIFFImageIndexError : Exception
+public class GeoTiffImageIndexError : Exception
 {
-    public GeoTIFFImageIndexError(int index) : base($"No image at index {index}")
+    public GeoTiffImageIndexError(int index) : base($"No image at index {index}")
     {
     }
 }

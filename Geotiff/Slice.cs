@@ -8,16 +8,16 @@ public class Slice
 {
     public Slice(int offset, int length)
     {
-        this.offset = offset;
-        this.length = length;
+        this.Offset = offset;
+        this.Length = length;
     }
 
     public Slice(int offset, int length, bool checkByteLength) : this(offset, length)
     {
-        this.checkByteLength = checkByteLength;
+        this.CheckByteLength = checkByteLength;
     }
 
-    public bool checkByteLength { get; set; } = true;
-    public int offset { get; set; }
-    public int length { get; set; }
+    public bool CheckByteLength { get; set; } = true;
+    public int Offset { get; set; }
+    public int Length { get; set; }
 }

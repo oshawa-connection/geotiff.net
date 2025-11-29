@@ -3,7 +3,7 @@ using Geotiff.Primitives;
 
 namespace Geotiff;
 
-public class DataSlice
+internal class DataSlice
 {
     private readonly byte[] _arrayBuffer;
     private readonly DataView _dataView;
@@ -21,7 +21,7 @@ public class DataSlice
 
     public long SliceOffset => _sliceOffset;
 
-    public long SliceTop => _sliceOffset + _dataView.length;
+    public long SliceTop => _sliceOffset + _dataView.Length;
 
     public bool LittleEndian => _littleEndian;
 
@@ -36,18 +36,23 @@ public class DataSlice
 
     public byte ReadByte(int offset)
     {
-        return _dataView.getUint8(offset - _sliceOffset);
+        return _dataView.GetUint8(offset - _sliceOffset);
+    }
+
+    public sbyte ReadSByte(int offset)
+    {
+        return _dataView.GetInt8(offset - _sliceOffset);
     }
 
     public float ReadFloat32(int offset)
     {
-        return _dataView.getFloat32(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetFloat32(offset - _sliceOffset, LittleEndian);
     }
 
 
     public double ReadFloat64(int offset)
     {
-        return _dataView.getFloat64(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetFloat64(offset - _sliceOffset, LittleEndian);
     }
 
     public Rational ReadRational(int offset)
@@ -60,14 +65,24 @@ public class DataSlice
 
     public ushort ReadUInt16(int offset)
     {
-        return _dataView.getUint16(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetUint16(offset - _sliceOffset, LittleEndian);
     }
 
     public uint ReadUInt32(int offset)
     {
-        return _dataView.getUint32(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetUint32(offset - _sliceOffset, LittleEndian);
     }
 
+    public int ReadInt32(int offset)
+    {
+        return _dataView.GetInt32(offset - _sliceOffset, LittleEndian);
+    }
+
+    public short ReadInt16(int offset)
+    {
+        return _dataView.GetInt16(offset - _sliceOffset, LittleEndian);
+    }
+    
     public ulong ReadUInt64(int offset)
     {
         // TODO: this is the way its done for JS purposes; is there no built in dotnet equivalent that's more efficient?
@@ -103,13 +118,13 @@ public class DataSlice
     public long ReadInt64(int offset)
     {
         long value = 0;
-        bool isNegative = (_dataView.getUint8(offset + (_littleEndian ? 7 : 0)) & 0x80) > 0;
+        bool isNegative = (_dataView.GetUint8(offset + (_littleEndian ? 7 : 0)) & 0x80) > 0;
         bool carrying = true;
 
         for (int i = 0; i < 8; i++)
         {
             int index = (int)(offset + (_littleEndian ? i : 7 - i));
-            byte b = _dataView.getUint8(index);
+            byte b = _dataView.GetUint8(index);
             if (isNegative)
             {
                 if (carrying)
@@ -163,47 +178,6 @@ public class DataSlice
 
         switch (fieldTypeStr)
         {
-            case FieldTypes.FLOAT:
-                finalResult = GeotiffGetValuesResult.FromFloat32(ReadAll(ReadFloat32, count, offset, fieldTypeLength));
-                break;
-            // case FieldTypes.SBYTE:
-            //     values = new Int8Array(count); 
-            //     readMethod = dataSlice.readInt8;
-            //     break;
-            case FieldTypes.SHORT:
-                finalResult = GeotiffGetValuesResult.FromUInt16(ReadAll(ReadUInt16, count, offset, fieldTypeLength));
-                break;
-            // case FieldTypes.SSHORT:
-            //     values = new Int16Array(count); 
-            //     readMethod = dataSlice.readInt16;
-            //     break;
-            case FieldTypes.LONG:
-            case FieldTypes.IFD:
-                finalResult = GeotiffGetValuesResult.FromUInt32(ReadAll(ReadUInt32, count, offset, fieldTypeLength));
-                break;
-            // case FieldTypes.SLONG:
-            //     values = new Int32Array(count); 
-            //     readMethod = dataSlice.readInt32;
-            //     break;
-            case FieldTypes.LONG8: 
-            case FieldTypes.IFD8:
-                finalResult = GeotiffGetValuesResult.FromUInt64(ReadAll(ReadUInt64, count, offset, fieldTypeLength));
-                break;
-            // case FieldTypes.SLONG8:
-            //     values = new Array(count); 
-            //     readMethod = dataSlice.readInt64;
-            //     break;
-            case FieldTypes.RATIONAL:
-                finalResult =
-                    GeotiffGetValuesResult.FromRational(ReadAll(ReadRational, count, offset, fieldTypeLength));
-                // values = new Uint32Array(count * 2); 
-                // readMethod = dataSlice.readUint32;
-                break;
-            // case FieldTypes.SRATIONAL:
-            //     values = new Int32Array(count * 2); 
-            //     readMethod = dataSlice.readInt32;
-            //     break;
-
             case FieldTypes.ASCII:
             case FieldTypes.BYTE:
             case FieldTypes.UNDEFINED:
@@ -211,6 +185,41 @@ public class DataSlice
                 string? decodedString = System.Text.Encoding.ASCII.GetString(asciiBytes);
                 finalResult = GeotiffGetValuesResult.FromString(decodedString);
                 break;
+            case FieldTypes.SBYTE:
+                finalResult = GeotiffGetValuesResult.FromSBytes(ReadAll(ReadSByte, count, offset, fieldTypeLength));
+                break;
+            case FieldTypes.SHORT:
+                finalResult = GeotiffGetValuesResult.FromUInt16(ReadAll(ReadUInt16, count, offset, fieldTypeLength));
+                break;
+            case FieldTypes.SSHORT:
+                finalResult = GeotiffGetValuesResult.FromInt16(ReadAll(ReadInt16, count, offset, fieldTypeLength));
+                break;
+            case FieldTypes.LONG:
+            case FieldTypes.IFD:
+                finalResult = GeotiffGetValuesResult.FromUInt32(ReadAll(ReadUInt32, count, offset, fieldTypeLength));
+                break;
+            case FieldTypes.SLONG:
+                finalResult = GeotiffGetValuesResult.FromInt32(ReadAll(ReadInt32, count, offset, fieldTypeLength));
+                break;
+            case FieldTypes.LONG8: 
+            case FieldTypes.IFD8:
+                finalResult = GeotiffGetValuesResult.FromUInt64(ReadAll(ReadUInt64, count, offset, fieldTypeLength));
+                break;
+            case FieldTypes.SLONG8:
+                finalResult = GeotiffGetValuesResult.FromInt64(ReadAll(ReadInt64, count, offset, fieldTypeLength));
+                break;
+            case FieldTypes.RATIONAL:
+                finalResult =
+                    GeotiffGetValuesResult.FromRational(ReadAll(ReadRational, count, offset, fieldTypeLength));
+                break;
+            case FieldTypes.SRATIONAL:
+                finalResult =
+                    GeotiffGetValuesResult.FromSRational(ReadAll(ReadInt32, count, offset, fieldTypeLength));
+                break;
+            case FieldTypes.FLOAT:
+                finalResult = GeotiffGetValuesResult.FromFloat32(ReadAll(ReadFloat32, count, offset, fieldTypeLength));
+                break;
+
             case FieldTypes.DOUBLE:
                 finalResult = GeotiffGetValuesResult.FromFloat64(ReadAll(ReadFloat64, count, offset, fieldTypeLength));
                 break;
@@ -219,27 +228,5 @@ public class DataSlice
         }
 
         return finalResult;
-        // // normal fields
-        // if (!(fieldType === FieldTypes.RATIONAL || fieldType === FieldTypes.SRATIONAL)) {
-        // for (let i = 0; i < count; ++i) {
-        // values[i] = readMethod.call(
-        // dataSlice, offset + (i * fieldTypeLength),
-        // );
-        // }
-        // } else { // RATIONAL or SRATIONAL
-        // for (let i = 0; i < count; i += 2) {
-        // values[i] = readMethod.call(
-        // dataSlice, offset + (i * fieldTypeLength),
-        // );
-        // values[i + 1] = readMethod.call(
-        // dataSlice, offset + ((i * fieldTypeLength) + 4),
-        // );
-        // }
-        // }
-
-        // if (fieldType === FieldTypes.ASCII) {
-        //     return new TextDecoder('utf-8').decode(values);
-        // }
-        // return values;
     }
 }

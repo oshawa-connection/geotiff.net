@@ -1,6 +1,6 @@
 namespace Geotiff.JavaScriptCompatibility;
 
-public static class JsParse
+internal static class JsParse
 {
     public static int ParseInt(string s, int radix)
     {

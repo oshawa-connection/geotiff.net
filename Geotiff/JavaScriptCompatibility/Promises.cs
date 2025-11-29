@@ -1,6 +1,6 @@
 namespace Geotiff.JavaScriptCompatibility;
 
-public static class Promises
+internal static class Promises
 {
     /// <summary>
     /// 

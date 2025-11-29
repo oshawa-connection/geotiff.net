@@ -37,12 +37,12 @@ public class GeotiffAWSClient : IGeotiffRemoteClient
     public async Task<IEnumerable<ArrayBuffer>> FetchSlices(IEnumerable<Slice> slices, CancellationToken? signal = null)
     {
         IEnumerable<Task<ArrayBuffer>>? tasks = slices.Select(slice =>
-            DownloadRangeFromS3Async(slice.offset, slice.length + slice.offset, signal));
+            DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset, signal));
         return await Task.WhenAll(tasks);
     }
 
     public async Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? signal = null)
     {
-        return await DownloadRangeFromS3Async(slice.offset, slice.length + slice.offset, signal);
+        return await DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset, signal);
     }
 }

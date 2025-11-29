@@ -1,8 +1,8 @@
 namespace Geotiff.JavaScriptCompatibility;
 
-public static class StringExtensions
+internal static class StringExtensions
 {
-    public static string JSSubString(this string str, int startIndex, int endIndex)
+    internal static string JSSubString(this string str, int startIndex, int endIndex)
     {
         if (str == null)
         {

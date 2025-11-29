@@ -13,18 +13,18 @@ public class FileSource : BaseSource
 
     public override async Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? cancellationToken)
     {
-        byte[]? x = new byte[slice.length];
+        byte[]? x = new byte[slice.Length];
 
-        stream.Seek(slice.offset, SeekOrigin.Begin);
+        stream.Seek(slice.Offset, SeekOrigin.Begin);
 
         int nReadBytes = 0;
         if (cancellationToken is null)
         {
-            nReadBytes = await stream.ReadAsync(x, 0, slice.length);
+            nReadBytes = await stream.ReadAsync(x, 0, slice.Length);
         }
         else
         {
-            nReadBytes = await stream.ReadAsync(x, 0, slice.length, (CancellationToken)cancellationToken);
+            nReadBytes = await stream.ReadAsync(x, 0, slice.Length, (CancellationToken)cancellationToken);
         }
         // if (nReadBytes < slice.length)
         // {

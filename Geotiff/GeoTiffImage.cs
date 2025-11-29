@@ -1,10 +1,5 @@
-using System;
-using System.Numerics;
-// using System.Runtime.InteropServices.JavaScript;
-using System.Threading.Tasks;
 using Geotiff.Compression;
 using Geotiff.JavaScriptCompatibility;
-using Geotiff.Projection;
 
 namespace Geotiff;
 
@@ -473,10 +468,10 @@ public class GeoTiffImage
 
         if (window is not null)
         {
-            imageWindow[0] = window.left;
-            imageWindow[1] = window.top;
-            imageWindow[2] = window.right;
-            imageWindow[3] = window.bottom;
+            imageWindow[0] = window.Left;
+            imageWindow[1] = window.Top;
+            imageWindow[2] = window.Right;
+            imageWindow[3] = window.Bottom;
         }
 
         if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
@@ -519,15 +514,15 @@ public class GeoTiffImage
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return (dv, offset) => dv.getUint8(offset);
+                    return (dv, offset) => dv.GetUint8(offset);
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return (dv, offset) => dv.getUint16(offset);
+                    return (dv, offset) => dv.GetUint16(offset);
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return (dv, offset) => dv.getUint32(offset);
+                    return (dv, offset) => dv.GetUint32(offset);
                 }
 
                 break;
@@ -549,9 +544,9 @@ public class GeoTiffImage
                         throw new NotImplementedException("Float 16 not implemented");
                     // return (dv, offset) => GetFloat16(dv, offset); // You need to implement GetFloat16
                     case 32:
-                        return (dv, offset) => dv.getFloat32(offset);
+                        return (dv, offset) => dv.GetFloat32(offset);
                     case 64:
-                        return (dv, offset) => dv.getFloat64(offset);
+                        return (dv, offset) => dv.GetFloat64(offset);
                 }
 
                 break;
@@ -716,19 +711,8 @@ public class GeoTiffImage
 
         return valueArrays;
     }
-
-
-    /** @typedef {import("./geotiff.js").TypedArray} TypedArray */
-    /** @typedef {import("./geotiff.js").ReadRasterResult} ReadRasterResult */
-
-    // private T sum<T>(IEnumerable<T> array, int start, int end) where T : INumber<T> {
-    //   T s = T.AdditiveIdentity;
-    //   for (var i = start; i < end; ++i) {
-    //     s += array.ElementAt(i);
-    //   }
-    //   return s;
-    // }
-    public Func<DataView, long, bool, object> getReaderForSample(int sampleIndex)
+    
+    private Func<DataView, long, bool, object> getReaderForSample(int sampleIndex)
     {
         int format = fileDirectory.SampleFormat is not null
             ? fileDirectory.SampleFormat[sampleIndex]
@@ -739,31 +723,31 @@ public class GeoTiffImage
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return (dv, offset, endianNess) => dv.getUint8((int)offset);
+                    return (dv, offset, endianNess) => dv.GetUint8((int)offset);
                     // return (dv, offset) => dv.getUint8((int)offset);
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return (dv, offset, endianNess) => dv.getUint16((int)offset, endianNess);
+                    return (dv, offset, endianNess) => dv.GetUint16((int)offset, endianNess);
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return (dv, offset, endianNess) => dv.getUint32((int)offset, endianNess);
+                    return (dv, offset, endianNess) => dv.GetUint32((int)offset, endianNess);
                 }
 
                 break;
             case 2: // twos complement signed integer data
                 if (bitsPerSample <= 8)
                 {
-                    return (dv, offset, endianNess) => dv.getInt8((int)offset);
+                    return (dv, offset, endianNess) => dv.GetInt8((int)offset);
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return (dv, offset, endianNess) => dv.getUint16((int)offset, endianNess);
+                    return (dv, offset, endianNess) => dv.GetUint16((int)offset, endianNess);
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return (dv, offset, endianNess) => dv.getInt32((int)offset, endianNess);
+                    return (dv, offset, endianNess) => dv.GetInt32((int)offset, endianNess);
                 }
 
                 break;
@@ -773,9 +757,9 @@ public class GeoTiffImage
                     case 16:
                         throw new NotImplementedException();
                     case 32:
-                        return (dv, offset, endianNess) => dv.getFloat32((int)offset, endianNess);
+                        return (dv, offset, endianNess) => dv.GetFloat32((int)offset, endianNess);
                     case 64:
-                        return (dv, offset, endianNess) => dv.getFloat64((int)offset, endianNess);
+                        return (dv, offset, endianNess) => dv.GetFloat64((int)offset, endianNess);
                     default:
                         break;
                 }
@@ -999,27 +983,27 @@ public class GeoTiffImage
                         int innerBitOffset = bitOffset % 8;
                         if (innerBitOffset + bitsPerSample <= 8)
                         {
-                            int result = (view.getUint8(byteOffset) >> (8 - bitsPerSample - innerBitOffset)) & bitMask;
+                            int result = (view.GetUint8(byteOffset) >> (8 - bitsPerSample - innerBitOffset)) & bitMask;
                             outArray.SetValue(result,
                                 outIndex); // TODO: not sure why they don't care about endianness here.
                         }
                         else if (innerBitOffset + bitsPerSample <= 16)
                         {
-                            int result = (view.getUint16(byteOffset) >> (16 - bitsPerSample - innerBitOffset)) &
+                            int result = (view.GetUint16(byteOffset) >> (16 - bitsPerSample - innerBitOffset)) &
                                          bitMask;
                             outArray.SetValue(result,
                                 outIndex); // TODO: not sure why they don't care about endianness here.
                         }
                         else if (innerBitOffset + bitsPerSample <= 24)
                         {
-                            int raw = (view.getUint16(byteOffset) << 8) | view.getUint8(byteOffset + 2);
+                            int raw = (view.GetUint16(byteOffset) << 8) | view.GetUint8(byteOffset + 2);
                             int result = (raw >> (24 - bitsPerSample - innerBitOffset)) & bitMask;
                             outArray.SetValue(result,
                                 outIndex); // TODO: not sure why they don't care about endianness here.
                         }
                         else
                         {
-                            long result = (view.getUint32(byteOffset) >> (32 - bitsPerSample - innerBitOffset)) &
+                            long result = (view.GetUint32(byteOffset) >> (32 - bitsPerSample - innerBitOffset)) &
                                           bitMask;
                             outArray.SetValue((int)result,
                                 outIndex); // TODO: fix narrowing conversion // TODO: not sure why they don't care about endianness here.
@@ -1102,7 +1086,7 @@ public class GeoTiffImage
 
         var window = new ImageWindow()
         {
-            left = (uint)left, right = (uint)right, bottom = (uint)bottom, top = (uint)top
+            Left = (uint)left, Right = (uint)right, Bottom = (uint)bottom, Top = (uint)top
         };
 
         return await ReadRasters(window, cancellationToken);

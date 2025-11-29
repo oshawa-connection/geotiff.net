@@ -3,7 +3,7 @@ namespace Geotiff.JavaScriptCompatibility;
 /// <summary>
 /// JS like Math functions from https://stackoverflow.com/a/6800845
 /// </summary>
-public static class JSMath
+internal static class JSMath
 {
     // This method only exists for consistency, so you can *always* call
     // MoreMath.Max instead of alternating between MoreMath.Max and Math.Max

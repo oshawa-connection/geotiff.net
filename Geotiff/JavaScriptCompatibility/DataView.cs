@@ -1,6 +1,6 @@
 namespace Geotiff.JavaScriptCompatibility;
 
-public class DataView
+internal class DataView
 {
     private readonly byte[] stream;
     public readonly string? type;
@@ -49,9 +49,9 @@ public class DataView
     }
 
 
-    public int length => stream.Length;
+    public int Length => stream.Length;
 
-    private void setByteRange(int offset, byte[] bytes)
+    private void SetByteRange(int offset, byte[] bytes)
     {
         for (int i = 0; i < bytes.Length; i++)
         {
@@ -59,7 +59,7 @@ public class DataView
         }
     }
 
-    private void checkType(string type, bool read)
+    private void CheckType(string type, bool read)
     {
         if (this.type == null)
         {
@@ -73,9 +73,9 @@ public class DataView
         }
     }
 
-    public float getFloat32(int offset, bool isLittleEndian = false)
+    public float GetFloat32(int offset, bool isLittleEndian = false)
     {
-        checkType(FLOAT, true);
+        CheckType(FLOAT, true);
         byte[]? x = stream.Skip(offset).Take(4).ToArray();
         if (x.Count() < 4)
         {
@@ -90,21 +90,21 @@ public class DataView
         return BitConverter.ToSingle(x);
     }
 
-    public void setFloat32(int offset, float value, bool isLittleEndian = false)
+    public void SetFloat32(int offset, float value, bool isLittleEndian = false)
     {
-        checkType(FLOAT, false);
+        CheckType(FLOAT, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
             x = x.Reverse().ToArray();
         }
 
-        setByteRange(offset, x);
+        SetByteRange(offset, x);
     }
 
-    public double getFloat64(int offset, bool isLittleEndian = false)
+    public double GetFloat64(int offset, bool isLittleEndian = false)
     {
-        checkType(DOUBLE, true);
+        CheckType(DOUBLE, true);
         byte[]? x = stream.Skip(offset).Take(8).ToArray();
         if (x.Count() < 8)
         {
@@ -119,19 +119,19 @@ public class DataView
         return BitConverter.ToDouble(x);
     }
 
-    public void setFloat64(int offset, double value, bool isLittleEndian = false)
+    public void SetFloat64(int offset, double value, bool isLittleEndian = false)
     {
-        checkType(DOUBLE, false);
+        CheckType(DOUBLE, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
             x = x.Reverse().ToArray();
         }
 
-        setByteRange(offset, x);
+        SetByteRange(offset, x);
     }
 
-    private byte[] read16(int offset, bool isLittleEndian = false)
+    private byte[] Read16(int offset, bool isLittleEndian = false)
     {
         byte[]? x = stream.Skip(offset).Take(2).ToArray();
         if (x.Count() < 2)
@@ -147,49 +147,49 @@ public class DataView
         return x;
     }
 
-    public short getInt16(int offset)
+    public short GetInt16(int offset, bool isLittleEndian = false)
     {
-        byte[]? x = read16(offset);
+        byte[]? x = Read16(offset, isLittleEndian);
 
         return BitConverter.ToInt16(x);
     }
 
 
-    public ushort getUint16(int offset, bool isLittleEndian = false)
+    public ushort GetUint16(int offset, bool isLittleEndian = false)
     {
-        byte[]? x = read16(offset, isLittleEndian);
+        byte[]? x = Read16(offset, isLittleEndian);
         return BitConverter.ToUInt16(x);
     }
 
-    public byte getUint8(int offset)
+    public byte GetUint8(int offset)
     {
-        checkType(UINT8, true);
+        CheckType(UINT8, true);
         return stream[offset];
     }
 
-    public void setUint8(int offset, byte value)
+    public void SetUint8(int offset, byte value)
     {
-        checkType(UINT8, false);
+        CheckType(UINT8, false);
         stream[offset] = value;
     }
 
 
-    public byte getInt8(int offset)
+    public sbyte GetInt8(int offset)
     {
-        checkType(INT8, true);
-        return stream.Skip(offset).First();
+        CheckType(INT8, true);
+        return (sbyte)stream.Skip(offset).First();
     }
 
-    public void setint8(int offset, byte value)
+    public void Setint8(int offset, byte value)
     {
-        checkType(INT8, false);
+        CheckType(INT8, false);
         stream[offset] = value;
     }
 
 
-    public uint getUint32(int offset, bool isLittleEndian = false)
+    public uint GetUint32(int offset, bool isLittleEndian = false)
     {
-        checkType(UINT32, true);
+        CheckType(UINT32, true);
         byte[]? x = stream.Skip(offset).Take(4).ToArray();
 
         if (isLittleEndian is false)
@@ -200,21 +200,21 @@ public class DataView
         return BitConverter.ToUInt32(x);
     }
 
-    public void setUint32(int offset, uint value, bool isLittleEndian = false)
+    public void SetUint32(int offset, uint value, bool isLittleEndian = false)
     {
-        checkType(UINT32, false);
+        CheckType(UINT32, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
             x = x.Reverse().ToArray();
         }
 
-        setByteRange(offset, x);
+        SetByteRange(offset, x);
     }
 
-    public UInt64 getUint64(int offset, bool isLittleEndian = false)
+    public UInt64 GetUint64(int offset, bool isLittleEndian = false)
     {
-        checkType(UINT64, true);
+        CheckType(UINT64, true);
         byte[]? x = stream.Skip(offset).Take(8).ToArray();
 
         if (isLittleEndian is false)
@@ -226,9 +226,9 @@ public class DataView
     }
     
 
-    public int getInt32(int offset, bool isLittleEndian = false)
+    public int GetInt32(int offset, bool isLittleEndian = false)
     {
-        checkType(INT32, true);
+        CheckType(INT32, true);
         byte[]? x = stream.Skip(offset).Take(4).ToArray();
 
         if (isLittleEndian is false)
@@ -239,16 +239,16 @@ public class DataView
         return BitConverter.ToInt32(x);
     }
 
-    public void setInt32(int offset, int value, bool isLittleEndian = false)
+    public void SetInt32(int offset, int value, bool isLittleEndian = false)
     {
-        checkType(UINT32, false);
+        CheckType(UINT32, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
             x = x.Reverse().ToArray();
         }
 
-        setByteRange(offset, x);
+        SetByteRange(offset, x);
     }
 
     public void SetValue(int offset, object value)
@@ -261,16 +261,16 @@ public class DataView
         switch (type)
         {
             case UINT8:
-                setUint8(offset, (byte)value);
+                SetUint8(offset, (byte)value);
                 break;
             case INT8:
-                setint8(offset, (byte)value);
+                Setint8(offset, (byte)value);
                 break;
             case FLOAT:
-                setFloat32(offset, (float)value);
+                SetFloat32(offset, (float)value);
                 break;
             case DOUBLE:
-                setFloat64(offset, (float)value);
+                SetFloat64(offset, (float)value);
                 break;
         }
     }

@@ -25,7 +25,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
             HttpMethod.Get,
             url);
         string? rangeHeaderValue = string.Join(',', slices
-            .Select((d) => $"{d.offset}-{d.offset + d.length}"));
+            .Select((d) => $"{d.Offset}-{d.Offset + d.Length}"));
 
         request.Headers.Add("Range", $"bytes={rangeHeaderValue}");
         HttpResponseMessage? response;
@@ -95,12 +95,12 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
 
     public async Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? signal = null)
     {
-        int offset = slice.offset;
-        int length = slice.length;
+        int offset = slice.Offset;
+        int length = slice.Length;
         using HttpRequestMessage request = new(
             HttpMethod.Get,
             url);
-        request.Headers.Add("Range", $"bytes={slice.offset}-{slice.offset + slice.length}");
+        request.Headers.Add("Range", $"bytes={slice.Offset}-{slice.Offset + slice.Length}");
         HttpResponseMessage? response;
 
         if (signal != null)
