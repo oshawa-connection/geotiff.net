@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConformanceTests", "Conform
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteTests", "RemoteTests\RemoteTests.csproj", "{8BA853EF-74C7-4EEF-B062-ACA106071E16}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeotiffInfo", "GeotiffInfo\GeotiffInfo.csproj", "{4DEEDCB7-71E0-4916-9E7C-723E921EC97A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{8BA853EF-74C7-4EEF-B062-ACA106071E16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8BA853EF-74C7-4EEF-B062-ACA106071E16}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8BA853EF-74C7-4EEF-B062-ACA106071E16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DEEDCB7-71E0-4916-9E7C-723E921EC97A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DEEDCB7-71E0-4916-9E7C-723E921EC97A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DEEDCB7-71E0-4916-9E7C-723E921EC97A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DEEDCB7-71E0-4916-9E7C-723E921EC97A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
