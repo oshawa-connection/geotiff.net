@@ -27,6 +27,7 @@ public class DataView
     public const string UINT8 = "UINT8";
     public const string INT8 = "INT8";
     public const string UINT32 = "UINT32";
+    public const string UINT64 = "UINT64";
     public const string INT32 = "INT32";
     public const string FLOAT = "FLOAT";
     public const string DOUBLE = "DOUBLE";
@@ -211,6 +212,19 @@ public class DataView
         setByteRange(offset, x);
     }
 
+    public UInt64 getUint64(int offset, bool isLittleEndian = false)
+    {
+        checkType(UINT64, true);
+        byte[]? x = stream.Skip(offset).Take(8).ToArray();
+
+        if (isLittleEndian is false)
+        {
+            x = x.Reverse().ToArray();
+        }
+
+        return BitConverter.ToUInt64(x);
+    }
+    
 
     public int getInt32(int offset, bool isLittleEndian = false)
     {

@@ -70,7 +70,9 @@ public class DataSlice
 
     public ulong ReadUInt64(int offset)
     {
-        uint left = ReadUInt32(offset);
+        // TODO: this is the way its done for JS purposes; is there no built in dotnet equivalent that's more efficient?
+        // They read two 32bit uints then combine them.
+        uint left = ReadUInt32(offset); 
         uint right = ReadUInt32(offset + 4);
         ulong combined;
 
@@ -93,6 +95,11 @@ public class DataSlice
         return combined;
     }
 
+    /// <summary>
+    /// adapted from https://stackoverflow.com/a/55338384/8060591
+    /// </summary>
+    /// <param name="offset"></param>
+    /// <returns></returns>
     public long ReadInt64(int offset)
     {
         long value = 0;
@@ -159,10 +166,6 @@ public class DataSlice
             case FieldTypes.FLOAT:
                 finalResult = GeotiffGetValuesResult.FromFloat32(ReadAll(ReadFloat32, count, offset, fieldTypeLength));
                 break;
-            // case FieldTypes.BYTE: case FieldTypes.ASCII: case FieldTypes.UNDEFINED:
-            //     values = new Uint8Array(count); 
-            //     // readMethod = dataSlice.readUint8;
-            //     break;
             // case FieldTypes.SBYTE:
             //     values = new Int8Array(count); 
             //     readMethod = dataSlice.readInt8;
@@ -182,10 +185,10 @@ public class DataSlice
             //     values = new Int32Array(count); 
             //     readMethod = dataSlice.readInt32;
             //     break;
-            // case FieldTypes.LONG8: case FieldTypes.IFD8:
-            //     values = new Array(count); 
-            //     readMethod = dataSlice.readUint64;
-            //     break;
+            case FieldTypes.LONG8: 
+            case FieldTypes.IFD8:
+                finalResult = GeotiffGetValuesResult.FromUInt64(ReadAll(ReadUInt64, count, offset, fieldTypeLength));
+                break;
             // case FieldTypes.SLONG8:
             //     values = new Array(count); 
             //     readMethod = dataSlice.readInt64;

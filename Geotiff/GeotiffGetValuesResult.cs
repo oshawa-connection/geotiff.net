@@ -8,6 +8,7 @@ public class GeotiffGetValuesResult
 {
     private string? _decodedAsciiResult;
 
+    private Int64[]? _resultInt64;
     private double[]? _resultFloat64;
     private float[]? _resultFloat32;
     private ulong[]? _resultUInt64;
@@ -15,6 +16,7 @@ public class GeotiffGetValuesResult
     public ushort[]? _resultUInt16;
     private Rational[]? _resultRational;
 
+    public bool IsInt64 => _resultInt64 is not null;
     public bool IsString => _decodedAsciiResult is not null;
     public bool IsFloat64 => _resultFloat64 is not null;
     public bool IsFloat32 => _resultFloat32 is not null;
@@ -31,6 +33,11 @@ public class GeotiffGetValuesResult
     public static GeotiffGetValuesResult FromUInt64(ulong[] data)
     {
         return new GeotiffGetValuesResult { _resultUInt64 = data };
+    }
+
+    public static GeotiffGetValuesResult FromInt64(Int64[] data)
+    {
+        return new GeotiffGetValuesResult { _resultInt64 = data };
     }
 
     public static GeotiffGetValuesResult FromUInt16(ushort[] data)

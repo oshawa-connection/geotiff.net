@@ -8,9 +8,58 @@ public class GeoTIFF
 {
     private readonly BaseSource source;
     private readonly bool bigTiff;
-    private readonly int firstIFDOffset;
+    private readonly ulong firstIFDOffset;
     private readonly bool littleEndian;
 
+    private static bool GetBomMarker(DataView dv)
+    {
+        ushort value = dv.getUint16(0, true);
+        bool isLittleEndian = false;
+        if (value == Constants.BOMLittleEndian)
+        {
+            isLittleEndian = true;
+        }
+        else if (value == Constants.BOMBigEndian)
+        {
+            isLittleEndian = false;
+        }
+        else
+        {
+            throw new Exception("Unrecognised Tiff BOM marker");
+        }
+
+        return isLittleEndian;
+    }
+
+    private static bool GetBigTiffMarker(DataView dv, bool isLittleEndian)
+    {
+        ushort isBigTiffValue = dv.getUint16(2, isLittleEndian);
+        if (isBigTiffValue == 42)
+        {
+            return false;
+        }
+
+        if (isBigTiffValue == 43)
+        {
+            return true;
+        }
+        
+        var offsetByteSize = dv.getUint16(4, isLittleEndian);
+        if (offsetByteSize != 8) {
+            throw new Exception("Unsupported offset byte-size.");
+        }
+
+        throw new Exception("Invalid tiff magic number.");
+    }
+    
+    public static ulong GetFirstIFDOffset(DataView dv, bool isLittleEndian, bool isBigTiff)
+    {
+        // This is used to 
+        return isBigTiff
+            ? dv.getUint64(8, isLittleEndian)
+            : dv.getUint32(4, isLittleEndian);
+    }
+    
     /// <summary>
     /// This is temporary for development purposes only.
     /// </summary>
@@ -24,31 +73,16 @@ public class GeoTIFF
 
         var dv = new DataView(slices.First());
         ushort value = dv.getUint16(0, true);
-        bool isLittleEndian = false;
-        if (value == Constants.BOMLittleEndian)
-        {
-            isLittleEndian = true;
-        }
-        else if (value == Constants.BOMBigEndian)
-        {
-            isLittleEndian = false;
-        }
-        else
-        {
-            throw new Exception("Unrecognised Tiff BOM marker");
-        }
+        bool isLittleEndian = GetBomMarker(dv);
 
-        ushort isBigTiffValue = dv.getUint16(2, isLittleEndian);
-        if (isBigTiffValue != 42)
-        {
-            throw new NotImplementedException("BigTiff support is not implemented");
-        }
+        bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
 
-        int firstIDFOffset = dv.getInt32(4, isLittleEndian);
-
-        return new GeoTIFF(source, isLittleEndian, false, firstIDFOffset);
+        var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
+        return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
 
+
+    
 
     public static async Task<GeoTIFF> FromStream(Stream stream)
     {
@@ -58,34 +92,18 @@ public class GeoTIFF
         byte[]? arr = memoryStream.ToArray();
         var dv = new DataView(arr);
         ushort value = dv.getUint16(0, true);
-        bool isLittleEndian = false;
-        if (value == Constants.BOMLittleEndian)
-        {
-            isLittleEndian = true;
-        }
-        else if (value == Constants.BOMBigEndian)
-        {
-            isLittleEndian = false;
-        }
-        else
-        {
-            throw new Exception("Unrecognised Tiff BOM marker");
-        }
+        bool isLittleEndian = GetBomMarker(dv);
 
-        ushort isBigTiffValue = dv.getUint16(2, isLittleEndian);
-        if (isBigTiffValue != 42)
-        {
-            throw new NotImplementedException("BigTiff support is not implemented");
-        }
-
-        int firstIDFOffset = dv.getInt32(4, isLittleEndian);
+        bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
+        
+        var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
         memoryStream.Position = 0;
         var source = new FileSource(memoryStream);
-        return new GeoTIFF(source, isLittleEndian, false, firstIDFOffset);
+        return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
 
 
-    private GeoTIFF(BaseSource source, bool littleEndian, bool bigTiff, int firstIFDOffset)
+    private GeoTIFF(BaseSource source, bool littleEndian, bool bigTiff, ulong firstIFDOffset)
     {
         this.source = source;
         this.littleEndian = littleEndian;
@@ -278,7 +296,7 @@ public class GeoTIFF
 
         if (index == 0)
         {
-            ImageFileDirectory? result = await ParseFileDirectoryAt(firstIFDOffset);
+            ImageFileDirectory? result = await ParseFileDirectoryAt((int)firstIFDOffset);// TODO: this is a narrowing conversion
             ImageFileDirectories.Add(index, result);
             return result;
         }
