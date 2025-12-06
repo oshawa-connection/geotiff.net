@@ -11,8 +11,6 @@ public class RemoteSource : BaseSource
 {
     private const string CRLFCRLF = "\r\n\r\n";
     public long? fileSize => _fileSize;
-
-    private readonly string url;
     private int maxRanges { get; set; }
     private IGeotiffRemoteClient client { get; set; }
     private bool allowFullFile { get; set; }
@@ -27,7 +25,6 @@ public class RemoteSource : BaseSource
     public RemoteSource(IGeotiffRemoteClient client, int maxRanges, bool allowFullFile)
     {
         this.client = client;
-        // this.headers = headers; // Let user do this on httpclient itself.
         this.maxRanges = maxRanges;
         this.allowFullFile = allowFullFile;
         _fileSize = null;

@@ -35,7 +35,7 @@ public class GeoTIFF
         }
         else
         {
-            throw new Exception("Unrecognised Tiff BOM marker");
+            throw new InvalidTiffException("Unrecognised Tiff BOM marker");
         }
 
         return isLittleEndian;
@@ -56,10 +56,10 @@ public class GeoTIFF
         
         var offsetByteSize = dv.GetUint16(4, isLittleEndian);
         if (offsetByteSize != 8) {
-            throw new Exception("Unsupported offset byte-size.");
+            throw new InvalidTiffException("Unsupported offset byte-size.");
         }
 
-        throw new Exception("Invalid tiff magic number.");
+        throw new InvalidTiffException("Invalid tiff magic number.");
     }
     
     private static ulong GetFirstIFDOffset(DataView dv, bool isLittleEndian, bool isBigTiff)
@@ -156,7 +156,7 @@ public class GeoTIFF
                 value = fileDirectory[location]; // TODO: could throw, error out if so.
                 if (value is null)
                 {
-                    throw new Exception($"Could not get value of geoKey '{key}'");
+                    throw new GeoTiffException($"Could not get value of geoKey '{key}'");
                 }
 
                 if (value is string)
@@ -222,7 +222,7 @@ public class GeoTIFF
             // Check if the value is directly encoded or refers to another byte range
             if (fieldTypeLength * typeCount <= (_bigTiff ? 8 : 4))
             {
-                fieldValues = dataSlice.getValues(fieldType, typeCount, (int)valueOffset);
+                fieldValues = dataSlice.GetValues(fieldType, typeCount, (int)valueOffset);
             }
             else
             {
@@ -231,12 +231,12 @@ public class GeoTIFF
 
                 if (dataSlice.Covers((int)actualOffset, (int)length))
                 {
-                    fieldValues = dataSlice.getValues(fieldType, typeCount, (int)actualOffset);
+                    fieldValues = dataSlice.GetValues(fieldType, typeCount, (int)actualOffset);
                 }
                 else
                 {
                     DataSlice? fieldDataSlice = await GetSlice((int)actualOffset, (int)length);
-                    fieldValues = fieldDataSlice.getValues(fieldType, typeCount, (int)actualOffset);
+                    fieldValues = fieldDataSlice.GetValues(fieldType, typeCount, (int)actualOffset);
                 }
             }
 

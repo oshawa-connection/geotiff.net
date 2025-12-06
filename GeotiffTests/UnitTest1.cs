@@ -52,7 +52,7 @@ public class UnitTest1
         bbox.XMax.ShouldBe(-55.916, 0.001);
         bbox.YMax.ShouldBe(63, 0.001);
 
-        List<Array>? readResult = await image.ReadRasters(cancellationToken: cts.Token);
+         var readResult = await image.ReadRasters(cancellationToken: cts.Token);
         // Console.WriteLine(readResult.Count);
 
         Console.WriteLine(image.GetProjectionString());
@@ -94,8 +94,8 @@ public class UnitTest1
 
         uint nPixels = image.GetHeight() * image.GetWidth();
 
-        List<Array>? readResult = await image.ReadRasters(cancellationToken: cts.Token);
-        Console.WriteLine(readResult.Count);
+        var readResult = await image.ReadRasters(cancellationToken: cts.Token);
+        Console.WriteLine(readResult.Count());
         // var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
         Console.WriteLine("HELLO");
     }
@@ -115,11 +115,12 @@ public class UnitTest1
         {
             for (int lat = 0; lat < 50; lat++)
             {
-                List<Array>?
+                var
                     result = await image.ReadValueAtCoordinate(lon + 0.5,
                         lat + 0.5); // add 0.5 to be in the centre of the pixel.
-                object? x = result[1].GetValue(0);
-                object? y = result[0].GetValue(0);
+                
+                object? x = result.ToList()[1].GetValue(0);
+                object? y = result.ToList()[0].GetValue(0);
                 x.ShouldBe(lon);
                 y.ShouldBe(lat);
             }
@@ -135,7 +136,7 @@ public class UnitTest1
         GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
         int count = await geotiff.GetImageCount();
         GeoTiffImage? image = await geotiff.GetImage();
-        List<Array>? readResult = await image.ReadRasters();
+        var readResult = await image.ReadRasters();
         Console.WriteLine("HELLO");
         // count.ShouldBe(1);
         //

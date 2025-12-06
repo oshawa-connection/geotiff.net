@@ -1,3 +1,5 @@
+using Geotiff.Exceptions;
+
 namespace Geotiff;
 
 public static class Constants
@@ -8,6 +10,21 @@ public static class Constants
     public const ushort BigTifMagicValue = 43;
     public const int WGS84_EPSG_CODE = 4326;
 }
+
+public enum GeotiffSampleDataTypes
+{
+    UINT8,
+    INT8,
+    INT16,
+    UINT16,
+    UINT32,
+    UINT64,
+    INT32,
+    FLOAT32,
+    DOUBLE
+}
+
+
 
 public static class FieldTypes
 {
@@ -578,7 +595,7 @@ public static class FieldTypes
             case IFD8:
                 return 8;
             default:
-                throw new Exception($"Invalid field type: {fieldType}");
+                throw new GeoTiffException($"Invalid field type: {fieldType}");
         }
     }
 }

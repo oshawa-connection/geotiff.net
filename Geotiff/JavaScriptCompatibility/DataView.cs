@@ -1,18 +1,20 @@
+using Geotiff.Exceptions;
+
 namespace Geotiff.JavaScriptCompatibility;
 
 internal class DataView
 {
     private readonly byte[] stream;
-    public readonly string? type;
+    public readonly GeotiffSampleDataTypes? type;
     public bool IsTyped => type != null;
 
-    public DataView(byte[] stream, string? type = null)
+    public DataView(byte[] stream, GeotiffSampleDataTypes? type = null)
     {
         this.type = type;
         this.stream = stream;
     }
 
-    public DataView(int size, string? type = null) : this(new byte[size], type) { }
+    public DataView(int size, GeotiffSampleDataTypes? type = null) : this(new byte[size], type) { }
 
     public DataView(ArrayBuffer buffer)
     {
@@ -23,32 +25,7 @@ internal class DataView
     {
         return new ArrayBuffer(stream);
     }
-
-    public const string UINT8 = "UINT8";
-    public const string INT8 = "INT8";
-    public const string UINT32 = "UINT32";
-    public const string UINT64 = "UINT64";
-    public const string INT32 = "INT32";
-    public const string FLOAT = "FLOAT";
-    public const string DOUBLE = "DOUBLE";
-
-    private int GetFieldTypeLength(string type)
-    {
-        switch (type)
-        {
-            case UINT8:
-            case INT8:
-                return 1;
-            case FLOAT:
-                return 4;
-            case DOUBLE:
-                return 8;
-            default:
-                throw new NotImplementedException($"{type} not implemented");
-        }
-    }
-
-
+    
     public int Length => stream.Length;
 
     private void SetByteRange(int offset, byte[] bytes)
@@ -59,7 +36,7 @@ internal class DataView
         }
     }
 
-    private void CheckType(string type, bool read)
+    private void CheckType(GeotiffSampleDataTypes type, bool read)
     {
         if (this.type == null)
         {
@@ -68,18 +45,18 @@ internal class DataView
 
         if (this.type != type)
         {
-            string? x = read ? "read" : "write";
-            throw new Exception($"Invalid operation, trying to {x} a {type} on array of type {this.type}");
+            string? op = read ? "read" : "write";
+            throw new GeoTiffException($"Invalid operation, trying to {op} a {type} on an array of type {this.type}");
         }
     }
 
     public float GetFloat32(int offset, bool isLittleEndian = false)
     {
-        CheckType(FLOAT, true);
+        CheckType(GeotiffSampleDataTypes.FLOAT32, true);
         byte[]? x = stream.Skip(offset).Take(4).ToArray();
         if (x.Count() < 4)
         {
-            throw new Exception("Not enough bytes in stream");
+            throw new GeoTiffException("Not enough bytes in stream");
         }
 
         if (isLittleEndian is false)
@@ -92,7 +69,7 @@ internal class DataView
 
     public void SetFloat32(int offset, float value, bool isLittleEndian = false)
     {
-        CheckType(FLOAT, false);
+        CheckType(GeotiffSampleDataTypes.FLOAT32, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
@@ -104,11 +81,11 @@ internal class DataView
 
     public double GetFloat64(int offset, bool isLittleEndian = false)
     {
-        CheckType(DOUBLE, true);
+        CheckType(GeotiffSampleDataTypes.DOUBLE, true);
         byte[]? x = stream.Skip(offset).Take(8).ToArray();
         if (x.Count() < 8)
         {
-            throw new Exception("Not enough bytes in stream");
+            throw new GeoTiffException("Not enough bytes in stream");
         }
 
         if (isLittleEndian is false)
@@ -121,7 +98,7 @@ internal class DataView
 
     public void SetFloat64(int offset, double value, bool isLittleEndian = false)
     {
-        CheckType(DOUBLE, false);
+        CheckType(GeotiffSampleDataTypes.DOUBLE, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
@@ -136,7 +113,7 @@ internal class DataView
         byte[]? x = stream.Skip(offset).Take(2).ToArray();
         if (x.Count() < 2)
         {
-            throw new Exception("Not enough bytes in stream");
+            throw new GeoTiffException("Not enough bytes in stream");
         }
 
         if (isLittleEndian is false)
@@ -149,6 +126,7 @@ internal class DataView
 
     public short GetInt16(int offset, bool isLittleEndian = false)
     {
+        CheckType(GeotiffSampleDataTypes.INT16, true);
         byte[]? x = Read16(offset, isLittleEndian);
 
         return BitConverter.ToInt16(x);
@@ -157,39 +135,40 @@ internal class DataView
 
     public ushort GetUint16(int offset, bool isLittleEndian = false)
     {
+        CheckType(GeotiffSampleDataTypes.UINT16, true);
         byte[]? x = Read16(offset, isLittleEndian);
         return BitConverter.ToUInt16(x);
     }
 
     public byte GetUint8(int offset)
     {
-        CheckType(UINT8, true);
+        CheckType(GeotiffSampleDataTypes.UINT8, true);
         return stream[offset];
     }
 
     public void SetUint8(int offset, byte value)
     {
-        CheckType(UINT8, false);
+        CheckType(GeotiffSampleDataTypes.UINT8, false);
         stream[offset] = value;
     }
 
 
     public sbyte GetInt8(int offset)
     {
-        CheckType(INT8, true);
+        CheckType(GeotiffSampleDataTypes.INT8, true);
         return (sbyte)stream.Skip(offset).First();
     }
 
     public void Setint8(int offset, byte value)
     {
-        CheckType(INT8, false);
+        CheckType(GeotiffSampleDataTypes.INT8, false);
         stream[offset] = value;
     }
 
 
     public uint GetUint32(int offset, bool isLittleEndian = false)
     {
-        CheckType(UINT32, true);
+        CheckType(GeotiffSampleDataTypes.UINT32, true);
         byte[]? x = stream.Skip(offset).Take(4).ToArray();
 
         if (isLittleEndian is false)
@@ -202,7 +181,7 @@ internal class DataView
 
     public void SetUint32(int offset, uint value, bool isLittleEndian = false)
     {
-        CheckType(UINT32, false);
+        CheckType(GeotiffSampleDataTypes.UINT32, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
@@ -214,7 +193,7 @@ internal class DataView
 
     public UInt64 GetUint64(int offset, bool isLittleEndian = false)
     {
-        CheckType(UINT64, true);
+        CheckType(GeotiffSampleDataTypes.UINT64, true);
         byte[]? x = stream.Skip(offset).Take(8).ToArray();
 
         if (isLittleEndian is false)
@@ -228,7 +207,7 @@ internal class DataView
 
     public int GetInt32(int offset, bool isLittleEndian = false)
     {
-        CheckType(INT32, true);
+        CheckType(GeotiffSampleDataTypes.INT32, true);
         byte[]? x = stream.Skip(offset).Take(4).ToArray();
 
         if (isLittleEndian is false)
@@ -241,7 +220,7 @@ internal class DataView
 
     public void SetInt32(int offset, int value, bool isLittleEndian = false)
     {
-        CheckType(UINT32, false);
+        CheckType(GeotiffSampleDataTypes.UINT32, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
@@ -258,18 +237,19 @@ internal class DataView
             throw new InvalidOperationException($"Cannot setValue on an typed array");
         }
 
+        // TODO: add support for other data types
         switch (type)
         {
-            case UINT8:
+            case GeotiffSampleDataTypes.UINT8:
                 SetUint8(offset, (byte)value);
                 break;
-            case INT8:
+            case GeotiffSampleDataTypes.INT8:
                 Setint8(offset, (byte)value);
                 break;
-            case FLOAT:
+            case GeotiffSampleDataTypes.FLOAT32:
                 SetFloat32(offset, (float)value);
                 break;
-            case DOUBLE:
+            case GeotiffSampleDataTypes.DOUBLE:
                 SetFloat64(offset, (float)value);
                 break;
         }

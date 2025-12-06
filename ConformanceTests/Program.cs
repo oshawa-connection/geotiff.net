@@ -91,7 +91,7 @@ internal class Program
         {
             case JsonValueKind.String:
                 IEnumerable<string>? strArray = fileDirectory.GetFileDirectoryListValue<string>(key);
-                throw new NotImplementedException(); // 99% sure all array tags are arrays of numbers, at least 
+                throw new NotImplementedException(); // 99% sure all array tags are arrays of numbers, at least in conformance test dataset
                 break;
             case JsonValueKind.Number:
                 IEnumerable<double>?

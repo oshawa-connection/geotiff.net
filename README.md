@@ -26,9 +26,11 @@ This project is a WIP, new contributors are very welcome. If you’d like to get
 - User examples
 - More user friendly handling of overviews during reading
 - Writing, particularly to COG format with overviews
-- The Azure source classes
+- GeotiffAzureClient
 - More spatial operation support - currently only `ReadValueAtCoordinate` is supported
 - Benchmarking
+- .ovr file support through implementation of MultiGeoTIFF.
+- Tests for more difficult cases such as BigTIFF, cases where precision is important etc.
 
 ## Compliance tests
 

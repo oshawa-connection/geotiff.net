@@ -1,3 +1,4 @@
+using Geotiff.Exceptions;
 using Geotiff.JavaScriptCompatibility;
 using Geotiff.Primitives;
 
@@ -169,7 +170,7 @@ internal class DataSlice
     }
 
 
-    public GeotiffGetValuesResult getValues(ushort fieldType, int count, int offset)
+    public GeotiffGetValuesResult GetValues(ushort fieldType, int count, int offset)
     {
         GeotiffGetValuesResult finalResult;
 
@@ -224,7 +225,7 @@ internal class DataSlice
                 finalResult = GeotiffGetValuesResult.FromFloat64(ReadAll(ReadFloat64, count, offset, fieldTypeLength));
                 break;
             default:
-                throw new Exception($"Invalid field type: {fieldTypeStr}");
+                throw new GeoTiffException($"Invalid field type: {fieldTypeStr}");
         }
 
         return finalResult;

@@ -1,4 +1,5 @@
 using Geotiff.Compression;
+using Geotiff.Exceptions;
 using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff;
@@ -9,7 +10,7 @@ public class GeoTiffImage
     private readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
-    private readonly Dictionary<int, ArrayBuffer> tiles;
+    private readonly Dictionary<int, ArrayBuffer>? tiles;
     private readonly bool isTiled;
     private readonly ushort planarConfiguration;
 
@@ -31,11 +32,9 @@ public class GeoTiffImage
             this.planarConfiguration = (ushort)planarConfiguration;
         }
 
-        // var planarConfiguration = fileDirectory.PlanarConfiguration;
-        // this.planarConfiguration = (typeof planarConfiguration == 'undefined') ? 1 : planarConfiguration;
         if (this.planarConfiguration != 1 && this.planarConfiguration != 2)
         {
-            throw new Exception("Invalid planar configuration.");
+            throw new InvalidTiffException("Invalid planar configuration.");
         }
 
         this.source = source;
@@ -65,7 +64,7 @@ public class GeoTiffImage
             };
         }
 
-        throw new Exception("The image does not have an affine transformation.");
+        throw new GeoTiffException("The image does not have an affine transformation.");
     }
 
 
@@ -122,7 +121,7 @@ public class GeoTiffImage
                 modelTransformation[10]);
         }
 
-        throw new Exception("The image does not have an affine transformation.");
+        throw new GeoTiffException("The image does not have an affine transformation.");
     }
 
 
@@ -179,11 +178,11 @@ public class GeoTiffImage
         }
     }
 
-    /**
-  * Returns the number of samples per pixel.
-  * @returns {Number} the number of samples per pixel
-  */
-    private ulong GetSamplesPerPixel()
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public ulong GetSamplesPerPixel()
     {
         ulong samplesPerPixel = fileDirectory.GetFileDirectoryValue<ulong>(FieldTypes.SamplesPerPixel);
         return samplesPerPixel != 0 ? samplesPerPixel : 1;
@@ -269,22 +268,22 @@ public class GeoTiffImage
         return samplesFormat?.ElementAt(sampleIndex) ?? 1;
     }
 
-    private Array ArrayForType(int format, ulong bitsPerSample, ulong size)
+    private Array ArrayForType(int format, ulong bitsPerSample, ulong size1, ulong? size2 = null)
     {
         switch (format)
         {
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return new byte[size];
+                    return new byte[size1];
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return new short[size];
+                    return new short[size1];
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return new uint[size];
+                    return new uint[size1];
                 }
 
                 break;
@@ -292,11 +291,11 @@ public class GeoTiffImage
                 switch (bitsPerSample)
                 {
                     case 8:
-                        return new sbyte[size];
+                        return new sbyte[size1];
                     case 16:
-                        return new short[size];
+                        return new short[size1];
                     case 32:
-                        return new int[size];
+                        return new int[size1];
                 }
 
                 break;
@@ -305,9 +304,9 @@ public class GeoTiffImage
                 {
                     case 16:
                     case 32:
-                        return new float[size];
+                        return new float[size1];
                     case 64:
-                        return new double[size];
+                        return new double[size1];
                 }
 
                 break;
@@ -315,7 +314,7 @@ public class GeoTiffImage
                 break;
         }
 
-        throw new Exception("Unsupported data format/bitsPerSample");
+        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
 
     /// <summary>
@@ -372,11 +371,12 @@ public class GeoTiffImage
                 break;
         }
 
-        throw new Exception("Unsupported data format/bitsPerSample");
+        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
 
 
     /// <summary>
+    /// TODO: Check why there are two overloads for this method.
     /// TODO: this is inefficient as a copy happens, which doens't happen in JS. It only creates a typed view over the data.
     /// </summary>
     /// <param name="format"></param>
@@ -391,7 +391,7 @@ public class GeoTiffImage
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return new DataView(size, DataView.UINT8);
+                    return new DataView(size, GeotiffSampleDataTypes.UINT8);
                 }
                 else if (bitsPerSample <= 16)
                 {
@@ -400,7 +400,7 @@ public class GeoTiffImage
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return new DataView(size, DataView.UINT32);
+                    return new DataView(size, GeotiffSampleDataTypes.UINT32);
                 }
 
                 break;
@@ -414,7 +414,7 @@ public class GeoTiffImage
                         throw new NotImplementedException();
                     // return new Int16[size];
                     case 32:
-                        return new DataView(size, DataView.INT32);
+                        return new DataView(size, GeotiffSampleDataTypes.INT32);
                 }
 
                 break;
@@ -423,9 +423,9 @@ public class GeoTiffImage
                 {
                     case 16:
                     case 32:
-                        return new DataView(size, DataView.FLOAT);
+                        return new DataView(size, GeotiffSampleDataTypes.FLOAT32);
                     case 64:
-                        return new DataView(size, DataView.DOUBLE);
+                        return new DataView(size,GeotiffSampleDataTypes.DOUBLE);
                 }
 
                 break;
@@ -433,7 +433,7 @@ public class GeoTiffImage
                 break;
         }
 
-        throw new Exception("Unsupported data format/bitsPerSample");
+        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
 
     /// <summary>
@@ -462,7 +462,7 @@ public class GeoTiffImage
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public async Task<List<Array>> ReadRasters(ImageWindow? window = null, CancellationToken? cancellationToken = null)
+    public async Task<IEnumerable<Array[,]>> ReadRasters(ImageWindow? window = null, CancellationToken? cancellationToken = null)
     {
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
@@ -476,7 +476,7 @@ public class GeoTiffImage
 
         if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
         {
-            throw new Exception("Invalid subsets");
+            throw new GeoTiffException("Invalid subsets");
         }
 
         uint imageWindowWidth = imageWindow[2] - imageWindow[0];
@@ -500,63 +500,89 @@ public class GeoTiffImage
     }
 
 
-    private Func<DataView, int, object> GetReaderForSample(int sampleIndex)
+    /// <summary>
+    /// This is the same as `ReadRasters`, but the results are converted to your requested type if necessary.
+    /// If you want strict type checking, see `ReadRastersStrict<T>`
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="window"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<IEnumerable<T[,]>> ReadRasters<T>(ImageWindow? window = null,
+        CancellationToken? cancellationToken = null) where T : struct
     {
-        // JSENH - potentially refactor this in js
-        int format = GetSampleFormat(sampleIndex);
-
-
-        uint bitsPerSample = GetBitsPerSample(sampleIndex);
-        ;
-
-        switch (format)
+        var readResult = await this.ReadRasters(window, cancellationToken);
+        var castResult = new List<T[,]>();
+        foreach (var sample in readResult)
         {
-            case 1: // unsigned integer data
-                if (bitsPerSample <= 8)
+            sample.GetType().GetElementType();
+            throw new GeoTiffException("");
+            if (sample is T typedArray)
+            {
+                // castResult.Add(typedArray);
+            } else
+            {
+                // Convert each element to T and build a new T[,]
+                int width = sample.GetLength(0);
+                int height = sample.GetLength(1);
+                var converted = new T[width, height];
+                for (int i = 0; i < width; i++)
                 {
-                    return (dv, offset) => dv.GetUint8(offset);
+                    for (int j = 0; j < height; j++)
+                    {
+                        converted[i, j] = (T)Convert.ChangeType(sample.GetValue(i, j), typeof(T));
+                    }
                 }
-                else if (bitsPerSample <= 16)
-                {
-                    return (dv, offset) => dv.GetUint16(offset);
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return (dv, offset) => dv.GetUint32(offset);
-                }
-
-                break;
-
-            case 2: // signed integer data
-                throw new NotImplementedException("Signed integers not supported");
-            //       if (bitsPerSample <= 8)
-            //   return (dv, offset) => dv.GetInt8(offset);
-            // else if (bitsPerSample <= 16)
-            //   return (dv, offset) => dv.GetInt16(offset);
-            // else if (bitsPerSample <= 32)
-            //   return (dv, offset) => dv.GetInt32(offset);
-            //       break;
-
-            case 3: // floating point data
-                switch (bitsPerSample)
-                {
-                    case 16:
-                        throw new NotImplementedException("Float 16 not implemented");
-                    // return (dv, offset) => GetFloat16(dv, offset); // You need to implement GetFloat16
-                    case 32:
-                        return (dv, offset) => dv.GetFloat32(offset);
-                    case 64:
-                        return (dv, offset) => dv.GetFloat64(offset);
-                }
-
-                break;
+                castResult.Add(converted);
+            }
         }
-
-        throw new Exception("Unsupported data format/bitsPerSample");
+        return castResult;
     }
 
     /// <summary>
-    /// 
+    /// This is the same as `ReadRasters`, but the results are converted to your requested type if necessary.
+    /// If you want strict type checking, see `ReadRastersStrict<T>`
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="window"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<IEnumerable<T[,]>> ReadRastersStrict<T>(ImageWindow? window = null,
+        CancellationToken? cancellationToken = null) where T : struct
+    {
+        var readResult = await this.ReadRasters(window, cancellationToken);
+        var castResult = new List<T[,]>();
+        foreach (var sample in readResult)
+        {
+            if (sample is T[,] typedArray)
+            {
+                castResult.Add(typedArray);
+            }
+            else
+            {
+                throw new GeoTiffException(
+                    $"Type {typeof(T).Name} does not match the type of raster {sample.GetType().GetElementType().FullName}");
+            }
+        }
+        foreach (var array in readResult)
+        {
+            if (array is T[,] typedArray)
+            {
+                castResult.Add(typedArray);
+            }
+            else
+            {
+                throw new GeoTiffException(
+                    $"Type {typeof(T).Name} does not match the type of raster {array.GetType().GetElementType().FullName}");
+            }
+        }
+
+        return castResult;
+    }
+
+
+    /// <summary>
+    /// TODO: Check why deocderRegistry is not used here
     /// </summary>
     /// <param name="imageWindow"></param>
     /// <param name="samples"></param>
@@ -567,7 +593,7 @@ public class GeoTiffImage
     /// <param name="height">TODO: consider that this can be null</param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="NotImplementedException"></exception>
-    private async Task<List<Array>> _ReadRaster(uint[] imageWindow, int[] samples, List<Array> valueArrays,
+    private async Task<List<Array[,]>> _ReadRaster(uint[] imageWindow, int[] samples, List<Array> valueArrays,
         DecoderRegistry decoder, uint? width, uint? height, CancellationToken? cancellationToken)
     {
         uint tileWidth = GetTileWidth();
@@ -595,14 +621,13 @@ public class GeoTiffImage
             if (planarConfiguration == 1)
             {
                 srcSampleOffsets.Add(fileDirectory.BitsPerSample.Skip(0).Take(samples[i] / 8).Sum());
-                // srcSampleOffsets.Add(sum(this.fileDirectory.BitsPerSample, 0, samples[i]) / 8);
             }
             else
             {
                 srcSampleOffsets.Add(0);
             }
 
-            sampleReaders.Add(getReaderForSample(samples[i]));
+            sampleReaders.Add(GetReaderForSample(samples[i]));
         }
 
         var promises = new List<Task>();
@@ -615,7 +640,7 @@ public class GeoTiffImage
                 Task<TileOrStripResult> getPromise = null;
                 if (planarConfiguration == 1)
                 {
-                    getPromise = getTileOrStrip(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
+                    getPromise = GetTileOrStrip(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
                 }
 
                 for (int sampleIndex = 0; sampleIndex < samples.Length; ++sampleIndex)
@@ -625,7 +650,7 @@ public class GeoTiffImage
                     if (planarConfiguration == 2)
                     {
                         bytesPerPixel = GetSampleByteSize(sample);
-                        getPromise = getTileOrStrip(xTile, yTile, sample, new DecoderRegistry(),
+                        getPromise = GetTileOrStrip(xTile, yTile, sample, new DecoderRegistry(),
                             cancellationToken);
                     }
 
@@ -654,8 +679,7 @@ public class GeoTiffImage
                                     dataView, pixelOffset + srcSampleOffsets[si], littleEndian
                                 );
                                 long windowCoordinate;
-
-
+                                
                                 windowCoordinate = (
                                     (y + firstLine - imageWindow[1]) * windowWidth
                                 ) + x + firstCol - imageWindow[0];
@@ -673,12 +697,11 @@ public class GeoTiffImage
         }
 
         await Task.WhenAll(promises);
-
-
+        
         if ((width != null && imageWindow[2] - imageWindow[0] != width)
             || (height != null && imageWindow[3] - imageWindow[1] != height))
         {
-            throw new NotImplementedException("Resampling not yet implmented");
+            throw new NotImplementedException("Resampling not yet implemented");
             // var resampled;
             // if (interleave)
             // {
@@ -708,11 +731,98 @@ public class GeoTiffImage
 
         // valueArrays.width = width || imageWindow[2] - imageWindow[0];
         // valueArrays.height = height || imageWindow[3] - imageWindow[1];
+        // imageWidth
+        //     imageHeight
+        var finalResult = new List<Array[,]>();
+        foreach (var sample in valueArrays)
+        {
+            // Use the correct element type for the 2D array
+            var elementType = sample.GetType().GetElementType() ?? typeof(object);
+            var resizedSample = new Array[imageWidth,imageHeight];
+            // var resizedSample = Array.CreateInstance(elementType, imageWidth, imageHeight);
 
-        return valueArrays;
+            for (int i = 0; i < imageWidth; i++)
+            {
+                for (int j = 0; j < imageHeight; j++)
+                {
+                    // Correct formula: row * numCols + col
+                    int flattenedIndex = i * (int)imageHeight + j;
+                    resizedSample.SetValue(sample.GetValue(flattenedIndex), i, j);
+                }
+            }
+            finalResult.Add(resizedSample);
+        }
+        
+        return finalResult;
+    }
+
+    
+    /// <summary>
+    /// Technically TIFF does support different types for each sample, but almost no software/ tooling supports this.
+    /// </summary>
+    /// <param name="sampleIndex"></param>
+    /// <returns></returns>
+    public GeotiffSampleDataTypes GetSampleType(int sampleIndex = 0)
+    {
+        int format = fileDirectory.SampleFormat is not null
+            ? fileDirectory.SampleFormat[sampleIndex]
+            : 1;
+        int bitsPerSample = fileDirectory.BitsPerSample[sampleIndex];
+        switch (format)
+        {
+            case 1: // unsigned integer data
+                if (bitsPerSample <= 8)
+                {
+                    return GeotiffSampleDataTypes.UINT8;
+                }
+                else if (bitsPerSample <= 16)
+                {
+                    return GeotiffSampleDataTypes.UINT16;
+                }
+                else if (bitsPerSample <= 32)
+                {
+                    return GeotiffSampleDataTypes.UINT32;
+                }
+
+                break;
+            case 2: // twos complement signed integer data
+                if (bitsPerSample <= 8)
+                {
+                    return GeotiffSampleDataTypes.INT8;
+                }
+                else if (bitsPerSample <= 16)
+                {
+                    return GeotiffSampleDataTypes.INT16;
+                }
+                else if (bitsPerSample <= 32)
+                {
+                    return GeotiffSampleDataTypes.INT32;
+                }
+
+                break;
+            case 3:
+                switch (bitsPerSample)
+                {
+                    case 16:
+                        throw new NotImplementedException();
+                    case 32:
+                        return GeotiffSampleDataTypes.FLOAT32;
+                    case 64:
+                        return GeotiffSampleDataTypes.DOUBLE;
+                    default:
+                        break;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
     
-    private Func<DataView, long, bool, object> getReaderForSample(int sampleIndex)
+    
+    private Func<DataView, long, bool, object> GetReaderForSample(int sampleIndex)
     {
         int format = fileDirectory.SampleFormat is not null
             ? fileDirectory.SampleFormat[sampleIndex]
@@ -724,7 +834,6 @@ public class GeoTiffImage
                 if (bitsPerSample <= 8)
                 {
                     return (dv, offset, endianNess) => dv.GetUint8((int)offset);
-                    // return (dv, offset) => dv.getUint8((int)offset);
                 }
                 else if (bitsPerSample <= 16)
                 {
@@ -743,7 +852,7 @@ public class GeoTiffImage
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return (dv, offset, endianNess) => dv.GetUint16((int)offset, endianNess);
+                    return (dv, offset, endianNess) => dv.GetInt16((int)offset, endianNess);
                 }
                 else if (bitsPerSample <= 32)
                 {
@@ -769,7 +878,7 @@ public class GeoTiffImage
                 break;
         }
 
-        throw new Exception("Unsupported data format/bitsPerSample");
+        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
 
     /**
@@ -782,7 +891,7 @@ public class GeoTiffImage
    *                               to be aborted
    * @returns {Promise.<{x: number, y: number, sample: number, data: ArrayBuffer}>} the decoded strip or tile
    */
-    private async Task<TileOrStripResult> getTileOrStrip(int x, int y, int sample, DecoderRegistry poolOrDecoder,
+    private async Task<TileOrStripResult> GetTileOrStrip(int x, int y, int sample, DecoderRegistry poolOrDecoder,
         CancellationToken? signal)
     {
         int numTilesPerRow = (int)Math.Ceiling((int)GetWidth() / (double)GetTileWidth());
@@ -850,9 +959,9 @@ public class GeoTiffImage
                 // var data = slice;
                 int sampleFormat = GetSampleFormat();
                 uint bitsPerSample = GetBitsPerSample();
-                if (needsNormalization(sampleFormat, (int)bitsPerSample))
+                if (NeedsNormalization(sampleFormat, (int)bitsPerSample))
                 {
-                    data = normalizeArray(
+                    data = NormalizeArray(
                         data,
                         sampleFormat,
                         planarConfiguration,
@@ -882,7 +991,7 @@ public class GeoTiffImage
         return new TileOrStripResult() { x = x, y = y, sample = sample, data = finalData };
     }
 
-    private bool needsNormalization(int format, int bitsPerSample)
+    private bool NeedsNormalization(int format, int bitsPerSample)
     {
         if ((format == 1 || format == 2) && bitsPerSample <= 32 && bitsPerSample % 8 == 0)
         {
@@ -896,7 +1005,7 @@ public class GeoTiffImage
         return true;
     }
 
-    public long getBlockWidth()
+    public long GetBlockWidth()
     {
         return GetTileWidth();
     }
@@ -929,7 +1038,7 @@ public class GeoTiffImage
     }
 
 
-    private ArrayBuffer normalizeArray(ArrayBuffer inBuffer, int format, int planarConfiguration, int samplesPerPixel,
+    private ArrayBuffer NormalizeArray(ArrayBuffer inBuffer, int format, int planarConfiguration, int samplesPerPixel,
         int bitsPerSample, int tileWidth, int tileHeight)
     {
         // var inByteArray = new Uint8Array(inBuffer);
@@ -1062,7 +1171,7 @@ public class GeoTiffImage
     /// <param name="y"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<List<Array>> ReadValueAtCoordinate(double x, double y,
+    public async Task<IEnumerable<Array>> ReadValueAtCoordinate(double x, double y,
         CancellationToken? cancellationToken = null)
     {
         IEnumerable<double>? modelTransformationList =
@@ -1091,13 +1200,4 @@ public class GeoTiffImage
 
         return await ReadRasters(window, cancellationToken);
     }
-}
-
-public class TileOrStripResult
-{
-    public int x { get; set; }
-    public int y { get; set; }
-    public int sample { get; set; }
-    public Task request { get; set; }
-    public ArrayBuffer data { get; set; }
 }
