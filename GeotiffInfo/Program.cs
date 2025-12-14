@@ -10,14 +10,17 @@ class Program
 
         var tiff = await GeoTIFF.FromStream(fsSource);
         Console.WriteLine(tiff.IsBifTIFF);
+        
         var imageCount = await tiff.GetImageCount();
         Console.WriteLine(imageCount);
 
         var image = await tiff.GetImage();
+        
         var origin = image.GetOrigin();
         var geotiffSampleType = image.GetSampleType();
+        
         Console.WriteLine(geotiffSampleType);
-        var readResult = await image.ReadRasters<double>();
+        var readResult = await image.ReadRasters<int>();
         var sampleResult = readResult.GetSampleResultAt(0);
         Console.WriteLine(sampleResult.FlatData.GetValue(0));
         Console.WriteLine(sampleResult.To2DArray()[0,0]);

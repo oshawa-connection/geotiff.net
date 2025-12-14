@@ -13,7 +13,10 @@ public class GeoTIFF
     private readonly bool _bigTiff;
     private readonly ulong firstIFDOffset;
     private readonly bool littleEndian;
-
+    /// <summary>
+    /// Prevents us making read requests if GetImageCount is called multiple times
+    /// </summary>
+    private int? finalImageCount = null;
     public bool IsBifTIFF => _bigTiff; 
     
     private GeoTIFF(BaseSource source, bool littleEndian, bool bigTiff, ulong firstIFDOffset)
@@ -22,6 +25,7 @@ public class GeoTIFF
         this.littleEndian = littleEndian;
         this._bigTiff = bigTiff;
         this.firstIFDOffset = firstIFDOffset;
+        this.finalImageCount = null;
     }
     
     private static bool GetBomMarker(DataView dv)
@@ -90,10 +94,23 @@ public class GeoTIFF
     
     public static async Task<GeoTIFF> FromStream(Stream stream)
     {
-        var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream);
-        memoryStream.Position = 0;
-        byte[]? arr = memoryStream.ToArray();
+        Stream seekableStream;
+        if (stream.CanSeek)
+        {
+            seekableStream = stream;
+        }
+        else
+        {
+            seekableStream = new MemoryStream();
+            await stream.CopyToAsync(seekableStream);
+            seekableStream.Position = 0;
+        }
+        
+        byte[] buffer = new byte[1024];
+        int bytesRead = await seekableStream.ReadAsync(buffer, 0, buffer.Length);
+        
+        
+        byte[]? arr = buffer.ToArray();
         var dv = new DataView(arr);
         ushort value = dv.GetUint16(0, true);
         bool isLittleEndian = GetBomMarker(dv);
@@ -101,13 +118,10 @@ public class GeoTIFF
         bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
         
         var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
-        memoryStream.Position = 0;
-        var source = new FileSource(memoryStream);
+        seekableStream.Position = 0;
+        var source = new FileSource(seekableStream);
         return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
-
-
-
 
     private async Task<DataSlice> GetSlice(int offset, int? size = null)
     {
@@ -283,8 +297,7 @@ public class GeoTIFF
     }
 
     private SparseList<ImageFileDirectory> ImageFileDirectories = new();
-
-
+    
     private async Task<ImageFileDirectory> RequestIFD(int index)
     {
         if (ImageFileDirectories[index] is not null)
@@ -310,8 +323,35 @@ public class GeoTIFF
         return result2;
     }
 
+    /// <summary>
+    /// TODO: Also account for .ovr files.
+    /// </summary>
+    /// <returns></returns>
+    public async Task<bool> HasOverviews()
+    {
+        var imageCount = await this.GetImageCount();
+        if (imageCount < 2)
+        {
+            return false;
+        }
+
+        var mainImage = await this.GetImage();
+        var possibleOverview = await this.GetImage(1);
+        
+        if (mainImage.GetHeight() > possibleOverview.GetHeight() && mainImage.GetWidth() > possibleOverview.GetWidth())
+        {
+            return true;
+        }
+
+        return false;
+    }
+    
     public async Task<int> GetImageCount()
     {
+        if (this.finalImageCount is not null)
+        {
+            return (int)this.finalImageCount;
+        }
         int index = 0;
         // loop until we run out of IFDs
         bool hasNext = true;
@@ -322,23 +362,17 @@ public class GeoTIFF
                 await RequestIFD(index);
                 ++index;
             }
-            catch (GeoTiffImageIndexError e)
+            catch (GeoTiffImageIndexError e) // TODO: bad, using exception for control flow. Diverge from geotiff.js here.
             {
-                // TODO: handle exceptions here properly
                 hasNext = false;
-                // throw;
-                // if (e instanceof GeoTIFFImageIndexError) {
-                //     hasNext = false;
-                // } else {
-                //     throw e;
-                // }
+                this.finalImageCount = index;
             }
             catch
             {
                 throw;
             }
         }
-
+        
         return index;
     }
 

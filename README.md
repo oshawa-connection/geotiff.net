@@ -21,16 +21,21 @@ Other than GDAL, there are several packages for reading (and possibly writing) g
 
 This project is a WIP, new contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Some ideas of good items to work on:
 
+Before release, the bare minimum:
+
 - Image resampling
-- JPEG compression and decompression
 - User examples
-- More user friendly handling of overviews during reading
+- More user friendly handling of overviews during reading + .ovr support through implementation of MultiGeoTIFF.
+- Benchmarking
+- .msk file handling, and more friendly handling of NO_DATA values in general.
+- BigTIFF is working well, but needs some tests to cover it. Also some tests for cases where precision is important.
+
+Post initial release:
+
 - Writing, particularly to COG format with overviews
 - GeotiffAzureClient
+- JPEG compression and decompression
 - More spatial operation support - currently only `ReadValueAtCoordinate` is supported
-- Benchmarking
-- .ovr file support through implementation of MultiGeoTIFF.
-- Tests for more difficult cases such as BigTIFF, cases where precision is important etc.
 
 ## Compliance tests
 

@@ -614,7 +614,7 @@ public class GeoTiffImage
                                 windowCoordinate = (
                                     (y + firstLine - imageWindow[1]) * windowWidth
                                 ) + x + firstCol - imageWindow[0];
-                                Console.WriteLine(si);
+                                
                                 Array? myArray = valueArrays[si];
                                 myArray.SetValue(value, (int)windowCoordinate);
                                 // valueArrays[si][(int)windowCoordinate] = value;

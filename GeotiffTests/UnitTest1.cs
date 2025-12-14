@@ -179,4 +179,18 @@ public class UnitTest1
         //     }
         // }
     }
+
+
+    [TestMethod]
+    public async Task InternalOverviews()
+    {
+        string lonLatTif = Path.Combine(GetDataFolderPath(), "internal_overviews.tif");
+        await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
+        int count = await geotiff.GetImageCount();
+        count.ShouldBe(4);
+        GeoTiffImage? image = await geotiff.GetImage(0);
+        
+                   
+    }
 }
