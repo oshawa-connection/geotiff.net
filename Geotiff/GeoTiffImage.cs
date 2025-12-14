@@ -501,6 +501,15 @@ public class GeoTiffImage
         return await _ReadRaster<T>(imageWindow, samples, valueArrays, poolOrDecoder, null, null, cancellationToken);
     }
     
+    private int sum(IEnumerable<int> array, int start, int end) {
+        var s = 0;
+        for (var i = start; i < end; ++i) {
+            s += array.ElementAt(i);
+        }
+        return s;
+    }
+    
+    
     /// <summary>
     /// TODO: Check why deocderRegistry is not used here
     /// </summary>
@@ -540,7 +549,9 @@ public class GeoTiffImage
         {
             if (planarConfiguration == 1)
             {
-                srcSampleOffsets.Add(fileDirectory.BitsPerSample.Skip(0).Take(samples[i] / 8).Sum());
+                // fileDirectory.BitsPerSample.ElementAt(samples[i])
+                srcSampleOffsets.Add(sum(this.fileDirectory.BitsPerSample, 0, samples[i]) / 8);
+                // srcSampleOffsets.Add(fileDirectory.BitsPerSample.Take(samples[i] / 8).Sum());
             }
             else
             {

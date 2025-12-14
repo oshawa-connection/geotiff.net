@@ -52,7 +52,7 @@ public class UnitTest1
         bbox.XMax.ShouldBe(-55.916, 0.001);
         bbox.YMax.ShouldBe(63, 0.001);
 
-         var readResult = await image.ReadRasters<double>(cancellationToken: cts.Token);
+         var readResult = await image.ReadRasters<float>(cancellationToken: cts.Token);
         // Console.WriteLine(readResult.Count);
 
         Console.WriteLine(image.GetProjectionString());
@@ -111,7 +111,7 @@ public class UnitTest1
         count.ShouldBe(1);
 
         GeoTiffImage? image = await geotiff.GetImage();
-        var readResult = await image.ReadRasters<int>(cancellationToken: cts.Token);
+        // var readResult = await image.ReadRasters<int>(cancellationToken: cts.Token);
         
         for (int lon = 0; lon < 50; lon++)
         {
@@ -126,12 +126,32 @@ public class UnitTest1
                 object? x = xSample.FlatData.GetValue(0);
                 object? y = ySample.FlatData.GetValue(0);
                 Console.WriteLine($"LAT was {lat} rLAT {x}. LON: {lon} rLON {y}");
-                // Console.WriteLine();
-                // x.ShouldBe(lon);
-                // y.ShouldBe(lat);
+                x.ShouldBe(lon);
+                y.ShouldBe(lat);
             }
         }
     }
+
+    [TestMethod]
+    public async Task TestReadMultiBand()
+    {
+        string multiBandTif = Path.Combine(GetDataFolderPath(), "bands_100.tif");
+        await using var fsSource = new FileStream(multiBandTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
+        int count = await geotiff.GetImageCount();
+        count.ShouldBe(1);
+        GeoTiffImage? image = await geotiff.GetImage();
+
+        var samples = image.GetSamplesPerPixel();
+        samples.ShouldBe(100UL);
+        var readResult = await image.ReadRasters<int>(cancellationToken: cts.Token);
+        for (int bandIndex = 2; bandIndex < 100; bandIndex++)
+        {
+            var sample = readResult.GetSampleResultAt(bandIndex);
+            sample.FlatData[10].ShouldBe(bandIndex + 1);
+        }
+    }
+    
 
 
     [TestMethod]
@@ -142,7 +162,7 @@ public class UnitTest1
         GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
         int count = await geotiff.GetImageCount();
         GeoTiffImage? image = await geotiff.GetImage();
-        var readResult = await image.ReadRasters<double>();
+        var readResult = await image.ReadRasters<byte>();
         Console.WriteLine("HELLO");
         // count.ShouldBe(1);
         //
