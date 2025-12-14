@@ -18,8 +18,9 @@ class Program
         var geotiffSampleType = image.GetSampleType();
         Console.WriteLine(geotiffSampleType);
         var readResult = await image.ReadRasters<double>();
-        Console.WriteLine(readResult.First().FlatData.GetValue(0));
-        Console.WriteLine(readResult.First().To2DArray()[0,0]);
-        Console.WriteLine(readResult.First().To2DArray()[0, readResult.First().Width - 1]);
+        var sampleResult = readResult.GetSampleResultAt(0);
+        Console.WriteLine(sampleResult.FlatData.GetValue(0));
+        Console.WriteLine(sampleResult.To2DArray()[0,0]);
+        Console.WriteLine(sampleResult.To2DArray()[sampleResult.Width - 1, 0]);
     }
 }

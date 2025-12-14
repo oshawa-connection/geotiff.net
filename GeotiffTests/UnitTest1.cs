@@ -94,8 +94,8 @@ public class UnitTest1
 
         uint nPixels = image.GetHeight() * image.GetWidth();
 
-        var readResult = await image.ReadRasters<double>(cancellationToken: cts.Token);
-        Console.WriteLine(readResult.Count());
+        var readResult = await image.ReadRasters<float>(cancellationToken: cts.Token);
+        Console.WriteLine(readResult.FlatData.Count());
         // var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
         Console.WriteLine("HELLO");
     }
@@ -116,12 +116,13 @@ public class UnitTest1
             for (int lat = 0; lat < 50; lat++)
             {
                 var
-                    result = await image.ReadValueAtCoordinate<double>(lon + 0.5,
+                    result = await image.ReadValueAtCoordinate<int>(lon + 0.5,
                         lat + 0.5); // add 0.5 to be in the centre of the pixel.
+                var xSample = result.GetSampleResultAt(1);
+                var ySample =  result.GetSampleResultAt(0);
                 
-                result.ElementAt(0).FlatData[1]
-                object? x = result.ToList()[1].GetValue(0);
-                object? y = result.ToList()[0].GetValue(0);
+                object? x = xSample.FlatData.GetValue(0);
+                object? y = ySample.FlatData.GetValue(0);
                 x.ShouldBe(lon);
                 y.ShouldBe(lat);
             }
@@ -137,7 +138,7 @@ public class UnitTest1
         GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
         int count = await geotiff.GetImageCount();
         GeoTiffImage? image = await geotiff.GetImage();
-        var readResult = await image.ReadRasters();
+        var readResult = await image.ReadRasters<double>();
         Console.WriteLine("HELLO");
         // count.ShouldBe(1);
         //

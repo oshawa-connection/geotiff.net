@@ -463,7 +463,7 @@ public class GeoTiffImage
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public async Task<IEnumerable<GeoTIFFReadResult<T>>> ReadRasters<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct 
+    public async Task<GeoTIFFReadResult<T>> ReadRasters<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct 
     {
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
@@ -513,7 +513,7 @@ public class GeoTiffImage
     /// <param name="height">TODO: consider that this can be null</param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="NotImplementedException"></exception>
-    private async Task<IEnumerable<GeoTIFFReadResult<T>>> _ReadRaster<T>(uint[] imageWindow, int[] samples, List<T[]> valueArrays,
+    private async Task<GeoTIFFReadResult<T>> _ReadRaster<T>(uint[] imageWindow, int[] samples, List<T[]> valueArrays,
         DecoderRegistry decoder, uint? width, uint? height, CancellationToken? cancellationToken) where T : struct
     {
         uint tileWidth = GetTileWidth();
@@ -654,7 +654,7 @@ public class GeoTiffImage
         // imageWidth
         //     imageHeight
         
-        return valueArrays.Select(d => new GeoTIFFReadResult<T>(d, imageWidth, imageHeight, this));
+        return new GeoTIFFReadResult<T>(valueArrays, imageWidth, imageHeight, this);
         // var finalResult = new List<Array[,]>();
         // foreach (var sample in valueArrays)
         // {
@@ -1093,7 +1093,7 @@ public class GeoTiffImage
     /// <param name="y"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<GeoTIFFReadResult<T>>> ReadValueAtCoordinate<T>(double x, double y,
+    public async Task<GeoTIFFReadResult<T>> ReadValueAtCoordinate<T>(double x, double y,
         CancellationToken? cancellationToken = null) where T : struct
     {
         IEnumerable<double>? modelTransformationList =

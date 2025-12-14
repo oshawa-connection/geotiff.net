@@ -1,12 +1,24 @@
 namespace Geotiff;
 
-public class GeoTIFFReadResult<T>(T[] flatData, uint width, uint height, GeoTiffImage parentImage) where T : struct
+public class GeoTIFFReadResult<T>(IEnumerable<T[]> flatData, uint width, uint height, GeoTiffImage parentImage) where T : struct
+{
+    public uint Height { get; set; } = height;
+    public uint Width { get; set; } = width;
+    public IEnumerable<T[]> FlatData { get; set; } = flatData;
+    private readonly GeoTiffImage ParentImage = parentImage;
+
+    public SampleReadResult<T> GetSampleResultAt(int sampleIndex)
+    {
+        return new SampleReadResult<T>(this.FlatData.ElementAt(0), width, height, parentImage);
+    }
+}
+
+public class SampleReadResult<T>(T[] flatData, uint width, uint height, GeoTiffImage parentImage)
 {
     public uint Height { get; set; } = height;
     public uint Width { get; set; } = width;
     public T[] FlatData { get; set; } = flatData;
     private readonly GeoTiffImage ParentImage = parentImage;
-
     /// <summary>
     /// This rearranges the data into a 2D array, indexed by result[pixelColumn, pixelRow] (x, y)
     /// </summary>
