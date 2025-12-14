@@ -4,7 +4,7 @@ A (WIP) port of [geotiff.js](https://geotiffjs.github.io/) to .Net.
 
 This project adds native .Net handling of geotiff files, the benefits being:
 - Easier cross platform compatibility (over GDAL which requires native dependencies to be compiled on the target platform)
-- Asynchronous, streamed and parallel reads + writes
+- Asynchronous and streamed reads + writes
 - Easier debugging
 - Extensability in C# (e.g. define your own source types)
 
@@ -13,6 +13,7 @@ This project adds native .Net handling of geotiff files, the benefits being:
 
 Other than GDAL, there are several packages for reading (and possibly writing) geotiffs.
 
+- [GDAL through gdal.netcore](https://github.com/MaxRev-Dev/gdal.netcore) - [Quite low level](https://github.com/OSGeo/gdal/blob/master/doc/source/api/csharp/csharp_raster.rst). Synchronous. Packages up GDAL for you so you don't have to compile it + the C# bindings yourself.
 - [ImageSharp](https://github.com/SixLabors/ImageSharp) - Does not support geotiff tags, COGs or spatial operations, synchronous.
 - [Mission controller](https://github.com/ArduPilot/MissionPlanner/blob/cedabf7b610c0e54b8fe4409d903963faa69ab90/ExtLibs/Utilities/GeoTiff.cs) - Does not support COGs or spatial operations, synchronous. Tailored to the requirements of Ardupilot itself.
 - [DEM.NET](https://github.com/dem-net/DEM.Net) - a wrapper around LibTiff.Net. Synchronous. Only filesystem files supported.
@@ -27,8 +28,9 @@ Before release, the bare minimum:
 - Image resampling
 - User examples
 - Benchmarking
-- .msk file handling, and more friendly handling of NO_DATA values in general.
-- BigTIFF is working well, but needs some tests to cover it. Also some tests for cases where precision is important.
+- .msk file handling, and more friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`
+- BigTIFF is working well, but needs some tests to cover it. 
+- Also some tests for cases where precision is important.
 
 Post initial release:
 
@@ -36,6 +38,7 @@ Post initial release:
 - GeotiffAzureClient
 - JPEG compression and decompression
 - More spatial operation support - currently only `ReadValueAtCoordinate` is supported
+- Support multi-threading/ parallel?
 
 ## Compliance tests
 

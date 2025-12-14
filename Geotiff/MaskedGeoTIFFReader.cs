@@ -5,15 +5,15 @@ namespace Geotiff;
 /// <summary>
 /// TODO: add static method to do this from single dataset GeoTIFF with internal mask band
 /// </summary>
-public class MaskedGeoTIFFFilesystemReader
+public class MaskedGeoTIFFReader
 {
     private readonly MultiGeoTIFF multiGeoTiff;
-    private MaskedGeoTIFFFilesystemReader(MultiGeoTIFF multiGeoTiff)
+    private MaskedGeoTIFFReader(MultiGeoTIFF multiGeoTiff)
     {
         this.multiGeoTiff = multiGeoTiff;
     }
     
-    public static async Task<MaskedGeoTIFFFilesystemReader> FromMultiGeoTiff(MultiGeoTIFF multiGeoTiff)
+    public static async Task<MaskedGeoTIFFReader> FromMultiGeoTiff(MultiGeoTIFF multiGeoTiff)
     {
         var count = await multiGeoTiff.GetImageCount();
         if (count < 2)
@@ -28,11 +28,12 @@ public class MaskedGeoTIFFFilesystemReader
         {
             throw new InvalidMaskedGeoTIFFException("Mask file must have the same dimensions as the main file");
         }
-            
         
-        
-        return new MaskedGeoTIFFFilesystemReader(multiGeoTiff);
+        return new MaskedGeoTIFFReader(multiGeoTiff);
     }
-    
-    
+
+    public static async Task<MaskedGeoTIFFReadResult<T>> ReadMaskedRasters<T>() where T : struct
+    {
+        throw new NotImplementedException();
+    }
 }
