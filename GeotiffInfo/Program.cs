@@ -16,7 +16,10 @@ class Program
         var image = await tiff.GetImage();
         var origin = image.GetOrigin();
         var geotiffSampleType = image.GetSampleType();
+        Console.WriteLine(geotiffSampleType);
         var readResult = await image.ReadRasters<double>();
-        // Console.WriteLine(readResult.First()[0]);
+        Console.WriteLine(readResult.First().FlatData.GetValue(0));
+        Console.WriteLine(readResult.First().To2DArray()[0,0]);
+        Console.WriteLine(readResult.First().To2DArray()[0, readResult.First().Width - 1]);
     }
 }

@@ -391,7 +391,7 @@ public class GeoTiffImage
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return new DataView(size, GeotiffSampleDataTypes.UINT8);
+                    return new DataView(size, GeotiffSampleDataTypes.Uint8);
                 }
                 else if (bitsPerSample <= 16)
                 {
@@ -400,7 +400,7 @@ public class GeoTiffImage
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return new DataView(size, GeotiffSampleDataTypes.UINT32);
+                    return new DataView(size, GeotiffSampleDataTypes.Uint32);
                 }
 
                 break;
@@ -414,7 +414,7 @@ public class GeoTiffImage
                         throw new NotImplementedException();
                     // return new Int16[size];
                     case 32:
-                        return new DataView(size, GeotiffSampleDataTypes.INT32);
+                        return new DataView(size, GeotiffSampleDataTypes.Int32);
                 }
 
                 break;
@@ -423,9 +423,9 @@ public class GeoTiffImage
                 {
                     case 16:
                     case 32:
-                        return new DataView(size, GeotiffSampleDataTypes.FLOAT32);
+                        return new DataView(size, GeotiffSampleDataTypes.Float32);
                     case 64:
-                        return new DataView(size,GeotiffSampleDataTypes.DOUBLE);
+                        return new DataView(size,GeotiffSampleDataTypes.Double);
                 }
 
                 break;
@@ -437,7 +437,7 @@ public class GeoTiffImage
     }
 
     /// <summary>
-    /// 
+    /// Leave this an non-generic for now, allow app to throw invalid casts.
     /// </summary>
     /// <param name="sampleIndex"></param>
     /// <param name="size">ulong type here is confirmed by geotiff spec</param>
@@ -457,12 +457,13 @@ public class GeoTiffImage
     }
 
     /// <summary>
-    /// 
+    /// By specifying the type parameter, you specify that all samples are of the same type. If this is not true, use GeoTIFFReadResultUnknownType instead.
+    /// TODO: allow users to specify which samples they want to read rather than reading all of them.
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public async Task<IEnumerable<Array[,]>> ReadRasters(ImageWindow? window = null, CancellationToken? cancellationToken = null)
+    public async Task<IEnumerable<GeoTIFFReadResult<T>>> ReadRasters<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct 
     {
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
@@ -484,103 +485,22 @@ public class GeoTiffImage
 
         ulong numPixels =
             (ulong)imageWindowWidth * (ulong)imageWindowHeight; // ignore resharper telling you that cast is redundant.
+        // TODO: allow user to specify which samples to be read rather than reading all of them.
         ulong samplesPerPixel = GetSamplesPerPixel();
         int[] samples =
             Enumerable.Range(0, (int)samplesPerPixel)
                 .ToArray(); // TODO: change away from using Enumerable.Range here as it doesn't accept ulong, or write extension.
-        List<Array> valueArrays = new();
+        List<T[]> valueArrays = new();
         for (int i = 0; i < samples.Count(); ++i)
         {
-            Array valueArray = GetArrayForSample(samples[i], numPixels);
+            var valueArray = (T[])GetArrayForSample(samples[i], numPixels);
             valueArrays.Add(valueArray);
         }
 
         var poolOrDecoder = new DecoderRegistry();
-        return await _ReadRaster(imageWindow, samples, valueArrays, poolOrDecoder, null, null, cancellationToken);
+        return await _ReadRaster<T>(imageWindow, samples, valueArrays, poolOrDecoder, null, null, cancellationToken);
     }
-
-
-    /// <summary>
-    /// This is the same as `ReadRasters`, but the results are converted to your requested type if necessary.
-    /// If you want strict type checking, see `ReadRastersStrict<T>`
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="window"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public async Task<IEnumerable<T[,]>> ReadRasters<T>(ImageWindow? window = null,
-        CancellationToken? cancellationToken = null) where T : struct
-    {
-        var readResult = await this.ReadRasters(window, cancellationToken);
-        var castResult = new List<T[,]>();
-        foreach (var sample in readResult)
-        {
-            sample.GetType().GetElementType();
-            throw new GeoTiffException("");
-            if (sample is T typedArray)
-            {
-                // castResult.Add(typedArray);
-            } else
-            {
-                // Convert each element to T and build a new T[,]
-                int width = sample.GetLength(0);
-                int height = sample.GetLength(1);
-                var converted = new T[width, height];
-                for (int i = 0; i < width; i++)
-                {
-                    for (int j = 0; j < height; j++)
-                    {
-                        converted[i, j] = (T)Convert.ChangeType(sample.GetValue(i, j), typeof(T));
-                    }
-                }
-                castResult.Add(converted);
-            }
-        }
-        return castResult;
-    }
-
-    /// <summary>
-    /// This is the same as `ReadRasters`, but the results are converted to your requested type if necessary.
-    /// If you want strict type checking, see `ReadRastersStrict<T>`
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="window"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public async Task<IEnumerable<T[,]>> ReadRastersStrict<T>(ImageWindow? window = null,
-        CancellationToken? cancellationToken = null) where T : struct
-    {
-        var readResult = await this.ReadRasters(window, cancellationToken);
-        var castResult = new List<T[,]>();
-        foreach (var sample in readResult)
-        {
-            if (sample is T[,] typedArray)
-            {
-                castResult.Add(typedArray);
-            }
-            else
-            {
-                throw new GeoTiffException(
-                    $"Type {typeof(T).Name} does not match the type of raster {sample.GetType().GetElementType().FullName}");
-            }
-        }
-        foreach (var array in readResult)
-        {
-            if (array is T[,] typedArray)
-            {
-                castResult.Add(typedArray);
-            }
-            else
-            {
-                throw new GeoTiffException(
-                    $"Type {typeof(T).Name} does not match the type of raster {array.GetType().GetElementType().FullName}");
-            }
-        }
-
-        return castResult;
-    }
-
-
+    
     /// <summary>
     /// TODO: Check why deocderRegistry is not used here
     /// </summary>
@@ -593,8 +513,8 @@ public class GeoTiffImage
     /// <param name="height">TODO: consider that this can be null</param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="NotImplementedException"></exception>
-    private async Task<List<Array[,]>> _ReadRaster(uint[] imageWindow, int[] samples, List<Array> valueArrays,
-        DecoderRegistry decoder, uint? width, uint? height, CancellationToken? cancellationToken)
+    private async Task<IEnumerable<GeoTIFFReadResult<T>>> _ReadRaster<T>(uint[] imageWindow, int[] samples, List<T[]> valueArrays,
+        DecoderRegistry decoder, uint? width, uint? height, CancellationToken? cancellationToken) where T : struct
     {
         uint tileWidth = GetTileWidth();
         uint tileHeight = GetTileHeight();
@@ -733,32 +653,34 @@ public class GeoTiffImage
         // valueArrays.height = height || imageWindow[3] - imageWindow[1];
         // imageWidth
         //     imageHeight
-        var finalResult = new List<Array[,]>();
-        foreach (var sample in valueArrays)
-        {
-            // Use the correct element type for the 2D array
-            var elementType = sample.GetType().GetElementType() ?? typeof(object);
-            var resizedSample = new Array[imageWidth,imageHeight];
-            // var resizedSample = Array.CreateInstance(elementType, imageWidth, imageHeight);
-
-            for (int i = 0; i < imageWidth; i++)
-            {
-                for (int j = 0; j < imageHeight; j++)
-                {
-                    // Correct formula: row * numCols + col
-                    int flattenedIndex = i * (int)imageHeight + j;
-                    resizedSample.SetValue(sample.GetValue(flattenedIndex), i, j);
-                }
-            }
-            finalResult.Add(resizedSample);
-        }
         
-        return finalResult;
+        return valueArrays.Select(d => new GeoTIFFReadResult<T>(d, imageWidth, imageHeight, this));
+        // var finalResult = new List<Array[,]>();
+        // foreach (var sample in valueArrays)
+        // {
+        //     // Use the correct element type for the 2D array
+        //     var elementType = sample.GetType().GetElementType() ?? typeof(object);
+        //     // var resizedSample = new Array[imageWidth,imageHeight];
+        //     var resizedSample = (Array[,])Array.CreateInstance(elementType, imageWidth, imageHeight);
+        //
+        //     for (int i = 0; i < imageWidth; i++)
+        //     {
+        //         for (int j = 0; j < imageHeight; j++)
+        //         {
+        //             int flattenedIndex = i * (int)imageHeight + j;
+        //             resizedSample.SetValue(sample.GetValue(flattenedIndex), i, j);
+        //         }
+        //     }
+        //     finalResult.Add(resizedSample);
+        // }
+        //
+        // return finalResult;
     }
 
     
     /// <summary>
     /// Technically TIFF does support different types for each sample, but almost no software/ tooling supports this.
+    /// (including geotiff.NET for that matter). If your use case requires this please file an issue on GitHub.
     /// </summary>
     /// <param name="sampleIndex"></param>
     /// <returns></returns>
@@ -773,30 +695,30 @@ public class GeoTiffImage
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return GeotiffSampleDataTypes.UINT8;
+                    return GeotiffSampleDataTypes.Uint8;
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return GeotiffSampleDataTypes.UINT16;
+                    return GeotiffSampleDataTypes.Uint16;
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return GeotiffSampleDataTypes.UINT32;
+                    return GeotiffSampleDataTypes.Uint32;
                 }
 
                 break;
             case 2: // twos complement signed integer data
                 if (bitsPerSample <= 8)
                 {
-                    return GeotiffSampleDataTypes.INT8;
+                    return GeotiffSampleDataTypes.Int8;
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return GeotiffSampleDataTypes.INT16;
+                    return GeotiffSampleDataTypes.Int16;
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return GeotiffSampleDataTypes.INT32;
+                    return GeotiffSampleDataTypes.Int32;
                 }
 
                 break;
@@ -806,9 +728,9 @@ public class GeoTiffImage
                     case 16:
                         throw new NotImplementedException();
                     case 32:
-                        return GeotiffSampleDataTypes.FLOAT32;
+                        return GeotiffSampleDataTypes.Float32;
                     case 64:
-                        return GeotiffSampleDataTypes.DOUBLE;
+                        return GeotiffSampleDataTypes.Double;
                     default:
                         break;
                 }
@@ -1171,8 +1093,8 @@ public class GeoTiffImage
     /// <param name="y"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<Array>> ReadValueAtCoordinate(double x, double y,
-        CancellationToken? cancellationToken = null)
+    public async Task<IEnumerable<GeoTIFFReadResult<T>>> ReadValueAtCoordinate<T>(double x, double y,
+        CancellationToken? cancellationToken = null) where T : struct
     {
         IEnumerable<double>? modelTransformationList =
             fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
@@ -1198,6 +1120,6 @@ public class GeoTiffImage
             Left = (uint)left, Right = (uint)right, Bottom = (uint)bottom, Top = (uint)top
         };
 
-        return await ReadRasters(window, cancellationToken);
+        return await ReadRasters<T>(window, cancellationToken);
     }
 }

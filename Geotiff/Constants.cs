@@ -13,15 +13,15 @@ public static class Constants
 
 public enum GeotiffSampleDataTypes
 {
-    UINT8,
-    INT8,
-    INT16,
-    UINT16,
-    UINT32,
-    UINT64,
-    INT32,
-    FLOAT32,
-    DOUBLE
+    Uint8,
+    Int8,
+    Int16,
+    Uint16,
+    Uint32,
+    Uint64,
+    Int32,
+    Float32,
+    Double
 }
 
 

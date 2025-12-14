@@ -4,6 +4,9 @@ using Geotiff.RemoteClients;
 
 namespace Geotiff;
 
+/// <summary>
+/// TODO: implement ReadRaster method here, selecting best image for the user. A nice to have.
+/// </summary>
 public class GeoTIFF
 {
     private readonly BaseSource source;

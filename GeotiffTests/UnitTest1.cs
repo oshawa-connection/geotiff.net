@@ -52,7 +52,7 @@ public class UnitTest1
         bbox.XMax.ShouldBe(-55.916, 0.001);
         bbox.YMax.ShouldBe(63, 0.001);
 
-         var readResult = await image.ReadRasters(cancellationToken: cts.Token);
+         var readResult = await image.ReadRasters<double>(cancellationToken: cts.Token);
         // Console.WriteLine(readResult.Count);
 
         Console.WriteLine(image.GetProjectionString());
@@ -94,7 +94,7 @@ public class UnitTest1
 
         uint nPixels = image.GetHeight() * image.GetWidth();
 
-        var readResult = await image.ReadRasters(cancellationToken: cts.Token);
+        var readResult = await image.ReadRasters<double>(cancellationToken: cts.Token);
         Console.WriteLine(readResult.Count());
         // var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
         Console.WriteLine("HELLO");
@@ -116,9 +116,10 @@ public class UnitTest1
             for (int lat = 0; lat < 50; lat++)
             {
                 var
-                    result = await image.ReadValueAtCoordinate(lon + 0.5,
+                    result = await image.ReadValueAtCoordinate<double>(lon + 0.5,
                         lat + 0.5); // add 0.5 to be in the centre of the pixel.
                 
+                result.ElementAt(0).FlatData[1]
                 object? x = result.ToList()[1].GetValue(0);
                 object? y = result.ToList()[0].GetValue(0);
                 x.ShouldBe(lon);
