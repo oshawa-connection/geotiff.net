@@ -324,6 +324,10 @@ public class GeoTIFF
     }
 
     /// <summary>
+    /// Test for the presence of overviews. This is denoted by GDAL as the first dataset being the largest, with
+    /// all subsequent images being progressively smaller and smaller. However, do note that this is not actually standard,
+    /// so you may encounter datasets that do not conform to this pattern and may just happen to order their subdatasets
+    /// like this. This method is therefore not foolproof.
     /// TODO: Also account for .ovr files.
     /// </summary>
     /// <returns></returns>
@@ -335,15 +339,19 @@ public class GeoTIFF
             return false;
         }
 
-        var mainImage = await this.GetImage();
-        var possibleOverview = await this.GetImage(1);
-        
-        if (mainImage.GetHeight() > possibleOverview.GetHeight() && mainImage.GetWidth() > possibleOverview.GetWidth())
+        var currentImage = await this.GetImage();
+        for (int i = 1; i < imageCount; i++)
         {
-            return true;
-        }
+            var possibleOverview = await this.GetImage(i);
+            if (currentImage.GetHeight() < possibleOverview.GetHeight() && currentImage.GetWidth() < possibleOverview.GetWidth())
+            {
+                return false;
+            }
 
-        return false;
+            currentImage = possibleOverview;
+        }
+        
+        return true;
     }
     
     public async Task<int> GetImageCount()

@@ -111,7 +111,7 @@ public class UnitTest1
         count.ShouldBe(1);
 
         GeoTiffImage? image = await geotiff.GetImage();
-        // var readResult = await image.ReadRasters<int>(cancellationToken: cts.Token);
+        
         
         for (int lon = 0; lon < 50; lon++)
         {
@@ -163,21 +163,8 @@ public class UnitTest1
         int count = await geotiff.GetImageCount();
         GeoTiffImage? image = await geotiff.GetImage();
         var readResult = await image.ReadRasters<byte>();
-        Console.WriteLine("HELLO");
-        // count.ShouldBe(1);
-        //
-        // var image = await geotiff.GetImage();
-        // for (var lon = 0; lon < 50; lon++)
-        // {
-        //     for (var lat = 0; lat < 50; lat++)
-        //     {
-        //         var result = await image.ReadValueAtCoordinate(lon + 0.5, lat + 0.5); // add 0.5 to be in the centre of the pixel.
-        //         var x = result[1].GetValue(0);
-        //         var y = result[0].GetValue(0);
-        //         x.ShouldBe(lon);
-        //         y.ShouldBe(lat);
-        //     }
-        // }
+        
+
     }
 
 
@@ -188,9 +175,51 @@ public class UnitTest1
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
         GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
         int count = await geotiff.GetImageCount();
+        count.ShouldBe(4); // tiff has 4 images, 3 of which are pyramids
+        GeoTiffImage? image = await geotiff.GetImage(0);
+
+        var result = await geotiff.HasOverviews();
+        result.ShouldBe(true, "Has overviews");
+
+
+        string multiDatasetImage = Path.Combine(GetDataFolderPath(), "ca_nrc_NA83SCRS.tif");
+        await using var fsSource2 = new FileStream(multiDatasetImage, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff2 = await GeoTIFF.FromStream(fsSource2);
+        int count2 = await geotiff2.GetImageCount();
+        count2.ShouldBe(14); // tiff has 4 images, 3 of which are pyramids
+        
+        var result2 = await geotiff2.HasOverviews();
+        result2.ShouldBe(false, "Has subdatasets, but they are not ordered properly to be considered overviews"); 
+        
+        
+        string singleDatasetImage = Path.Combine(GetDataFolderPath(), "spcs27.tif");
+        await using var fsSource3 = new FileStream(singleDatasetImage, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff3 = await GeoTIFF.FromStream(fsSource3);
+        int count3 = await geotiff3.GetImageCount();
+        count3.ShouldBe(1); // tiff has 4 images, 3 of which are pyramids
+        
+        var result3 = await geotiff3.HasOverviews();
+        result3.ShouldBe(false,"Has only one subdataset");
+    }
+
+    /// <summary>
+    /// Make sure stream seeking etc works ok
+    /// </summary>
+    [TestMethod]
+    public async Task RepeatedReadsFromDisk()
+    {
+        string lonLatTif = Path.Combine(GetDataFolderPath(), "internal_overviews.tif");
+        await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
+        int count = await geotiff.GetImageCount();
         count.ShouldBe(4);
         GeoTiffImage? image = await geotiff.GetImage(0);
+        var readResult1 = await image.ReadRasters<int>(cancellationToken: cts.Token);
+        var readResult2 = await image.ReadRasters<int>(cancellationToken: cts.Token);
+        var readResult3 = await image.ReadRasters<int>(cancellationToken: cts.Token);
+        var readResult4 = await image.ReadRasters<int>(cancellationToken: cts.Token);
         
-                   
+        readResult1.GetSampleResultAt(0).FlatData[0].ShouldBe(readResult4.GetSampleResultAt(0).FlatData[0]);
     }
+    
 }
