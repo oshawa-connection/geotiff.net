@@ -3,7 +3,6 @@ import rasterio
 from rasterio.transform import from_origin
 from rasterio.crs import CRS
 
-# Raster spec
 width = 50               # columns: longitudes 0 .. 50
 height = 50              # rows: latitudes 50 .. 0 (north -> south)
 pixel_size = 1           # 1 degree

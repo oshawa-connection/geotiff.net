@@ -9,7 +9,7 @@ public class GeoTIFFReadResult<T>(IEnumerable<T[]> flatData, uint width, uint he
 
     public SampleReadResult<T> GetSampleResultAt(int sampleIndex)
     {
-        return new SampleReadResult<T>(this.FlatData.ElementAt(0), width, height, parentImage);
+        return new SampleReadResult<T>(this.FlatData.ElementAt(sampleIndex), width, height, parentImage);
     }
 }
 
