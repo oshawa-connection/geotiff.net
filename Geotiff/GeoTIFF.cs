@@ -9,22 +9,22 @@ namespace Geotiff;
 /// </summary>
 public class GeoTIFF
 {
-    private readonly BaseSource source;
+    protected internal readonly BaseSource Source;
     private readonly bool _bigTiff;
-    private readonly ulong firstIFDOffset;
-    private readonly bool littleEndian;
+    protected internal readonly ulong FirstIFDOffset;
+    public readonly bool IsLittleEndian;
     /// <summary>
     /// Prevents us making read requests if GetImageCount is called multiple times
     /// </summary>
-    private int? finalImageCount = null;
+    protected internal int? finalImageCount = null;
     public bool IsBifTIFF => _bigTiff; 
     
-    private GeoTIFF(BaseSource source, bool littleEndian, bool bigTiff, ulong firstIFDOffset)
+    public GeoTIFF(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
     {
-        this.source = source;
-        this.littleEndian = littleEndian;
+        this.Source = source;
+        this.IsLittleEndian = isLittleEndian;
         this._bigTiff = bigTiff;
-        this.firstIFDOffset = firstIFDOffset;
+        this.FirstIFDOffset = firstIFDOffset;
         this.finalImageCount = null;
     }
     
@@ -92,6 +92,11 @@ public class GeoTIFF
         return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
     
+    /// <summary>
+    /// If you provide a non-seekable stream, the entire stream will be read into memory.
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <returns></returns>
     public static async Task<GeoTIFF> FromStream(Stream stream)
     {
         Stream seekableStream;
@@ -107,8 +112,8 @@ public class GeoTIFF
         }
         
         byte[] buffer = new byte[1024];
-        int bytesRead = await seekableStream.ReadAsync(buffer, 0, buffer.Length);
-        
+        // having less bytes than requested is ok in this situation. Up to 1024, but less is ok.
+        int bytesRead = await seekableStream.ReadAsync(buffer, 0, buffer.Length); 
         
         byte[]? arr = buffer.ToArray();
         var dv = new DataView(arr);
@@ -129,12 +134,12 @@ public class GeoTIFF
         int sizeToUse = size is null ? fallbackSize : (int)size;
         var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
-        IEnumerable<ArrayBuffer>? results = await source.Fetch(slices);
+        IEnumerable<ArrayBuffer>? results = await Source.Fetch(slices);
 
         return new DataSlice(
             results.Single().GetAllBytes(), // TODO: Double check this.  
             offset,
-            littleEndian,
+            IsLittleEndian,
             _bigTiff
         );
     }
@@ -201,7 +206,7 @@ public class GeoTIFF
         return geoKeyDirectory;
     }
 
-    private async Task<ImageFileDirectory> ParseFileDirectoryAt(int offset)
+    protected internal async Task<ImageFileDirectory> ParseFileDirectoryAt(int offset)
     {
         int entrySize = _bigTiff ? 20 : 12;
         int offsetSize = _bigTiff ? 8 : 2;
@@ -298,7 +303,7 @@ public class GeoTIFF
 
     private SparseList<ImageFileDirectory> ImageFileDirectories = new();
     
-    private async Task<ImageFileDirectory> RequestIFD(int index)
+    protected internal async Task<ImageFileDirectory> RequestIFD(int index)
     {
         if (ImageFileDirectories[index] is not null)
         {
@@ -307,7 +312,7 @@ public class GeoTIFF
 
         if (index == 0)
         {
-            ImageFileDirectory? result = await ParseFileDirectoryAt((int)firstIFDOffset);// TODO: this is a narrowing conversion
+            ImageFileDirectory? result = await ParseFileDirectoryAt((int)FirstIFDOffset);// TODO: this is a narrowing conversion
             ImageFileDirectories.Add(index, result);
             return result;
         }
@@ -325,10 +330,9 @@ public class GeoTIFF
 
     /// <summary>
     /// Test for the presence of overviews. This is denoted by GDAL as the first dataset being the largest, with
-    /// all subsequent images being progressively smaller and smaller. However, do note that this is not actually standard,
+    /// all subsequent images being progressively smaller and smaller. However, note that this is not actually standard,
     /// so you may encounter datasets that do not conform to this pattern and may just happen to order their subdatasets
     /// like this. This method is therefore not foolproof.
-    /// TODO: Also account for .ovr files.
     /// </summary>
     /// <returns></returns>
     public async Task<bool> HasOverviews()
@@ -354,7 +358,7 @@ public class GeoTIFF
         return true;
     }
     
-    public async Task<int> GetImageCount()
+    public virtual async Task<int> GetImageCount()
     {
         if (this.finalImageCount is not null)
         {
@@ -385,7 +389,7 @@ public class GeoTIFF
     }
 
 
-    public async Task<GeoTiffImage> GetImage(int index = 0)
+    public virtual async Task<GeoTiffImage> GetImage(int index = 0)
     {
         if (ImageFileDirectories[index] is null)
         {
@@ -399,7 +403,7 @@ public class GeoTIFF
 
         ImageFileDirectory? ifd = await RequestIFD(index);
         return new GeoTiffImage(
-            ifd, littleEndian, false, source
+            ifd, IsLittleEndian, false, Source
         );
     }
 }

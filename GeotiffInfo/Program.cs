@@ -20,7 +20,7 @@ class Program
         var geotiffSampleType = image.GetSampleType();
         
         Console.WriteLine(geotiffSampleType);
-        var readResult = await image.ReadRasters<int>();
+        var readResult = await image.ReadRasters<byte>();
         var sampleResult = readResult.GetSampleResultAt(0);
         Console.WriteLine(sampleResult.FlatData.GetValue(0));
         Console.WriteLine(sampleResult.To2DArray()[0,0]);

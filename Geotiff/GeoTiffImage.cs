@@ -7,7 +7,7 @@ namespace Geotiff;
 public class GeoTiffImage
 {
     public readonly ImageFileDirectory fileDirectory;
-    private readonly bool littleEndian;
+    public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
     private readonly Dictionary<int, ArrayBuffer>? tiles;
@@ -40,14 +40,41 @@ public class GeoTiffImage
         this.source = source;
     }
 
+    public bool HasValidTiePoints()
+    {
+        IEnumerable<double>? tiePoint = fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
+        return tiePoint is not null && tiePoint.Count() == 6;
+    }
 
-    public VectorXYZ GetOrigin()
+    public bool HasValidModelTransformation()
+    {
+        IEnumerable<double>? modelTransformation =
+            fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+
+        return modelTransformation is not null;
+    }
+
+    /// <summary>
+    /// Can use this before checking for origin or boundingbox to prevent exceptions
+    /// </summary>
+    /// <returns></returns>
+    public bool HasAffineTransformation()
+    {
+        return HasValidModelTransformation() || HasValidTiePoints();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException">Thrown if the affine transformation is not set</exception>
+    public VectorXYZ? GetOrigin()
     {
         IEnumerable<double>? tiePoint = fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
         IEnumerable<double>? modelTransformation =
             fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
 
-        if (tiePoint is not null && tiePoint.Count() == 6)
+        if (HasValidTiePoints())
         {
             return new VectorXYZ() { X = tiePoint.ElementAt(3), Y = tiePoint.ElementAt(4), Z = tiePoint.ElementAt(5) };
         }
@@ -956,10 +983,11 @@ public class GeoTiffImage
         }
     }
 
-    /**
-     * Returns the GDAL nodata value
-     * @returns {number|null}
-     */
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     private int? GetGDALNoData()
     {
         if (fileDirectory.GDAL_NODATA == null)

@@ -23,9 +23,9 @@ This project is a WIP, new contributors are very welcome. If you’d like to get
 
 Before release, the bare minimum:
 
+- Handle case where the user does not know the type of the raster data before reading it, e.g. in cases where they are reading a user-passed tiff file.
 - Image resampling
 - User examples
-- More user friendly handling of overviews during reading + .ovr support through implementation of MultiGeoTIFF.
 - Benchmarking
 - .msk file handling, and more friendly handling of NO_DATA values in general.
 - BigTIFF is working well, but needs some tests to cover it. Also some tests for cases where precision is important.

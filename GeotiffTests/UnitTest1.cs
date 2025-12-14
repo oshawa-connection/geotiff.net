@@ -221,5 +221,29 @@ public class UnitTest1
         
         readResult1.GetSampleResultAt(0).FlatData[0].ShouldBe(readResult4.GetSampleResultAt(0).FlatData[0]);
     }
-    
+
+
+    [TestMethod]
+    public async Task OverviewReader()
+    {
+        // TODO: would be nice to have this in the main code someplace.
+        string externalOverviewTifPath = Path.Combine(GetDataFolderPath(), "external_overviews.tif");
+        var ovrFilePath = externalOverviewTifPath + ".ovr";
+        
+        if (File.Exists(ovrFilePath) is false)
+        {
+            throw new FileNotFoundException($"No file .ovr file found at {ovrFilePath}");
+        }
+
+        await using var mainStream = File.OpenRead(externalOverviewTifPath);
+        await using var ovrStream = File.OpenRead(ovrFilePath);
+
+        var overviewMultiTiff = await MultiGeoTIFF.FromStreams(mainStream, new[] { ovrStream });
+
+        var imageCount = await overviewMultiTiff.GetImageCount();
+        imageCount.ShouldBe(3, "1 main, 2 from overview");
+
+        var hasOverviews = await overviewMultiTiff.HasOverviews();
+        hasOverviews.ShouldBe(true);
+    }
 }
