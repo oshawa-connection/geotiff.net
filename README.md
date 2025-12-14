@@ -6,8 +6,49 @@ This project adds native .Net handling of geotiff files, the benefits being:
 - Easier cross platform compatibility (over GDAL which requires native dependencies to be compiled on the target platform)
 - Asynchronous and streamed reads + writes
 - Easier debugging
-- Extensability in C# (e.g. define your own source types)
+- Extensability in C# (e.g. define your own source types, decoders, sidecar file handlers)
 
+## Examples
+
+Read a small sample 
+
+
+
+Read everything as a 2D array from the first sample of the first image from a file:
+```csharp
+var lonLatTif = Path.Combine(GetDataFolderPath(), "elevationData.tif");
+await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+var geotiff = await GeoTIFF.FromStream(fsSource);
+int count = await geotiff.GetImageCount();
+var image = await geotiff.GetImage();
+var readResult = await image.ReadRasters<int>();
+var sampleResult = readResult.GetSampleResultAt(0).To2DArray();
+```
+
+
+Read data at the pixel at a coordinate from an AWS S3 bucket:
+```csharp
+using var client = new AmazonS3Client(new AmazonS3Config { ... });
+var gtAWSClient = new GeotiffAWSClient("testbucket", "modelOutputDataCOG.tif", client);
+GeoTIFF? geotiff = await GeoTIFF.FromRemoteClient(gtAWSClient);
+var image = await geotiff.GetImage();
+var result = await image.ReadValueAtCoordinate<double>(lon, lat); 
+var waterVelocityAtCoordinate =  result.GetSampleResultAt(0).FlatData.GetValue(0);
+var waterDepthAtCoordinate = result.GetSampleResultAt(1).FlatData.GetValue(0);
+```
+
+Read data from a file that has external overviews in an `.ovr` sidecar file
+```csharp
+var externalOverviewTifPath = Path.Combine(GetDataFolderPath(), "external_overviews.tif");
+var ovrFilePath = externalOverviewTifPath + ".ovr";
+
+await using var mainStream = File.OpenRead(externalOverviewTifPath);
+await using var ovrStream = File.OpenRead(ovrFilePath);
+
+var overviewMultiTiff = await MultiGeoTIFF.FromStreams(mainStream, new[] { ovrStream });
+var imageCount = await overviewMultiTiff.GetImageCount();// 4; 1 from the main file and 3 from the overviews.
+var hasOverviews = await overviewMultiTiff.HasOverviews(); // true
+```
 
 ## Alternatives libraries
 

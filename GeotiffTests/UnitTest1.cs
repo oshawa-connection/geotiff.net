@@ -111,8 +111,6 @@ public class UnitTest1
         count.ShouldBe(1);
 
         GeoTiffImage? image = await geotiff.GetImage();
-        
-        
         for (int lon = 0; lon < 50; lon++)
         {
             for (int lat = 0; lat < 50; lat++)
