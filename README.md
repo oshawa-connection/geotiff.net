@@ -10,10 +10,6 @@ This project adds native .Net handling of geotiff files, the benefits being:
 
 ## Examples
 
-Read a small sample 
-
-
-
 Read everything as a 2D array from the first sample of the first image from a file:
 ```csharp
 var lonLatTif = Path.Combine(GetDataFolderPath(), "elevationData.tif");
