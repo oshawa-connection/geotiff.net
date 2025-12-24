@@ -137,7 +137,7 @@ internal class Program
                     GeotiffImage? resultImage = r.Images[i];
                     foreach (KeyValuePair<string, JsonElement> tag in resultImage.Tags)
                     {
-                        if (csharpImage.fileDirectory.FileDirectory.ContainsKey(tag.Key) is false)
+                        if (csharpImage.fileDirectory.TagDictionary.ContainsKey(tag.Key) is false)
                         {
                             Console.WriteLine($"Tag {tag.Key} was missing in csharp read image");
                         }
@@ -174,7 +174,7 @@ internal class Program
                     //     tagCount += csharpImage.fileDirectory.GeoKeyDirectory.Count;
                     // }
 
-                    ShouldBeError($"Tag Count on image {i};", csharpImage.fileDirectory.FileDirectory.Count,
+                    ShouldBeError($"Tag Count on image {i};", csharpImage.fileDirectory.TagDictionary.Count,
                         resultImage.Tags.Count);
                 }
             }

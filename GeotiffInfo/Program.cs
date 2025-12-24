@@ -15,7 +15,7 @@ class Program
         Console.WriteLine(imageCount);
 
         var image = await tiff.GetImageAsync();
-        
+        image.ListTags()
         var origin = image.GetOrigin();
         var geotiffSampleType = image.GetSampleType();
         

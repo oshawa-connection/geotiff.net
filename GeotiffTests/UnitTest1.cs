@@ -78,6 +78,30 @@ public class UnitTest1
         bbox.YMax.ShouldBe(32, 0.001);
         uint nPixels = image.GetHeight() * image.GetWidth();
     }
+    
+    [TestMethod]
+    public async Task TestTagReading()
+    {
+        string usNoaaTif = Path.Combine(GetDataFolderPath(), "us_noaa_FL.tif");
+        await using var fsSource = new FileStream(usNoaaTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        int count = await geotiff.GetImageCountAsync();
+        count.ShouldBe(1);
+
+        GeoTiffImage? image = await geotiff.GetImageAsync();
+        VectorXYZ? origin = image.GetOrigin();
+        BoundingBox? bbox = image.GetBoundingBox();
+        origin.X.ShouldBe(-88);
+        origin.Y.ShouldBe(32);
+        bbox.XMin.ShouldBe(-88, 0.001);
+        bbox.YMin.ShouldBe(23.75, 0.001);
+        bbox.XMax.ShouldBe(-79.75, 0.001);
+        bbox.YMax.ShouldBe(32, 0.001);
+        uint nPixels = image.GetHeight() * image.GetWidth();
+        
+        image.fileDirectory
+    }
+    
 
     [TestMethod]
     public async Task TestRawTiffNoCompression()

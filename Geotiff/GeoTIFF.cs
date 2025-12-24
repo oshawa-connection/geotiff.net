@@ -32,11 +32,11 @@ public class GeoTIFF
     {
         ushort value = dv.GetUint16(0, true);
         bool isLittleEndian = false;
-        if (value == Constants.BOMLittleEndian)
+        if (value == Constant.BOMLittleEndian)
         {
             isLittleEndian = true;
         }
-        else if (value == Constants.BOMBigEndian)
+        else if (value == Constant.BOMBigEndian)
         {
             isLittleEndian = false;
         }
@@ -197,16 +197,16 @@ public class GeoTIFF
     }
 
 
-    private Dictionary<string, object>? ParseGeoKeyDirectory(Dictionary<string, object> fileDirectory)
+    private Dictionary<string, object>? ParseGeoKeyDirectory(Dictionary<string, Tag> fileDirectory)
     {
-        bool rawGeoKeyDirectoryResult = fileDirectory.TryGetValue("GeoKeyDirectory", out object rawGeoKeyDirectoryObj);
-
+        bool rawGeoKeyDirectoryResult = fileDirectory.TryGetValue("GeoKeyDirectory", out Tag rawGeoKeyDirectoryObj);
+        
         if (!rawGeoKeyDirectoryResult)
         {
             return null;
         }
 
-        ushort[]? rawGeoKeyDirectory = ((List<object>)rawGeoKeyDirectoryObj).UnboxAll<ushort>().ToArray();
+        ushort[]? rawGeoKeyDirectory = ((List<object>)rawGeoKeyDirectoryObj.Value).UnboxAll<ushort>().ToArray();
 
         Dictionary<string, object> geoKeyDirectory = new();
         for (int i = 4; i <= rawGeoKeyDirectory[3] * 4; i += 4)
@@ -233,6 +233,7 @@ public class GeoTIFF
                     throw new GeoTiffException($"Could not get value of geoKey '{key}'");
                 }
 
+                value = ((Tag)value).Value;
                 if (value is string)
                 {
                     string? cast = (string)value;
@@ -276,13 +277,13 @@ public class GeoTIFF
             dataSlice = await GetSliceAsync(offset, byteSize);
         }
 
-        var fileDirectory = new Dictionary<string, object>();
+        var fileDirectory = new Dictionary<string, Tag>();
         var rawFileDirectory = new Dictionary<int, object>();
 
         int i = offset + (_bigTiff ? 8 : 2);
         for (long entryCount = 0; entryCount < numDirEntries; i += entrySize, ++entryCount)
         {
-            ushort fieldTag = dataSlice.ReadUInt16(i);
+            ushort fieldTagId = dataSlice.ReadUInt16(i);
             ushort fieldType = dataSlice.ReadUInt16(i + 2);
             int typeCount = _bigTiff
                 ? (int)dataSlice.ReadUInt64(i + 4)
@@ -291,7 +292,7 @@ public class GeoTIFF
             GeotiffGetValuesResult fieldValues;
             object value;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
-            string? fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
+            GeotiffFieldDataType fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
             long valueOffset = i + (_bigTiff ? 12 : 8);
             // Check if the value is directly encoded or refers to another byte range
             if (fieldTypeLength * typeCount <= (_bigTiff ? 8 : 4))
@@ -315,15 +316,15 @@ public class GeoTIFF
             }
 
             // Unpack single values from the array
-            if ((typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTag)
-                                && !(fieldTypeName == FieldTypes.SRATIONAL)) || fieldTypeName == FieldTypes.ASCII)
+            if ((typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTagId)
+                                && !(fieldTypeName == GeotiffFieldDataType.SRATIONAL)) || fieldTypeName == GeotiffFieldDataType.ASCII)
             {
                 value = fieldValues.GetFirstElement();
                 // value = (fieldValues as Array)?[0] ?? fieldValues;
             }
             else
             {
-                if (fieldTypeName == FieldTypes.SRATIONAL)
+                if (fieldTypeName == GeotiffFieldDataType.SRATIONAL)
                 {
                     throw new NotImplementedException($"SRationals not supported: {fieldTypeName}"); // TODO: Is this true anymore?
                 }
@@ -332,12 +333,15 @@ public class GeoTIFF
             }
 
             // Write the tag's value to the file directory
-            if (FieldTypes.FieldTags.TryGetByKey(fieldTag, out string tagName))
+            if (FieldTypes.FieldTags.TryGetByKey(fieldTagId, out string tagName))
             {
-                fileDirectory[tagName] = value;
+                fileDirectory[tagName] = new Tag(fieldTagId, tagName, fieldTypeName, value, false);
+                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, tagName, fieldTypeName, value, false);
             }
-
-            rawFileDirectory[fieldTag] = value;
+            else
+            {
+                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, null, fieldTypeName, value, false);
+            }
         }
 
         Dictionary<string, object>? geoKeyDirectory = ParseGeoKeyDirectory(fileDirectory);

@@ -2,17 +2,21 @@ namespace Geotiff;
 
 using System.Collections.Generic;
 
+/// <summary>
+
+/// </summary>
 public class ImageFileDirectory
 {
     /// <summary>
     /// Mapping of tag names to values.
     /// </summary>
-    public Dictionary<string, object> FileDirectory { get; }
+    public Dictionary<string, Tag> TagDictionary { get; }
 
     /// <summary>
     /// Mapping of tag IDs to values (raw representation).
+    /// Could be useful if there are non-standard and non-GDAL tags added.
     /// </summary>
-    public Dictionary<int, object> RawFileDirectory { get; }
+    public Dictionary<int, Tag> RawFileDirectory { get; }
 
     /// <summary>
     /// Mapping of geo key names to values.
@@ -27,17 +31,17 @@ public class ImageFileDirectory
     /// <summary>
     /// Creates an ImageFileDirectory.
     /// </summary>
-    /// <param name="fileDirectory">Mapping tag names to values.</param>
+    /// <param name="tagDictionary">Mapping tag names to values.</param>
     /// <param name="rawFileDirectory">Raw file directory, mapping tag IDs to values.</param>
     /// <param name="geoKeyDirectory">Geo key directory, mapping geo key names to values.</param>
     /// <param name="nextIFDByteOffset">Byte offset to the next IFD.</param>
     public ImageFileDirectory(
-        Dictionary<string, object> fileDirectory,
+        Dictionary<string, Tag> tagDictionary,
         Dictionary<int, object> rawFileDirectory,
         Dictionary<string, object> geoKeyDirectory,
         int nextIFDByteOffset)
     {
-        FileDirectory = fileDirectory;
+        TagDictionary = tagDictionary;
         RawFileDirectory = rawFileDirectory;
         GeoKeyDirectory = geoKeyDirectory;
         NextIFDByteOffset = nextIFDByteOffset;
@@ -54,10 +58,10 @@ public class ImageFileDirectory
     public IEnumerable<T>? GetFileDirectoryListValue<T>(string key)
     {
         IEnumerable<T>? finalResult = null;
-        bool listReadResult = FileDirectory.TryGetValue(key, out object listOfObjects);
+        bool listReadResult = TagDictionary.TryGetValue(key, out var listOfObjects);
         if (listReadResult is true)
         {
-            finalResult = ((List<object>)listOfObjects).UnboxAll<T>();
+            finalResult = ((List<object>)listOfObjects.Value).UnboxAll<T>();
         }
 
         return finalResult;
@@ -90,16 +94,16 @@ public class ImageFileDirectory
 
     public T GetFileDirectoryValue<T>(string key)
     {
-        if (FileDirectory.TryGetValue(key, out object obj))
+        if (TagDictionary.TryGetValue(key, out Tag? obj))
         {
             Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-            object? converted = Convert.ChangeType(obj, targetType);
+            object? converted = Convert.ChangeType(obj.Value, targetType);
             return (T)converted;
         }
 
         return default!;
     }
-
+    
     public int[] BitsPerSample => GetFileDirectoryArrayValue<int>("BitsPerSample");
 
     public int[]? SampleFormat => GetFileDirectoryArrayValue<int>("SampleFormat");

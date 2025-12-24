@@ -48,10 +48,10 @@ public class SampleReadResult<T>(T[] flatData, uint width, uint height, GeoTiffI
 }
 
 
-public class GeoTIFFReadResultUnknownType(Array rawArrayData, uint height, uint width, GeotiffSampleDataTypes sampleType)
+public class GeoTIFFReadResultUnknownType(Array rawArrayData, uint height, uint width, GeotiffSampleDataType sampleType)
 {
     public uint Height { get; set; } = height;
     public uint Width { get; set; } = width;
     public Array RawArrayData { get; set; } = rawArrayData;
-    public GeotiffSampleDataTypes sampleType = sampleType;
+    public GeotiffSampleDataType SampleType = sampleType;
 }
