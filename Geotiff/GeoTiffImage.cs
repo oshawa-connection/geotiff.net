@@ -490,7 +490,7 @@ public class GeoTiffImage
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public async Task<GeoTIFFReadResult<T>> ReadRasters<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct 
+    public async Task<GeoTIFFReadResult<T>> ReadRastersAsync<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct 
     {
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
@@ -525,7 +525,7 @@ public class GeoTiffImage
         }
 
         var poolOrDecoder = new DecoderRegistry();
-        return await _ReadRaster<T>(imageWindow, samples, valueArrays, poolOrDecoder, null, null, cancellationToken);
+        return await _ReadRasterAsync<T>(imageWindow, samples, valueArrays, poolOrDecoder, null, null, cancellationToken);
     }
     
     private int sum(IEnumerable<int> array, int start, int end) {
@@ -549,7 +549,7 @@ public class GeoTiffImage
     /// <param name="height">TODO: consider that this can be null</param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="NotImplementedException"></exception>
-    private async Task<GeoTIFFReadResult<T>> _ReadRaster<T>(uint[] imageWindow, int[] samples, List<T[]> valueArrays,
+    private async Task<GeoTIFFReadResult<T>> _ReadRasterAsync<T>(uint[] imageWindow, int[] samples, List<T[]> valueArrays,
         DecoderRegistry decoder, uint? width, uint? height, CancellationToken? cancellationToken) where T : struct
     {
         uint tileWidth = GetTileWidth();
@@ -598,7 +598,7 @@ public class GeoTiffImage
                 Task<TileOrStripResult> getPromise = null;
                 if (planarConfiguration == 1)
                 {
-                    getPromise = GetTileOrStrip(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
+                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
                 }
 
                 for (int sampleIndex = 0; sampleIndex < samples.Length; ++sampleIndex)
@@ -608,7 +608,7 @@ public class GeoTiffImage
                     if (planarConfiguration == 2)
                     {
                         bytesPerPixel = GetSampleByteSize(sample);
-                        getPromise = GetTileOrStrip(xTile, yTile, sample, new DecoderRegistry(),
+                        getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(),
                             cancellationToken);
                     }
 
@@ -852,7 +852,7 @@ public class GeoTiffImage
    *                               to be aborted
    * @returns {Promise.<{x: number, y: number, sample: number, data: ArrayBuffer}>} the decoded strip or tile
    */
-    private async Task<TileOrStripResult> GetTileOrStrip(int x, int y, int sample, DecoderRegistry poolOrDecoder,
+    private async Task<TileOrStripResult> GetTileOrStripAsync(int x, int y, int sample, DecoderRegistry poolOrDecoder,
         CancellationToken? signal)
     {
         int numTilesPerRow = (int)Math.Ceiling((int)GetWidth() / (double)GetTileWidth());
@@ -907,7 +907,7 @@ public class GeoTiffImage
         }
 
         ArrayBuffer slice =
-            (await source.Fetch(new List<Slice>() { new(offset, byteCount) }, signal)).First();
+            (await source.FetchAsync(new List<Slice>() { new(offset, byteCount) }, signal)).First();
 
         Func<Task<ArrayBuffer>> request;
         ArrayBuffer finalData;
@@ -916,7 +916,7 @@ public class GeoTiffImage
             // resolve each request by potentially applying array normalization
             request = async () =>
             {
-                ArrayBuffer data = await poolOrDecoder.Decode(fileDirectory, slice);
+                ArrayBuffer data = await poolOrDecoder.DecodeAsync(fileDirectory, slice);
                 // var data = slice;
                 int sampleFormat = GetSampleFormat();
                 uint bitsPerSample = GetBitsPerSample();
@@ -1133,7 +1133,7 @@ public class GeoTiffImage
     /// <param name="y"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<GeoTIFFReadResult<T>> ReadValueAtCoordinate<T>(double x, double y,
+    public async Task<GeoTIFFReadResult<T>> ReadValueAtCoordinateAsync<T>(double x, double y,
         CancellationToken? cancellationToken = null) where T : struct
     {
         IEnumerable<double>? modelTransformationList =
@@ -1160,6 +1160,6 @@ public class GeoTiffImage
             Left = (uint)left, Right = (uint)right, Bottom = (uint)bottom, Top = (uint)top
         };
 
-        return await ReadRasters<T>(window, cancellationToken);
+        return await ReadRastersAsync<T>(window, cancellationToken);
     }
 }

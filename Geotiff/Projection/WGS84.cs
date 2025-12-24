@@ -2,8 +2,6 @@ namespace Geotiff.Projection;
 
 internal static class WGS84
 {
-    // No filepath: user decides where to place this code
-
     private const double EarthRadius = 6378137.0;
 
     /// <summary>

@@ -125,15 +125,15 @@ internal class Program
             string? tiffPath = Path.Combine(dir, r.FileName);
             await using var fsSource = new FileStream(tiffPath, FileMode.Open, FileAccess.Read);
             Console.WriteLine($"Messages for {r.FileName}");
-            GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
-            int count = await geotiff.GetImageCount();
+            GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+            int count = await geotiff.GetImageCountAsync();
 
             try
             {
                 ShouldBeError("ImageCount", count, r.Images.Count);
                 for (int i = 0; i < r.Images.Count; i++)
                 {
-                    GeoTiffImage? csharpImage = await geotiff.GetImage(i);
+                    GeoTiffImage? csharpImage = await geotiff.GetImageAsync(i);
                     GeotiffImage? resultImage = r.Images[i];
                     foreach (KeyValuePair<string, JsonElement> tag in resultImage.Tags)
                     {
@@ -191,8 +191,8 @@ internal class Program
         string? tiffPath = Path.Combine(dir, "tiffData", "erdas_spnad83.tif");
 
         await using var fsSource = new FileStream(tiffPath, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStream(fsSource);
-        int count = await geotiff.GetImageCount();
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        int count = await geotiff.GetImageCountAsync();
     }
 
     private static async Task Main(string[] args)

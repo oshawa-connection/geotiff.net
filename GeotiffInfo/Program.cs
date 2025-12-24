@@ -8,19 +8,19 @@ class Program
     {
         await using var fsSource = new FileStream(args.First(), FileMode.Open, FileAccess.Read);
 
-        var tiff = await GeoTIFF.FromStream(fsSource);
+        var tiff = await GeoTIFF.FromStreamAsync(fsSource);
         Console.WriteLine(tiff.IsBifTIFF);
         
-        var imageCount = await tiff.GetImageCount();
+        var imageCount = await tiff.GetImageCountAsync();
         Console.WriteLine(imageCount);
 
-        var image = await tiff.GetImage();
+        var image = await tiff.GetImageAsync();
         
         var origin = image.GetOrigin();
         var geotiffSampleType = image.GetSampleType();
         
         Console.WriteLine(geotiffSampleType);
-        var readResult = await image.ReadRasters<byte>();
+        var readResult = await image.ReadRastersAsync<byte>();
         var sampleResult = readResult.GetSampleResultAt(0);
         Console.WriteLine(sampleResult.FlatData.GetValue(0));
         Console.WriteLine(sampleResult.To2DArray()[0,0]);

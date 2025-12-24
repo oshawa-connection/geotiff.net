@@ -77,13 +77,12 @@ public class GeoTIFF
             : dv.GetUint32(4, isLittleEndian);
     }
     
-    public static async Task<GeoTIFF> FromRemoteClient(IGeotiffRemoteClient client)
+    public static async Task<GeoTIFF> FromRemoteClientAsync(IGeotiffRemoteClient client)
     {
         var source = new RemoteSource(client, int.MaxValue, false);
-        IEnumerable<ArrayBuffer>? slices = await source.Fetch(new Slice[] { new(0, 1024) });
+        IEnumerable<ArrayBuffer>? slices = await source.FetchAsync(new Slice[] { new(0, 1024) });
 
         var dv = new DataView(slices.First());
-        ushort value = dv.GetUint16(0, true);
         bool isLittleEndian = GetBomMarker(dv);
 
         bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
@@ -92,12 +91,13 @@ public class GeoTIFF
         return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
     
+    
     /// <summary>
     /// If you provide a non-seekable stream, the entire stream will be read into memory.
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    public static async Task<GeoTIFF> FromStream(Stream stream)
+    public static GeoTIFF FromStream(Stream stream)
     {
         Stream seekableStream;
         if (stream.CanSeek)
@@ -107,13 +107,65 @@ public class GeoTIFF
         else
         {
             seekableStream = new MemoryStream();
-            await stream.CopyToAsync(seekableStream);
+            stream.CopyTo(seekableStream);
             seekableStream.Position = 0;
         }
         
         byte[] buffer = new byte[1024];
         // having less bytes than requested is ok in this situation. Up to 1024, but less is ok.
-        int bytesRead = await seekableStream.ReadAsync(buffer, 0, buffer.Length); 
+        seekableStream.Read(buffer, 0, buffer.Length);
+        
+        byte[]? arr = buffer.ToArray();
+        var dv = new DataView(arr);
+        bool isLittleEndian = GetBomMarker(dv);
+
+        bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
+        
+        var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
+        seekableStream.Position = 0;
+        var source = new FileSource(seekableStream);
+        return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
+    }
+    
+    
+    /// <summary>
+    /// If you provide a non-seekable stream, the entire stream will be read into memory.
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <returns></returns>
+    public static async Task<GeoTIFF> FromStreamAsync(Stream stream, CancellationToken? cancellationToken = null)
+    {
+        Stream seekableStream;
+        if (stream.CanSeek)
+        {
+            seekableStream = stream;
+        }
+        else
+        {
+            seekableStream = new MemoryStream();
+            if (cancellationToken is not null)
+            {
+                await stream.CopyToAsync(seekableStream,(CancellationToken)cancellationToken);    
+            }
+            else
+            {
+                await stream.CopyToAsync(seekableStream);
+            }
+            
+            seekableStream.Position = 0;
+        }
+        
+        byte[] buffer = new byte[1024];
+        // having less bytes than requested is ok in this situation. Up to 1024, but less is ok.
+        if (cancellationToken is not null)
+        {
+            await seekableStream.ReadAsync(buffer, 0, buffer.Length, (CancellationToken)cancellationToken);    
+        }
+        else
+        {
+            await seekableStream.ReadAsync(buffer, 0, buffer.Length);
+        }
+         
         
         byte[]? arr = buffer.ToArray();
         var dv = new DataView(arr);
@@ -128,13 +180,13 @@ public class GeoTIFF
         return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
 
-    private async Task<DataSlice> GetSlice(int offset, int? size = null)
+    private async Task<DataSlice> GetSliceAsync(int offset, int? size = null)
     {
         int fallbackSize = _bigTiff ? 4048 : 1024;
         int sizeToUse = size is null ? fallbackSize : (int)size;
         var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
-        IEnumerable<ArrayBuffer>? results = await Source.Fetch(slices);
+        IEnumerable<ArrayBuffer>? results = await Source.FetchAsync(slices);
 
         return new DataSlice(
             results.Single().GetAllBytes(), // TODO: Double check this.  
@@ -206,12 +258,12 @@ public class GeoTIFF
         return geoKeyDirectory;
     }
 
-    protected internal async Task<ImageFileDirectory> ParseFileDirectoryAt(int offset)
+    protected internal async Task<ImageFileDirectory> ParseFileDirectoryAtAsync(int offset)
     {
         int entrySize = _bigTiff ? 20 : 12;
         int offsetSize = _bigTiff ? 8 : 2;
 
-        DataSlice? dataSlice = await GetSlice(offset);
+        DataSlice? dataSlice = await GetSliceAsync(offset);
 
         int numDirEntries = _bigTiff
             ? (int)dataSlice.ReadUInt64(offset)
@@ -221,7 +273,7 @@ public class GeoTIFF
         int byteSize = ((int)numDirEntries * (int)entrySize) + (_bigTiff ? 16 : 6);
         if (!dataSlice.Covers(offset, byteSize))
         {
-            dataSlice = await GetSlice(offset, byteSize);
+            dataSlice = await GetSliceAsync(offset, byteSize);
         }
 
         var fileDirectory = new Dictionary<string, object>();
@@ -257,7 +309,7 @@ public class GeoTIFF
                 }
                 else
                 {
-                    DataSlice? fieldDataSlice = await GetSlice((int)actualOffset, (int)length);
+                    DataSlice? fieldDataSlice = await GetSliceAsync((int)actualOffset, (int)length);
                     fieldValues = fieldDataSlice.GetValues(fieldType, typeCount, (int)actualOffset);
                 }
             }
@@ -303,7 +355,7 @@ public class GeoTIFF
 
     private SparseList<ImageFileDirectory> ImageFileDirectories = new();
     
-    protected internal async Task<ImageFileDirectory> RequestIFD(int index)
+    protected internal async Task<ImageFileDirectory> RequestIFDAsync(int index)
     {
         if (ImageFileDirectories[index] is not null)
         {
@@ -312,7 +364,7 @@ public class GeoTIFF
 
         if (index == 0)
         {
-            ImageFileDirectory? result = await ParseFileDirectoryAt((int)FirstIFDOffset);// TODO: this is a narrowing conversion
+            ImageFileDirectory? result = await ParseFileDirectoryAtAsync((int)FirstIFDOffset);// TODO: this is a narrowing conversion
             ImageFileDirectories.Add(index, result);
             return result;
         }
@@ -323,7 +375,7 @@ public class GeoTIFF
             throw new GeoTiffImageIndexError(index);
         }
 
-        ImageFileDirectory? result2 = await ParseFileDirectoryAt(currentIFD.NextIFDByteOffset);
+        ImageFileDirectory? result2 = await ParseFileDirectoryAtAsync(currentIFD.NextIFDByteOffset);
         ImageFileDirectories.Add(index, result2);
         return result2;
     }
@@ -335,18 +387,18 @@ public class GeoTIFF
     /// like this. This method is therefore not foolproof.
     /// </summary>
     /// <returns></returns>
-    public async Task<bool> HasOverviews()
+    public async Task<bool> HasOverviewsAsync()
     {
-        var imageCount = await this.GetImageCount();
+        var imageCount = await this.GetImageCountAsync();
         if (imageCount < 2)
         {
             return false;
         }
 
-        var currentImage = await this.GetImage();
+        var currentImage = await this.GetImageAsync();
         for (int i = 1; i < imageCount; i++)
         {
-            var possibleOverview = await this.GetImage(i);
+            var possibleOverview = await this.GetImageAsync(i);
             if (currentImage.GetHeight() < possibleOverview.GetHeight() && currentImage.GetWidth() < possibleOverview.GetWidth())
             {
                 return false;
@@ -358,7 +410,7 @@ public class GeoTIFF
         return true;
     }
     
-    public virtual async Task<int> GetImageCount()
+    public virtual async Task<int> GetImageCountAsync()
     {
         if (this.finalImageCount is not null)
         {
@@ -371,7 +423,7 @@ public class GeoTIFF
         {
             try
             {
-                await RequestIFD(index);
+                await RequestIFDAsync(index);
                 ++index;
             }
             catch (GeoTiffImageIndexError e) // TODO: bad, using exception for control flow. Diverge from geotiff.js here.
@@ -389,19 +441,19 @@ public class GeoTIFF
     }
 
 
-    public virtual async Task<GeoTiffImage> GetImage(int index = 0)
+    public virtual async Task<GeoTiffImage> GetImageAsync(int index = 0)
     {
         if (ImageFileDirectories[index] is null)
         {
             int i = 0;
             while (i < index)
             {
-                await RequestIFD(i); // populate cache
+                await RequestIFDAsync(i); // populate cache
                 i++;
             }
         }
 
-        ImageFileDirectory? ifd = await RequestIFD(index);
+        ImageFileDirectory? ifd = await RequestIFDAsync(index);
         return new GeoTiffImage(
             ifd, IsLittleEndian, false, Source
         );

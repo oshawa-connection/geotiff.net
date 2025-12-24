@@ -9,7 +9,7 @@ public class RawGeotiffDecoder : GeotiffDecoder
 {
     public override IEnumerable<int> codes => new[] { 1 };
 
-    public override async Task<ArrayBuffer> DecodeBlock(ArrayBuffer buffer)
+    public override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer)
     {
         return buffer;
     }

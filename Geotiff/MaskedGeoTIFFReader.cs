@@ -32,14 +32,14 @@ public class MaskedGeoTIFFReader
     /// <exception cref="InvalidMaskedGeoTIFFException"></exception>
     public static async Task<MaskedGeoTIFFReader> FromMultiGeoTiff(MultiGeoTIFF multiGeoTiff)
     {
-        var count = await multiGeoTiff.GetImageCount();
+        var count = await multiGeoTiff.GetImageCountAsync();
         if (count < 2)
         {
             throw new InvalidMaskedGeoTIFFException("Masked MultiGeoTIFFs require at least 2 images");
         }
 
-        var mainImage = await multiGeoTiff.GetImage();
-        var maskImage = await multiGeoTiff.GetImage(1);
+        var mainImage = await multiGeoTiff.GetImageAsync();
+        var maskImage = await multiGeoTiff.GetImageAsync(1);
         // TODO: check type of mask band here - should be byte. Double check this from GDAL.
         
         if (mainImage.GetHeight() != maskImage.GetHeight() || mainImage.GetWidth() != maskImage.GetWidth())
@@ -52,11 +52,11 @@ public class MaskedGeoTIFFReader
 
     public async Task<MaskBandGeoTIFFReadResult<T>> ReadMaskedRasters<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct
     {
-        var mainImage = await multiGeoTiff.GetImage();
-        var maskImage = await multiGeoTiff.GetImage(1);
+        var mainImage = await multiGeoTiff.GetImageAsync();
+        var maskImage = await multiGeoTiff.GetImageAsync(1);
 
-        var mainReadResult = await mainImage.ReadRasters<T>(window, cancellationToken);
-        var maskedReadResult = await maskImage.ReadRasters<byte>(window, cancellationToken);
+        var mainReadResult = await mainImage.ReadRastersAsync<T>(window, cancellationToken);
+        var maskedReadResult = await maskImage.ReadRastersAsync<byte>(window, cancellationToken);
         
         return new MaskBandGeoTIFFReadResult<T>(
             maskedReadResult.GetSampleResultAt(0).FlatData, 

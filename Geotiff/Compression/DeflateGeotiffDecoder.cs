@@ -13,7 +13,7 @@ public class DeflateGeotiffDecoder : GeotiffDecoder
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public override async Task<ArrayBuffer> DecodeBlock(ArrayBuffer buffer)
+    public override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer)
     {
         using var ms = new MemoryStream(buffer.GetAllBytes());
         await using var decompressor = new ZlibStream(ms, CompressionMode.Decompress);
