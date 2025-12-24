@@ -3,6 +3,16 @@ using Geotiff.Exceptions;
 namespace Geotiff;
 
 /// <summary>
+/// There are three cases that need to be handled here:
+/// 1. External .msk file.
+/// 2. Internal alpha band mask
+/// 3. 1-X bands with the GDAL_NODATA tag
+///
+/// There is also potentially a 4th case
+/// "Specify a per-band NODATA value as part of a suggested encodingInfo extension to the RangeType DataRecord fields (which also addresses the scale factor and offset)"
+/// But I haven't seen it used.
+///
+/// 
 /// TODO: add static method to do this from single dataset GeoTIFF with internal mask band
 /// </summary>
 public class MaskedGeoTIFFReader
@@ -13,6 +23,13 @@ public class MaskedGeoTIFFReader
         this.multiGeoTiff = multiGeoTiff;
     }
     
+    /// <summary>
+    /// This is the case 1 where the tiff has to maintain backwards compatability i.e. have 1-3 bands
+    /// for clients that only support that, so they write the mask band out to a seperate .msk file.
+    /// </summary>
+    /// <param name="multiGeoTiff"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidMaskedGeoTIFFException"></exception>
     public static async Task<MaskedGeoTIFFReader> FromMultiGeoTiff(MultiGeoTIFF multiGeoTiff)
     {
         var count = await multiGeoTiff.GetImageCount();
@@ -23,7 +40,8 @@ public class MaskedGeoTIFFReader
 
         var mainImage = await multiGeoTiff.GetImage();
         var maskImage = await multiGeoTiff.GetImage(1);
-
+        // TODO: check type of mask band here - should be byte. Double check this from GDAL.
+        
         if (mainImage.GetHeight() != maskImage.GetHeight() || mainImage.GetWidth() != maskImage.GetWidth())
         {
             throw new InvalidMaskedGeoTIFFException("Mask file must have the same dimensions as the main file");
@@ -32,8 +50,19 @@ public class MaskedGeoTIFFReader
         return new MaskedGeoTIFFReader(multiGeoTiff);
     }
 
-    public static async Task<MaskedGeoTIFFReadResult<T>> ReadMaskedRasters<T>() where T : struct
+    public async Task<MaskBandGeoTIFFReadResult<T>> ReadMaskedRasters<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct
     {
-        throw new NotImplementedException();
+        var mainImage = await multiGeoTiff.GetImage();
+        var maskImage = await multiGeoTiff.GetImage(1);
+
+        var mainReadResult = await mainImage.ReadRasters<T>(window, cancellationToken);
+        var maskedReadResult = await maskImage.ReadRasters<byte>(window, cancellationToken);
+        
+        return new MaskBandGeoTIFFReadResult<T>(
+            maskedReadResult.GetSampleResultAt(0).FlatData, 
+            mainReadResult.SampleData, 
+            maskedReadResult.Width, 
+            maskedReadResult.Height, 
+            mainImage);
     }
 }
