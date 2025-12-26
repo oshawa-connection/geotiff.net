@@ -18,7 +18,7 @@ public class ArrayBuffer
         return buffer.AsMemory();
     }
 
-    public static async Task<ArrayBuffer> FromStream(Stream stream, CancellationToken? signal)
+    public static async Task<ArrayBuffer> FromStreamAsync(Stream stream, CancellationToken? signal= null)
     {
         var ms = new MemoryStream();
         if (signal != null)

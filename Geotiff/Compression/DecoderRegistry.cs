@@ -29,9 +29,9 @@ public class DecoderRegistry
         return _register.First(d => d.codes.Contains((int)compressionCode));
     }
 
-    public async Task<ArrayBuffer> Decode(ImageFileDirectory fileDirectory, ArrayBuffer buffer)
+    public async Task<ArrayBuffer> DecodeAsync(ImageFileDirectory fileDirectory, ArrayBuffer buffer)
     {
         GeotiffDecoder? decoder = GetDecoder(fileDirectory);
-        return await decoder.DecodeBlock(buffer);
+        return await decoder.DecodeBlockAsync(buffer);
     }
 }

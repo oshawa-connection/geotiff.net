@@ -5,5 +5,5 @@ namespace Geotiff.Compression;
 public abstract class GeotiffDecoder
 {
     public abstract IEnumerable<int> codes { get; }
-    public abstract Task<ArrayBuffer> DecodeBlock(ArrayBuffer buffer);
+    public abstract Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer);
 }

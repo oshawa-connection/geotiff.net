@@ -2,7 +2,7 @@ using Geotiff.Exceptions;
 
 namespace Geotiff;
 
-public static class Constants
+public static class Constant
 {
     public const ushort BOMLittleEndian = 0x4949;
     public const ushort BOMBigEndian = 0x4D4D;
@@ -11,7 +11,7 @@ public static class Constants
     public const int WGS84_EPSG_CODE = 4326;
 }
 
-public enum GeotiffSampleDataTypes
+public enum GeotiffSampleDataType
 {
     Uint8,
     Int8,
@@ -25,44 +25,49 @@ public enum GeotiffSampleDataTypes
 }
 
 
+public enum GeotiffFieldDataType
+{
+    BYTE,
+    ASCII,
+    SHORT,
+    LONG,
+    RATIONAL,
+    SBYTE,
+    UNDEFINED,
+    SSHORT,
+    SLONG,
+    SRATIONAL,
+    FLOAT,
+    DOUBLE,
+    IFD,
+    LONG8,
+    SLONG8,
+    IFD8
+}
+
 
 public static class FieldTypes
 {
-    public const string BYTE = "BYTE";
-    public const string ASCII = "ASCII";
-    public const string SHORT = "SHORT";
-    public const string LONG = "LONG";
-    public const string RATIONAL = "RATIONAL";
-    public const string SBYTE = "SBYTE";
-    public const string UNDEFINED = "UNDEFINED";
-    public const string SSHORT = "SSHORT";
-    public const string SLONG = "SLONG";
-    public const string SRATIONAL = "SRATIONAL";
-    public const string FLOAT = "FLOAT";
-    public const string DOUBLE = "DOUBLE";
-    public const string IFD = "IFD";
-    public const string LONG8 = "LONG8";
-    public const string SLONG8 = "SLONG8";
-    public const string IFD8 = "IFD8";
 
-    public static Dictionary<int, string> FieldTypeLookup = new()
+
+    public static Dictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
     {
-        { 0x0001, BYTE },
-        { 0x0002, ASCII },
-        { 0x0003, SHORT },
-        { 0x0004, LONG },
-        { 0x0005, RATIONAL },
-        { 0x0006, SBYTE },
-        { 0x0007, UNDEFINED },
-        { 0x0008, SSHORT },
-        { 0x0009, SLONG },
-        { 0x000A, SRATIONAL },
-        { 0x000B, FLOAT },
-        { 0x000C, DOUBLE },
-        { 0x000D, IFD },
-        { 0x0010, LONG8 },
-        { 0x0011, SLONG8 },
-        { 0x0012, IFD8 }
+        { 0x0001, GeotiffFieldDataType.BYTE },
+        { 0x0002, GeotiffFieldDataType.ASCII },
+        { 0x0003, GeotiffFieldDataType.SHORT },
+        { 0x0004, GeotiffFieldDataType.LONG },
+        { 0x0005, GeotiffFieldDataType.RATIONAL },
+        { 0x0006, GeotiffFieldDataType.SBYTE },
+        { 0x0007, GeotiffFieldDataType.UNDEFINED },
+        { 0x0008, GeotiffFieldDataType.SSHORT },
+        { 0x0009, GeotiffFieldDataType.SLONG },
+        { 0x000A, GeotiffFieldDataType.SRATIONAL },
+        { 0x000B, GeotiffFieldDataType.FLOAT },
+        { 0x000C, GeotiffFieldDataType.DOUBLE },
+        { 0x000D, GeotiffFieldDataType.IFD },
+        { 0x0010, GeotiffFieldDataType.LONG8 },
+        { 0x0011, GeotiffFieldDataType.SLONG8 },
+        { 0x0012, GeotiffFieldDataType.IFD8 }
     };
 
 
@@ -571,28 +576,28 @@ public static class FieldTypes
 
     public static int GetFieldTypeLength(int fieldTypea)
     {
-        string? fieldType = FieldTypeLookup[fieldTypea];
+        GeotiffFieldDataType fieldType = FieldTypeLookup[fieldTypea];
         switch (fieldType)
         {
-            case BYTE:
-            case ASCII:
-            case SBYTE:
-            case UNDEFINED:
+            case GeotiffFieldDataType.BYTE:
+            case GeotiffFieldDataType.ASCII:
+            case GeotiffFieldDataType.SBYTE:
+            case GeotiffFieldDataType.UNDEFINED:
                 return 1;
-            case SHORT:
-            case SSHORT:
+            case GeotiffFieldDataType.SHORT:
+            case GeotiffFieldDataType.SSHORT:
                 return 2;
-            case LONG:
-            case SLONG:
-            case FLOAT:
-            case IFD:
+            case GeotiffFieldDataType.LONG:
+            case GeotiffFieldDataType.SLONG:
+            case GeotiffFieldDataType.FLOAT:
+            case GeotiffFieldDataType.IFD:
                 return 4;
-            case RATIONAL:
-            case SRATIONAL:
-            case DOUBLE:
-            case LONG8:
-            case SLONG8:
-            case IFD8:
+            case GeotiffFieldDataType.RATIONAL:
+            case GeotiffFieldDataType.SRATIONAL:
+            case GeotiffFieldDataType.DOUBLE:
+            case GeotiffFieldDataType.LONG8:
+            case GeotiffFieldDataType.SLONG8:
+            case GeotiffFieldDataType.IFD8:
                 return 8;
             default:
                 throw new GeoTiffException($"Invalid field type: {fieldType}");

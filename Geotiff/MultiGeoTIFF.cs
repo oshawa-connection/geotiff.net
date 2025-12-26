@@ -19,8 +19,8 @@ public class MultiGeoTIFF : GeoTIFF
 
     public static async Task<MultiGeoTIFF> FromStreams(Stream mainStream, IEnumerable<Stream> otherStreams)
     {
-        var mainTiff = await GeoTIFF.FromStream(mainStream);
-        var x = otherStreams.Select(async d => await GeoTIFF.FromStream(d));
+        var mainTiff = await GeoTIFF.FromStreamAsync(mainStream);
+        var x = otherStreams.Select(async d => await GeoTIFF.FromStreamAsync(d));
         var r = await Task.WhenAll(x);
 
         return new MultiGeoTIFF(mainTiff, r, mainTiff.IsLittleEndian, mainTiff.IsBifTIFF, mainTiff.FirstIFDOffset);
@@ -28,14 +28,14 @@ public class MultiGeoTIFF : GeoTIFF
     
     private async Task ParseFileDirectoriesForAllFiles()
     {
-        var tasks2 = this.sidecarFileSources.Select(d => d.ParseFileDirectoryAt((int)d.FirstIFDOffset));
-        var tasks3 = tasks2.Append(this.mainFile.ParseFileDirectoryAt((int)this.mainFile.FirstIFDOffset));
+        var tasks2 = this.sidecarFileSources.Select(d => d.ParseFileDirectoryAtAsync((int)d.FirstIFDOffset));
+        var tasks3 = tasks2.Append(this.mainFile.ParseFileDirectoryAtAsync((int)this.mainFile.FirstIFDOffset));
 
         await Task.WhenAll(tasks3);
     }
 
-    public override async Task<GeoTiffImage> GetImage(int index = 0) {
-        await this.GetImageCount();
+    public override async Task<GeoTiffImage> GetImageAsync(int index = 0) {
+        await this.GetImageCountAsync();
         await this.ParseFileDirectoriesForAllFiles();
         var visited = 0;
         var relativeIndex = 0;
@@ -45,7 +45,7 @@ public class MultiGeoTIFF : GeoTIFF
             var imageFile = imageFiles[i];
             for (var ii = 0; ii < this.imageCounts.ElementAt(i); ii++) {
                 if (index == visited) {
-                    var ifd = await imageFile.RequestIFD(relativeIndex);
+                    var ifd = await imageFile.RequestIFDAsync(relativeIndex);
                     return new GeoTiffImage(
                         ifd, this.IsLittleEndian, false,
                         imageFile.Source
@@ -61,7 +61,7 @@ public class MultiGeoTIFF : GeoTIFF
     }
     
     
-    public override async Task<int> GetImageCount()
+    public override async Task<int> GetImageCountAsync()
     {
         if (this.finalImageCount != null) 
         {
@@ -70,10 +70,10 @@ public class MultiGeoTIFF : GeoTIFF
 
         var ics = new List<Task<int>>()
         {
-            this.mainFile.GetImageCount()
+            this.mainFile.GetImageCountAsync()
         };
         
-        ics.AddRange(this.sidecarFileSources.Select(d => d.GetImageCount()));
+        ics.AddRange(this.sidecarFileSources.Select(d => d.GetImageCountAsync()));
         this.imageCounts = await Task.WhenAll(ics);
         this.finalImageCount = this.imageCounts.Sum();
         return (int)this.finalImageCount;

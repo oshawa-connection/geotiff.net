@@ -19,7 +19,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
         this.allowFullFile = allowFullFile;
     }
 
-    public async Task<IEnumerable<ArrayBuffer>> FetchSlices(IEnumerable<Slice> slices, CancellationToken? signal = null)
+    public async Task<IEnumerable<ArrayBuffer>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
     {
         using HttpRequestMessage request = new(
             HttpMethod.Get,
@@ -56,7 +56,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
                 return byteRanges;
             }
 
-            ArrayBuffer? data = await ArrayBuffer.FromStream(await response.Content.ReadAsStreamAsync(), signal);
+            ArrayBuffer? data = await ArrayBuffer.FromStreamAsync(await response.Content.ReadAsStreamAsync(), signal);
 
             ContentRangeHeaderParseResult? contentRangeResult = response.Headers.ParseContentRange();
             if (contentRangeResult is not null)
@@ -86,14 +86,14 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
                     "Server responded with full file. If this is intentional behaviour, call RemoteSource with allowFullFile = true");
             }
 
-            ArrayBuffer? data = await ArrayBuffer.FromStream(await response.Content.ReadAsStreamAsync(), signal);
+            ArrayBuffer? data = await ArrayBuffer.FromStreamAsync(await response.Content.ReadAsStreamAsync(), signal);
 
             // this._fileSize = data.Length;
             return new[] { data };
         }
     }
 
-    public async Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? signal = null)
+    public async Task<ArrayBuffer> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
     {
         int offset = slice.Offset;
         int length = slice.Length;
@@ -118,7 +118,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
         if (response.StatusCode == HttpStatusCode.PartialContent)
         {
             // TODO: Handle parseContentRange here
-            ArrayBuffer? data = await ArrayBuffer.FromStream(await response.Content.ReadAsStreamAsync(), signal);
+            ArrayBuffer? data = await ArrayBuffer.FromStreamAsync(await response.Content.ReadAsStreamAsync(), signal);
             return data;
             //   const data = await response.getData();
             //
@@ -159,6 +159,16 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
             //   length: data.byteLength,
             // };
         }
+    }
+
+    public IEnumerable<ArrayBuffer> FetchSlices(IEnumerable<Slice> slices)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ArrayBuffer FetchSlice(Slice slice)
+    {
+        throw new NotImplementedException();
     }
 
 
