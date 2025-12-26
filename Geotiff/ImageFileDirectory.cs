@@ -37,7 +37,7 @@ public class ImageFileDirectory
     /// <param name="nextIFDByteOffset">Byte offset to the next IFD.</param>
     public ImageFileDirectory(
         Dictionary<string, Tag> tagDictionary,
-        Dictionary<int, object> rawFileDirectory,
+        Dictionary<int, Tag> rawFileDirectory,
         Dictionary<string, object> geoKeyDirectory,
         int nextIFDByteOffset)
     {

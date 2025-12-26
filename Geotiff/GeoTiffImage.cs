@@ -96,9 +96,9 @@ public class GeoTiffImage
         return null;
     }
 
-    public IEnumerable<> GetAllRawTags()
+    public IEnumerable<Tag> GetAllRawTags()
     {
-        return this.fileDirectory.RawFileDirectory.Values.
+        return this.fileDirectory.RawFileDirectory.Values;
     }
     
     /// <summary>

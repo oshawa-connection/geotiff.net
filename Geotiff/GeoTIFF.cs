@@ -278,7 +278,7 @@ public class GeoTIFF
         }
 
         var fileDirectory = new Dictionary<string, Tag>();
-        var rawFileDirectory = new Dictionary<int, object>();
+        var rawFileDirectory = new Dictionary<int, Tag>();
 
         int i = offset + (_bigTiff ? 8 : 2);
         for (long entryCount = 0; entryCount < numDirEntries; i += entrySize, ++entryCount)
@@ -291,6 +291,7 @@ public class GeoTIFF
 
             GeotiffGetValuesResult fieldValues;
             object value;
+            bool isList = false;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
             GeotiffFieldDataType fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
             long valueOffset = i + (_bigTiff ? 12 : 8);
@@ -330,17 +331,18 @@ public class GeoTIFF
                 }
 
                 value = fieldValues.GetListOfElements();
+                isList = true;
             }
 
             // Write the tag's value to the file directory
             if (FieldTypes.FieldTags.TryGetByKey(fieldTagId, out string tagName))
             {
-                fileDirectory[tagName] = new Tag(fieldTagId, tagName, fieldTypeName, value, false);
-                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, tagName, fieldTypeName, value, false);
+                fileDirectory[tagName] = new Tag(fieldTagId, tagName, fieldTypeName, value, isList);
+                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, tagName, fieldTypeName, value, isList);
             }
             else
             {
-                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, null, fieldTypeName, value, false);
+                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, null, fieldTypeName, value, isList);
             }
         }
 

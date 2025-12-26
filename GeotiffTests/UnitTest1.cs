@@ -98,8 +98,6 @@ public class UnitTest1
         bbox.XMax.ShouldBe(-79.75, 0.001);
         bbox.YMax.ShouldBe(32, 0.001);
         uint nPixels = image.GetHeight() * image.GetWidth();
-        
-        image.fileDirectory
     }
     
 

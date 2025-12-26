@@ -15,7 +15,21 @@ class Program
         Console.WriteLine(imageCount);
 
         var image = await tiff.GetImageAsync();
-        image.ListTags()
+        var knownTags = image.GetAllKnownTags();
+        Console.WriteLine("Known Tags:");
+        foreach (var knownTag in knownTags.Where(d => d.IsList is false))
+        {
+            Console.WriteLine($"{knownTag.TagName}: {knownTag.Value}");
+        }
+
+        foreach (var knownTag in knownTags.Where(d => d.IsList))
+        {
+            Console.WriteLine($"{knownTag.TagName}");
+            foreach (var lv in (List<object>)knownTag.Value)
+            {
+                Console.WriteLine();
+            }
+        }
         var origin = image.GetOrigin();
         var geotiffSampleType = image.GetSampleType();
         
