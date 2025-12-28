@@ -48,8 +48,6 @@ public enum GeotiffFieldDataType
 
 public static class FieldTypes
 {
-
-
     public static Dictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
     {
         { 0x0001, GeotiffFieldDataType.BYTE },
