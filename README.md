@@ -69,7 +69,7 @@ Before release, the bare minimum:
 - BigTIFF is working well, but needs some tests to cover it. 
 - Also some tests for cases where precision is important.
 - Handle http servers that respond in different ways in GeotiffHTTPClient.cs - check todo comments in that file.
-
+- Allow users to specify which samples they want to read rather than reading all of them.
 
 Post initial release:
 
