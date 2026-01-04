@@ -30,9 +30,6 @@ public class GeotiffGetValuesResult
     public bool IsRational => _resultRational != null;
     public bool IsSRational => _resultSRational != null;
     
-
-    
-    
     public ulong[] ResultUInt64 =>
         _resultUInt64 ?? throw new InvalidOperationException("Result is not a UInt64 array.");
 
@@ -63,8 +60,6 @@ public class GeotiffGetValuesResult
         return new GeotiffGetValuesResult { _resultInt16 = data };
     }
     
-    
-
     public static GeotiffGetValuesResult FromUInt32(uint[] data)
     {
         return new GeotiffGetValuesResult { _resultUInt32 = data };

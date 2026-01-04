@@ -6,7 +6,7 @@ namespace Geotiff;
 
 public class GeoTiffImage
 {
-    public readonly ImageFileDirectory fileDirectory;
+    private readonly ImageFileDirectory fileDirectory;
     public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
@@ -20,7 +20,7 @@ public class GeoTiffImage
         this.littleEndian = littleEndian;
         tiles = cache ? new Dictionary<int, ArrayBuffer>() : null;
 
-        isTiled = fileDirectory.FileDirectory.ContainsKey("StripOffsets") is false;
+        isTiled = fileDirectory.TagDictionary.ContainsKey("StripOffsets") is false;
         ushort? planarConfiguration = fileDirectory.GetFileDirectoryValue<ushort?>(FieldTypes.PlanarConfiguration);
 
         if (planarConfiguration is null)
@@ -50,8 +50,7 @@ public class GeoTiffImage
     {
         IEnumerable<double>? modelTransformation =
             fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
-
-        return modelTransformation is not null;
+        return modelTransformation is not null && modelTransformation.Count() > 11;
     }
 
     /// <summary>
@@ -64,10 +63,10 @@ public class GeoTiffImage
     }
 
     /// <summary>
-    /// 
+    /// Returns null if there is no affine transformation set
     /// </summary>
     /// <returns></returns>
-    /// <exception cref="GeoTiffException">Thrown if the affine transformation is not set</exception>
+    /// <exception cref="GeoTiffException">Thrown if the affine transformation is invalid</exception>
     public VectorXYZ? GetOrigin()
     {
         IEnumerable<double>? tiePoint = fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
@@ -82,7 +81,10 @@ public class GeoTiffImage
         if (modelTransformation is not null)
         {
             // TODO: check modeltransformation length
-
+            if (modelTransformation.Count() < 12)
+            {
+                throw new GeoTiffException("The image has an invalid model transformation");
+            }
             return new VectorXYZ()
             {
                 X = modelTransformation.ElementAt(3),
@@ -91,9 +93,23 @@ public class GeoTiffImage
             };
         }
 
-        throw new GeoTiffException("The image does not have an affine transformation.");
+        return null;
     }
 
+    public IEnumerable<Tag> GetAllRawTags()
+    {
+        return this.fileDirectory.RawFileDirectory.Values;
+    }
+    
+    /// <summary>
+    /// Lists all standard, extended and GDAL tags known to this library.
+    /// Unrecognised tags will be excluded, use GetAllRawTags instead for these.
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<Tag> GetAllKnownTags()
+    {
+        return this.fileDirectory.TagDictionary.Values;
+    }
 
     /// <summary>
     /// uint return type here is confirmed by geotiff spec
@@ -418,7 +434,7 @@ public class GeoTiffImage
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return new DataView(size, GeotiffSampleDataTypes.Uint8);
+                    return new DataView(size, GeotiffSampleDataType.Uint8);
                 }
                 else if (bitsPerSample <= 16)
                 {
@@ -427,7 +443,7 @@ public class GeoTiffImage
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return new DataView(size, GeotiffSampleDataTypes.Uint32);
+                    return new DataView(size, GeotiffSampleDataType.Uint32);
                 }
 
                 break;
@@ -441,7 +457,7 @@ public class GeoTiffImage
                         throw new NotImplementedException();
                     // return new Int16[size];
                     case 32:
-                        return new DataView(size, GeotiffSampleDataTypes.Int32);
+                        return new DataView(size, GeotiffSampleDataType.Int32);
                 }
 
                 break;
@@ -450,9 +466,9 @@ public class GeoTiffImage
                 {
                     case 16:
                     case 32:
-                        return new DataView(size, GeotiffSampleDataTypes.Float32);
+                        return new DataView(size, GeotiffSampleDataType.Float32);
                     case 64:
-                        return new DataView(size,GeotiffSampleDataTypes.Double);
+                        return new DataView(size,GeotiffSampleDataType.Double);
                 }
 
                 break;
@@ -490,7 +506,7 @@ public class GeoTiffImage
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public async Task<GeoTIFFReadResult<T>> ReadRasters<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct 
+    public async Task<GeoTIFFReadResult<T>> ReadRastersAsync<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct 
     {
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
@@ -525,7 +541,7 @@ public class GeoTiffImage
         }
 
         var poolOrDecoder = new DecoderRegistry();
-        return await _ReadRaster<T>(imageWindow, samples, valueArrays, poolOrDecoder, null, null, cancellationToken);
+        return await _ReadRasterAsync<T>(imageWindow, samples, valueArrays, poolOrDecoder, null, null, cancellationToken);
     }
     
     private int sum(IEnumerable<int> array, int start, int end) {
@@ -549,7 +565,7 @@ public class GeoTiffImage
     /// <param name="height">TODO: consider that this can be null</param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="NotImplementedException"></exception>
-    private async Task<GeoTIFFReadResult<T>> _ReadRaster<T>(uint[] imageWindow, int[] samples, List<T[]> valueArrays,
+    private async Task<GeoTIFFReadResult<T>> _ReadRasterAsync<T>(uint[] imageWindow, int[] samples, List<T[]> valueArrays,
         DecoderRegistry decoder, uint? width, uint? height, CancellationToken? cancellationToken) where T : struct
     {
         uint tileWidth = GetTileWidth();
@@ -598,7 +614,7 @@ public class GeoTiffImage
                 Task<TileOrStripResult> getPromise = null;
                 if (planarConfiguration == 1)
                 {
-                    getPromise = GetTileOrStrip(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
+                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
                 }
 
                 for (int sampleIndex = 0; sampleIndex < samples.Length; ++sampleIndex)
@@ -608,7 +624,7 @@ public class GeoTiffImage
                     if (planarConfiguration == 2)
                     {
                         bytesPerPixel = GetSampleByteSize(sample);
-                        getPromise = GetTileOrStrip(xTile, yTile, sample, new DecoderRegistry(),
+                        getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(),
                             cancellationToken);
                     }
 
@@ -723,7 +739,7 @@ public class GeoTiffImage
     /// </summary>
     /// <param name="sampleIndex"></param>
     /// <returns></returns>
-    public GeotiffSampleDataTypes GetSampleType(int sampleIndex = 0)
+    public GeotiffSampleDataType GetSampleType(int sampleIndex = 0)
     {
         int format = fileDirectory.SampleFormat is not null
             ? fileDirectory.SampleFormat[sampleIndex]
@@ -734,30 +750,30 @@ public class GeoTiffImage
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return GeotiffSampleDataTypes.Uint8;
+                    return GeotiffSampleDataType.Uint8;
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return GeotiffSampleDataTypes.Uint16;
+                    return GeotiffSampleDataType.Uint16;
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return GeotiffSampleDataTypes.Uint32;
+                    return GeotiffSampleDataType.Uint32;
                 }
 
                 break;
             case 2: // twos complement signed integer data
                 if (bitsPerSample <= 8)
                 {
-                    return GeotiffSampleDataTypes.Int8;
+                    return GeotiffSampleDataType.Int8;
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return GeotiffSampleDataTypes.Int16;
+                    return GeotiffSampleDataType.Int16;
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return GeotiffSampleDataTypes.Int32;
+                    return GeotiffSampleDataType.Int32;
                 }
 
                 break;
@@ -767,9 +783,9 @@ public class GeoTiffImage
                     case 16:
                         throw new NotImplementedException();
                     case 32:
-                        return GeotiffSampleDataTypes.Float32;
+                        return GeotiffSampleDataType.Float32;
                     case 64:
-                        return GeotiffSampleDataTypes.Double;
+                        return GeotiffSampleDataType.Double;
                     default:
                         break;
                 }
@@ -852,7 +868,7 @@ public class GeoTiffImage
    *                               to be aborted
    * @returns {Promise.<{x: number, y: number, sample: number, data: ArrayBuffer}>} the decoded strip or tile
    */
-    private async Task<TileOrStripResult> GetTileOrStrip(int x, int y, int sample, DecoderRegistry poolOrDecoder,
+    private async Task<TileOrStripResult> GetTileOrStripAsync(int x, int y, int sample, DecoderRegistry poolOrDecoder,
         CancellationToken? signal)
     {
         int numTilesPerRow = (int)Math.Ceiling((int)GetWidth() / (double)GetTileWidth());
@@ -907,7 +923,7 @@ public class GeoTiffImage
         }
 
         ArrayBuffer slice =
-            (await source.Fetch(new List<Slice>() { new(offset, byteCount) }, signal)).First();
+            (await source.FetchAsync(new List<Slice>() { new(offset, byteCount) }, signal)).First();
 
         Func<Task<ArrayBuffer>> request;
         ArrayBuffer finalData;
@@ -916,7 +932,7 @@ public class GeoTiffImage
             // resolve each request by potentially applying array normalization
             request = async () =>
             {
-                ArrayBuffer data = await poolOrDecoder.Decode(fileDirectory, slice);
+                ArrayBuffer data = await poolOrDecoder.DecodeAsync(fileDirectory, slice);
                 // var data = slice;
                 int sampleFormat = GetSampleFormat();
                 uint bitsPerSample = GetBitsPerSample();
@@ -1133,7 +1149,7 @@ public class GeoTiffImage
     /// <param name="y"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<GeoTIFFReadResult<T>> ReadValueAtCoordinate<T>(double x, double y,
+    public async Task<GeoTIFFReadResult<T>> ReadValueAtCoordinateAsync<T>(double x, double y,
         CancellationToken? cancellationToken = null) where T : struct
     {
         IEnumerable<double>? modelTransformationList =
@@ -1160,6 +1176,6 @@ public class GeoTiffImage
             Left = (uint)left, Right = (uint)right, Bottom = (uint)bottom, Top = (uint)top
         };
 
-        return await ReadRasters<T>(window, cancellationToken);
+        return await ReadRastersAsync<T>(window, cancellationToken);
     }
 }

@@ -2,6 +2,9 @@ using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff;
 
+/// <summary>
+/// Any kind of streamed source, e.g. file streams, memory streams.
+/// </summary>
 public class FileSource : BaseSource
 {
     private readonly Stream stream;
@@ -11,7 +14,7 @@ public class FileSource : BaseSource
         this.stream = stream;
     }
 
-    public override async Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? cancellationToken)
+    public override async Task<ArrayBuffer> FetchSliceAsync(Slice slice, CancellationToken? cancellationToken)
     {
         byte[]? x = new byte[slice.Length];
 
@@ -31,6 +34,17 @@ public class FileSource : BaseSource
         //     throw new Exception("Not enough bytes");
         // }
 
+        return new ArrayBuffer(x);
+    }
+
+    public override ArrayBuffer FetchSlice(Slice slice)
+    {
+        byte[]? x = new byte[slice.Length];
+
+        stream.Seek(slice.Offset, SeekOrigin.Begin);
+
+        int nReadBytes = stream.Read(x, 0, slice.Length);
+        
         return new ArrayBuffer(x);
     }
 }

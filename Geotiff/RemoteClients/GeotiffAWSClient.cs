@@ -31,18 +31,34 @@ public class GeotiffAWSClient : IGeotiffRemoteClient
 
         using GetObjectResponse? response = await amazonS3Client.GetObjectAsync(request);
         await using Stream? stream = response.ResponseStream;
-        return await ArrayBuffer.FromStream(stream, signal);
+        return await ArrayBuffer.FromStreamAsync(stream, signal);
     }
-
-    public async Task<IEnumerable<ArrayBuffer>> FetchSlices(IEnumerable<Slice> slices, CancellationToken? signal = null)
+    
+    public async Task<IEnumerable<ArrayBuffer>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
     {
         IEnumerable<Task<ArrayBuffer>>? tasks = slices.Select(slice =>
             DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset, signal));
         return await Task.WhenAll(tasks);
     }
 
-    public async Task<ArrayBuffer> FetchSlice(Slice slice, CancellationToken? signal = null)
+    public async Task<ArrayBuffer> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
     {
         return await DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset, signal);
+    }
+
+    public IEnumerable<ArrayBuffer> FetchSlices(IEnumerable<Slice> slices)
+    {
+        IEnumerable<Task<ArrayBuffer>>? tasks = slices.Select(slice =>
+            DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset));
+        var task = Task.WhenAll(tasks);
+        task.Wait();
+        return task.Result;
+    }
+
+    public ArrayBuffer FetchSlice(Slice slice)
+    {
+        var task = Task.Run(() => FetchSliceAsync(slice)); 
+        task.Wait();
+        return task.Result;
     }
 }

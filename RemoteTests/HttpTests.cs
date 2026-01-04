@@ -14,8 +14,8 @@ public class HttpTests
         using var client = new HttpClient();
 
         var httpClient = new GeotiffHTTPClient(baseURL, client, false);
-        GeoTIFF? cog = await GeoTIFF.FromRemoteClient(httpClient);
-        GeoTiffImage? image = await cog.GetImage();
+        GeoTIFF? cog = await GeoTIFF.FromRemoteClientAsync(httpClient);
+        GeoTiffImage? image = await cog.GetImageAsync();
         Console.WriteLine("HELLO WORLD");
     }
 }
