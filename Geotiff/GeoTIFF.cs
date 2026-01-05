@@ -205,9 +205,10 @@ public class GeoTIFF
         {
             return null;
         }
+        
+        ushort[] rawGeoKeyDirectory = rawGeoKeyDirectoryObj.GetUShortArray();
 
-        ushort[]? rawGeoKeyDirectory = ((List<object>)rawGeoKeyDirectoryObj.Value).UnboxAll<ushort>().ToArray();
-
+        //TODO: This probably needs a dedicated class for it rather than a JS style object.
         Dictionary<string, object> geoKeyDirectory = new();
         for (int i = 4; i <= rawGeoKeyDirectory[3] * 4; i += 4)
         {
@@ -220,14 +221,16 @@ public class GeoTIFF
             ushort count = rawGeoKeyDirectory[i + 2];
             ushort offset = rawGeoKeyDirectory[i + 3];
 
-            object? value = null;
+            Tag? value = null;
+            geoKeyDirectory[key] = null;
             if (location is null)
             {
-                value = offset;
+                geoKeyDirectory[key] = offset;
             }
             else
             {
                 value = fileDirectory[location]; // TODO: could throw, error out if so.
+                
                 if (value is null)
                 {
                     throw new GeoTiffException($"Could not get value of geoKey '{key}'");
@@ -289,7 +292,7 @@ public class GeoTIFF
                 ? (int)dataSlice.ReadUInt64(i + 4)
                 : (int)dataSlice.ReadUInt32(i + 4);
 
-            GeotiffGetValuesResult fieldValues;
+            GeotiffTagValueResult fieldValues;
             object value;
             bool isList = false;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
@@ -337,12 +340,12 @@ public class GeoTIFF
             // Write the tag's value to the file directory
             if (FieldTypes.FieldTags.TryGetByKey(fieldTagId, out string tagName))
             {
-                fileDirectory[tagName] = new Tag(fieldTagId, tagName, fieldTypeName, value, isList);
-                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, tagName, fieldTypeName, value, isList);
+                fileDirectory[tagName] = new Tag(fieldTagId, tagName, fieldValues, isList);
+                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, tagName, fieldValues, isList);
             }
             else
             {
-                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, null, fieldTypeName, value, isList);
+                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, null, fieldValues, isList);
             }
         }
 

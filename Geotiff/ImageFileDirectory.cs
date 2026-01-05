@@ -57,14 +57,22 @@ public class ImageFileDirectory
     /// <returns></returns>
     public IEnumerable<T>? GetFileDirectoryListValue<T>(string key)
     {
-        IEnumerable<T>? finalResult = null;
-        bool listReadResult = TagDictionary.TryGetValue(key, out var listOfObjects);
-        if (listReadResult is true)
+        if (TagDictionary.TryGetValue(key, out var tag))
         {
-            finalResult = ((List<object>)listOfObjects.Value).UnboxAll<T>();
+            if (typeof(T) == typeof(string))
+            {
+                var str = tag.GetString();
+                return new[] { (T)(object)str };
+            }
+            else
+            {
+                //TODO: Do this the long form way where we check for every numeric type to prevent double conversion
+                var arr = tag.GetAsDoubleArray();
+                Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+                return arr.Select(d => (T)Convert.ChangeType(d, targetType));
+            }
         }
-
-        return finalResult;
+        return null;
     }
 
     public T[]? GetFileDirectoryArrayValue<T>(string key)
@@ -91,16 +99,22 @@ public class ImageFileDirectory
         return default!;
     }
 
-
     public T GetFileDirectoryValue<T>(string key)
     {
-        if (TagDictionary.TryGetValue(key, out Tag? obj))
+        if (TagDictionary.TryGetValue(key, out var tag))
         {
-            Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-            object? converted = Convert.ChangeType(obj.Value, targetType);
-            return (T)converted;
+            if (typeof(T) == typeof(string))
+            {
+                var str = tag.GetString();
+                return (T)(object)str;
+            }
+            else
+            {
+                var arr = tag.GetDouble();
+                Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+                return (T)Convert.ChangeType(arr, targetType);
+            }
         }
-
         return default!;
     }
     

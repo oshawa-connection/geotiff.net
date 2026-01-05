@@ -17,18 +17,18 @@ class Program
         var image = await tiff.GetImageAsync();
         var knownTags = image.GetAllKnownTags();
         Console.WriteLine("Known Tags:");
-        foreach (var knownTag in knownTags.Where(d => d.IsList is false))
+        foreach (var knownTag in knownTags.Where(d => d.IsArray is false))
         {
             Console.WriteLine($"{knownTag.TagName}: {knownTag.Value}");
         }
 
-        foreach (var knownTag in knownTags.Where(d => d.IsList))
+        foreach (var knownTag in knownTags.Where(d => d.IsArray))
         {
             Console.WriteLine($"{knownTag.TagName}");
-            foreach (var lv in (List<object>)knownTag.Value)
-            {
-                Console.WriteLine();
-            }
+            // foreach (var lv in (List<object>)knownTag.Value)
+            // {
+            //     Console.WriteLine();
+            // }
         }
         var origin = image.GetOrigin();
         var geotiffSampleType = image.GetSampleType();
