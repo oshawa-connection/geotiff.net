@@ -561,8 +561,8 @@ public class GeoTiffImage
     /// <param name="valueArrays"></param>
     /// <param name="interleave"></param>
     /// <param name="decoder"></param>
-    /// <param name="width">TODO: consider that this can be null</param>
-    /// <param name="height">TODO: consider that this can be null</param>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="NotImplementedException"></exception>
     private async Task<GeoTIFFReadResult<T>> _ReadRasterAsync<T>(uint[] imageWindow, int[] samples, List<T[]> valueArrays,

@@ -246,7 +246,6 @@ public class UnitTest1
     [TestMethod]
     public async Task OverviewReader()
     {
-        // TODO: would be nice to have this in the main code someplace.
         string externalOverviewTifPath = Path.Combine(GetDataFolderPath(), "external_overviews.tif");
         var ovrFilePath = externalOverviewTifPath + ".ovr";
         
@@ -270,7 +269,6 @@ public class UnitTest1
 
     public async Task MaskedMultiTiffReader()
     {
-        // TODO: would be nice to have this in the main code someplace.
         string externalOverviewTifPath = Path.Combine(GetDataFolderPath(), "masked.tif");
         var mskFilePath = externalOverviewTifPath + ".msk";
         

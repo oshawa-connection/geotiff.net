@@ -384,6 +384,7 @@ public class GeoTIFF
     /// all subsequent images being progressively smaller and smaller. However, note that this is not actually standard,
     /// so you may encounter datasets that do not conform to this pattern and may just happen to order their subdatasets
     /// like this. This method is therefore not foolproof.
+    /// TODO: check how GDAL structures GeoTiff with internal mask + internal overviews
     /// </summary>
     /// <returns></returns>
     public async Task<bool> HasOverviewsAsync()
