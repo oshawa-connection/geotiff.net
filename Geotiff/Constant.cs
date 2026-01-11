@@ -11,7 +11,7 @@ public static class Constant
     public const int WGS84_EPSG_CODE = 4326;
 }
 
-public enum GeotiffSampleDataType
+public enum GeoTiffSampleDataType
 {
     Uint8,
     Int8,
@@ -25,7 +25,7 @@ public enum GeotiffSampleDataType
 }
 
 
-internal enum GeotiffFieldDataType
+internal enum GeoTiffFieldDataType
 {
     BYTE,
     ASCII,
@@ -82,24 +82,24 @@ public enum TagDataType
 
 public static class FieldTypes
 {
-    internal static Dictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
+    internal static Dictionary<int, GeoTiffFieldDataType> FieldTypeLookup = new()
     {
-        { 0x0001, GeotiffFieldDataType.BYTE },
-        { 0x0002, GeotiffFieldDataType.ASCII },
-        { 0x0003, GeotiffFieldDataType.SHORT },
-        { 0x0004, GeotiffFieldDataType.LONG },
-        { 0x0005, GeotiffFieldDataType.RATIONAL },
-        { 0x0006, GeotiffFieldDataType.SBYTE },
-        { 0x0007, GeotiffFieldDataType.UNDEFINED },
-        { 0x0008, GeotiffFieldDataType.SSHORT },
-        { 0x0009, GeotiffFieldDataType.SLONG },
-        { 0x000A, GeotiffFieldDataType.SRATIONAL },
-        { 0x000B, GeotiffFieldDataType.FLOAT },
-        { 0x000C, GeotiffFieldDataType.DOUBLE },
-        { 0x000D, GeotiffFieldDataType.IFD },
-        { 0x0010, GeotiffFieldDataType.LONG8 },
-        { 0x0011, GeotiffFieldDataType.SLONG8 },
-        { 0x0012, GeotiffFieldDataType.IFD8 }
+        { 0x0001, GeoTiffFieldDataType.BYTE },
+        { 0x0002, GeoTiffFieldDataType.ASCII },
+        { 0x0003, GeoTiffFieldDataType.SHORT },
+        { 0x0004, GeoTiffFieldDataType.LONG },
+        { 0x0005, GeoTiffFieldDataType.RATIONAL },
+        { 0x0006, GeoTiffFieldDataType.SBYTE },
+        { 0x0007, GeoTiffFieldDataType.UNDEFINED },
+        { 0x0008, GeoTiffFieldDataType.SSHORT },
+        { 0x0009, GeoTiffFieldDataType.SLONG },
+        { 0x000A, GeoTiffFieldDataType.SRATIONAL },
+        { 0x000B, GeoTiffFieldDataType.FLOAT },
+        { 0x000C, GeoTiffFieldDataType.DOUBLE },
+        { 0x000D, GeoTiffFieldDataType.IFD },
+        { 0x0010, GeoTiffFieldDataType.LONG8 },
+        { 0x0011, GeoTiffFieldDataType.SLONG8 },
+        { 0x0012, GeoTiffFieldDataType.IFD8 }
     };
 
 
@@ -595,28 +595,28 @@ public static class FieldTypes
 
     public static int GetFieldTypeLength(int fieldTypea)
     {
-        GeotiffFieldDataType fieldType = FieldTypeLookup[fieldTypea];
+        GeoTiffFieldDataType fieldType = FieldTypeLookup[fieldTypea];
         switch (fieldType)
         {
-            case GeotiffFieldDataType.BYTE:
-            case GeotiffFieldDataType.ASCII:
-            case GeotiffFieldDataType.SBYTE:
-            case GeotiffFieldDataType.UNDEFINED:
+            case GeoTiffFieldDataType.BYTE:
+            case GeoTiffFieldDataType.ASCII:
+            case GeoTiffFieldDataType.SBYTE:
+            case GeoTiffFieldDataType.UNDEFINED:
                 return 1;
-            case GeotiffFieldDataType.SHORT:
-            case GeotiffFieldDataType.SSHORT:
+            case GeoTiffFieldDataType.SHORT:
+            case GeoTiffFieldDataType.SSHORT:
                 return 2;
-            case GeotiffFieldDataType.LONG:
-            case GeotiffFieldDataType.SLONG:
-            case GeotiffFieldDataType.FLOAT:
-            case GeotiffFieldDataType.IFD:
+            case GeoTiffFieldDataType.LONG:
+            case GeoTiffFieldDataType.SLONG:
+            case GeoTiffFieldDataType.FLOAT:
+            case GeoTiffFieldDataType.IFD:
                 return 4;
-            case GeotiffFieldDataType.RATIONAL:
-            case GeotiffFieldDataType.SRATIONAL:
-            case GeotiffFieldDataType.DOUBLE:
-            case GeotiffFieldDataType.LONG8:
-            case GeotiffFieldDataType.SLONG8:
-            case GeotiffFieldDataType.IFD8:
+            case GeoTiffFieldDataType.RATIONAL:
+            case GeoTiffFieldDataType.SRATIONAL:
+            case GeoTiffFieldDataType.DOUBLE:
+            case GeoTiffFieldDataType.LONG8:
+            case GeoTiffFieldDataType.SLONG8:
+            case GeoTiffFieldDataType.IFD8:
                 return 8;
             default:
                 throw new GeoTiffException($"Invalid field type: {fieldType}");

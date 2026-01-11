@@ -1,4 +1,5 @@
 using Geotiff.Exceptions;
+using Geotiff.Extensions;
 using Geotiff.JavaScriptCompatibility;
 using Geotiff.RemoteClients;
 
@@ -156,17 +157,7 @@ public class GeoTIFF
         }
         
         byte[] buffer = new byte[1024];
-        // having less bytes than requested is ok in this situation. Up to 1024, but less is ok.
-        if (cancellationToken is not null)
-        {
-            await seekableStream.ReadAsync(buffer, 0, buffer.Length, (CancellationToken)cancellationToken);    
-        }
-        else
-        {
-            await seekableStream.ReadAsync(buffer, 0, buffer.Length);
-        }
-         
-        
+        await seekableStream.ReadWholeArrayAsync(buffer, cancellationToken);
         byte[]? arr = buffer.ToArray();
         var dv = new DataView(arr);
         ushort value = dv.GetUint16(0, true);
@@ -295,7 +286,7 @@ public class GeoTIFF
             object value;
             bool isList = false;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
-            GeotiffFieldDataType fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
+            GeoTiffFieldDataType fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
             long valueOffset = i + (_bigTiff ? 12 : 8);
             // Check if the value is directly encoded or refers to another byte range
             if (fieldTypeLength * typeCount <= (_bigTiff ? 8 : 4))
@@ -320,14 +311,14 @@ public class GeoTIFF
 
             // Unpack single values from the array
             if ((typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTagId)
-                                && !(fieldTypeName == GeotiffFieldDataType.SRATIONAL)) || fieldTypeName == GeotiffFieldDataType.ASCII)
+                                && !(fieldTypeName == GeoTiffFieldDataType.SRATIONAL)) || fieldTypeName == GeoTiffFieldDataType.ASCII)
             {
                 value = fieldValues.GetFirstElement();
                 // value = (fieldValues as Array)?[0] ?? fieldValues;
             }
             else
             {
-                if (fieldTypeName == GeotiffFieldDataType.SRATIONAL)
+                if (fieldTypeName == GeoTiffFieldDataType.SRATIONAL)
                 {
                     throw new NotImplementedException($"SRationals not supported: {fieldTypeName}"); // TODO: Is this true anymore?
                 }

@@ -434,7 +434,7 @@ public class GeoTiffImage
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return new DataView(size, GeotiffSampleDataType.Uint8);
+                    return new DataView(size, GeoTiffSampleDataType.Uint8);
                 }
                 else if (bitsPerSample <= 16)
                 {
@@ -443,7 +443,7 @@ public class GeoTiffImage
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return new DataView(size, GeotiffSampleDataType.Uint32);
+                    return new DataView(size, GeoTiffSampleDataType.Uint32);
                 }
 
                 break;
@@ -457,7 +457,7 @@ public class GeoTiffImage
                         throw new NotImplementedException();
                     // return new Int16[size];
                     case 32:
-                        return new DataView(size, GeotiffSampleDataType.Int32);
+                        return new DataView(size, GeoTiffSampleDataType.Int32);
                 }
 
                 break;
@@ -466,9 +466,9 @@ public class GeoTiffImage
                 {
                     case 16:
                     case 32:
-                        return new DataView(size, GeotiffSampleDataType.Float32);
+                        return new DataView(size, GeoTiffSampleDataType.Float32);
                     case 64:
-                        return new DataView(size,GeotiffSampleDataType.Double);
+                        return new DataView(size,GeoTiffSampleDataType.Double);
                 }
 
                 break;
@@ -588,33 +588,31 @@ public class GeoTiffImage
 
         List<int> srcSampleOffsets = new();
         List<Func<DataView, long, bool, object>> sampleReaders = new();
-        for (int i = 0; i < samples.Length; ++i)
+        foreach (var t in samples)
         {
             if (planarConfiguration == 1)
             {
-                // fileDirectory.BitsPerSample.ElementAt(samples[i])
-                srcSampleOffsets.Add(sum(this.FileDirectory.BitsPerSample, 0, samples[i]) / 8);
-                // srcSampleOffsets.Add(fileDirectory.BitsPerSample.Take(samples[i] / 8).Sum());
+                srcSampleOffsets.Add(sum(this.FileDirectory.BitsPerSample, 0, t) / 8);
             }
             else
             {
                 srcSampleOffsets.Add(0);
             }
 
-            sampleReaders.Add(GetReaderForSample(samples[i]));
+            sampleReaders.Add(GetReaderForSample(t));
         }
 
-        var promises = new List<Task>();
+        var taskList = new List<Task>();
 
 
         for (int yTile = minYTile; yTile < maxYTile; ++yTile)
         {
             for (int xTile = minXTile; xTile < maxXTile; ++xTile)
             {
-                Task<TileOrStripResult> getPromise = null;
+                Task<TileOrStripResult> getTask = null;
                 if (planarConfiguration == 1)
                 {
-                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
+                    getTask = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
                 }
 
                 for (int sampleIndex = 0; sampleIndex < samples.Length; ++sampleIndex)
@@ -624,11 +622,11 @@ public class GeoTiffImage
                     if (planarConfiguration == 2)
                     {
                         bytesPerPixel = GetSampleByteSize(sample);
-                        getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(),
+                        getTask = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(),
                             cancellationToken);
                     }
 
-                    Task<bool> promise = getPromise.Then<TileOrStripResult, bool>((tile) =>
+                    Task<bool> ptask = getTask.Then<TileOrStripResult, bool>((tile) =>
                     {
                         ArrayBuffer buffer = tile.data;
                         var dataView = new DataView(buffer);
@@ -660,18 +658,17 @@ public class GeoTiffImage
                                 
                                 Array? myArray = valueArrays[si];
                                 myArray.SetValue(value, (int)windowCoordinate);
-                                // valueArrays[si][(int)windowCoordinate] = value;
                             }
                         }
 
                         return true;
                     });
-                    promises.Add(promise);
+                    taskList.Add(ptask);
                 }
             }
         }
 
-        await Task.WhenAll(promises);
+        await Task.WhenAll(taskList);
         
         if ((width != null && imageWindow[2] - imageWindow[0] != width)
             || (height != null && imageWindow[3] - imageWindow[1] != height))
@@ -739,7 +736,7 @@ public class GeoTiffImage
     /// </summary>
     /// <param name="sampleIndex"></param>
     /// <returns></returns>
-    public GeotiffSampleDataType GetSampleType(int sampleIndex = 0)
+    public GeoTiffSampleDataType GetSampleType(int sampleIndex = 0)
     {
         int format = FileDirectory.SampleFormat is not null
             ? FileDirectory.SampleFormat[sampleIndex]
@@ -750,30 +747,30 @@ public class GeoTiffImage
             case 1: // unsigned integer data
                 if (bitsPerSample <= 8)
                 {
-                    return GeotiffSampleDataType.Uint8;
+                    return GeoTiffSampleDataType.Uint8;
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return GeotiffSampleDataType.Uint16;
+                    return GeoTiffSampleDataType.Uint16;
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return GeotiffSampleDataType.Uint32;
+                    return GeoTiffSampleDataType.Uint32;
                 }
 
                 break;
             case 2: // twos complement signed integer data
                 if (bitsPerSample <= 8)
                 {
-                    return GeotiffSampleDataType.Int8;
+                    return GeoTiffSampleDataType.Int8;
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return GeotiffSampleDataType.Int16;
+                    return GeoTiffSampleDataType.Int16;
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return GeotiffSampleDataType.Int32;
+                    return GeoTiffSampleDataType.Int32;
                 }
 
                 break;
@@ -783,9 +780,9 @@ public class GeoTiffImage
                     case 16:
                         throw new NotImplementedException();
                     case 32:
-                        return GeotiffSampleDataType.Float32;
+                        return GeoTiffSampleDataType.Float32;
                     case 64:
-                        return GeotiffSampleDataType.Double;
+                        return GeoTiffSampleDataType.Double;
                     default:
                         break;
                 }
