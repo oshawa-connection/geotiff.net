@@ -16,9 +16,9 @@ public enum GeoTiffSampleDataType
     Uint8,
     Int8,
     Int16,
-    Uint16,
-    Uint32,
-    Uint64,
+    UInt16,
+    UInt32,
+    UInt64,
     Int32,
     Float32,
     Double

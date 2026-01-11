@@ -443,7 +443,7 @@ public class GeoTiffImage
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return new DataView(size, GeoTiffSampleDataType.Uint32);
+                    return new DataView(size, GeoTiffSampleDataType.UInt32);
                 }
 
                 break;
@@ -751,11 +751,11 @@ public class GeoTiffImage
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return GeoTiffSampleDataType.Uint16;
+                    return GeoTiffSampleDataType.UInt16;
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return GeoTiffSampleDataType.Uint32;
+                    return GeoTiffSampleDataType.UInt32;
                 }
 
                 break;

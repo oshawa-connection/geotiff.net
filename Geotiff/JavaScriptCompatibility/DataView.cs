@@ -135,7 +135,7 @@ internal class DataView
 
     public ushort GetUint16(int offset, bool isLittleEndian = false)
     {
-        CheckType(GeoTiffSampleDataType.Uint16, true);
+        CheckType(GeoTiffSampleDataType.UInt16, true);
         byte[]? x = Read16(offset, isLittleEndian);
         return BitConverter.ToUInt16(x);
     }
@@ -168,7 +168,7 @@ internal class DataView
 
     public uint GetUint32(int offset, bool isLittleEndian = false)
     {
-        CheckType(GeoTiffSampleDataType.Uint32, true);
+        CheckType(GeoTiffSampleDataType.UInt32, true);
         byte[]? x = stream.Skip(offset).Take(4).ToArray();
 
         if (isLittleEndian is false)
@@ -181,7 +181,7 @@ internal class DataView
 
     public void SetUint32(int offset, uint value, bool isLittleEndian = false)
     {
-        CheckType(GeoTiffSampleDataType.Uint32, false);
+        CheckType(GeoTiffSampleDataType.UInt32, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
@@ -193,7 +193,7 @@ internal class DataView
 
     public UInt64 GetUint64(int offset, bool isLittleEndian = false)
     {
-        CheckType(GeoTiffSampleDataType.Uint64, true);
+        CheckType(GeoTiffSampleDataType.UInt64, true);
         byte[]? x = stream.Skip(offset).Take(8).ToArray();
 
         if (isLittleEndian is false)
@@ -220,7 +220,7 @@ internal class DataView
 
     public void SetInt32(int offset, int value, bool isLittleEndian = false)
     {
-        CheckType(GeoTiffSampleDataType.Uint32, false);
+        CheckType(GeoTiffSampleDataType.UInt32, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
