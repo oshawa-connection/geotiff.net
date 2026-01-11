@@ -205,9 +205,10 @@ public class GeoTIFF
         {
             return null;
         }
+        
+        ushort[] rawGeoKeyDirectory = rawGeoKeyDirectoryObj.GetUShortArray();
 
-        ushort[]? rawGeoKeyDirectory = ((List<object>)rawGeoKeyDirectoryObj.Value).UnboxAll<ushort>().ToArray();
-
+        //TODO: This probably needs a dedicated class for it rather than a JS style object.
         Dictionary<string, object> geoKeyDirectory = new();
         for (int i = 4; i <= rawGeoKeyDirectory[3] * 4; i += 4)
         {
@@ -220,31 +221,32 @@ public class GeoTIFF
             ushort count = rawGeoKeyDirectory[i + 2];
             ushort offset = rawGeoKeyDirectory[i + 3];
 
-            object? value = null;
+            object valueToSet = null;
+            geoKeyDirectory[key] = valueToSet;
             if (location is null)
             {
-                value = offset;
+                geoKeyDirectory[key] = offset;
             }
             else
             {
-                value = fileDirectory[location]; // TODO: could throw, error out if so.
+                Tag value = fileDirectory[location];
+                
                 if (value is null)
                 {
                     throw new GeoTiffException($"Could not get value of geoKey '{key}'");
                 }
-
-                value = ((Tag)value).Value;
-                if (value is string)
+                
+                if (value.DataType == TagDataType.ASCII)
                 {
-                    string? cast = (string)value;
-                    value = cast.JSSubString(offset, offset + count - 1);
+                    valueToSet = value.GetString().JSSubString(offset, offset + count - 1);
                 }
-                else if (value is List<object>)
+                else if (value.IsArray)
                 {
                     // value = value.subarray(offset, offset + count);
                     if (count == 1)
                     {
-                        value = ((List<object>)value).First();
+                        valueToSet = value.GetAsDoubleArray().First(); // TODO: with explicit mapping, read the exact numeric type and store in a class
+                        // value = ((List<object>)value).First();
                     }
                 }
                 else
@@ -253,7 +255,7 @@ public class GeoTIFF
                 }
             }
 
-            geoKeyDirectory[key] = value;
+            geoKeyDirectory[key] = valueToSet;
         }
 
         return geoKeyDirectory;
@@ -289,7 +291,7 @@ public class GeoTIFF
                 ? (int)dataSlice.ReadUInt64(i + 4)
                 : (int)dataSlice.ReadUInt32(i + 4);
 
-            GeotiffGetValuesResult fieldValues;
+            GeotiffTagValueResult fieldValues;
             object value;
             bool isList = false;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
@@ -330,19 +332,19 @@ public class GeoTIFF
                     throw new NotImplementedException($"SRationals not supported: {fieldTypeName}"); // TODO: Is this true anymore?
                 }
 
-                value = fieldValues.GetListOfElements();
+                value = fieldValues.GetArrayOfElements();
                 isList = true;
             }
 
             // Write the tag's value to the file directory
             if (FieldTypes.FieldTags.TryGetByKey(fieldTagId, out string tagName))
             {
-                fileDirectory[tagName] = new Tag(fieldTagId, tagName, fieldTypeName, value, isList);
-                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, tagName, fieldTypeName, value, isList);
+                fileDirectory[tagName] = new Tag(fieldTagId, tagName, fieldValues, isList);
+                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, tagName, fieldValues, isList);
             }
             else
             {
-                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, null, fieldTypeName, value, isList);
+                rawFileDirectory[fieldTagId] = new Tag(fieldTagId, null, fieldValues, isList);
             }
         }
 

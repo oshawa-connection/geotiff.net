@@ -82,7 +82,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
         {
             if (!allowFullFile)
             {
-                throw new GeotiffNetworkException(
+                throw new GeoTiffNetworkException(
                     "Server responded with full file. If this is intentional behaviour, call RemoteSource with allowFullFile = true");
             }
 
@@ -134,7 +134,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
         {
             if (!allowFullFile)
             {
-                throw new GeotiffNetworkException("Server responded with full file");
+                throw new GeoTiffNetworkException("Server responded with full file");
             }
 
             var ms = new MemoryStream();

@@ -2,7 +2,7 @@
 using System.Text.Json.Nodes;
 using ConformanceTests.Exceptions;
 using Geotiff;
-using Geotiff.Primitives;
+using Rationals;
 using Shouldly;
 
 namespace ConformanceTests;
@@ -43,7 +43,7 @@ internal class Program
 
     public static void CompareNumberTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
     {
-        double doubleValue = fileDirectory.GetFileDirectoryValue<double>(key); // promote to double, GDAL style.
+        double doubleValue = fileDirectory.GetFileDirectoryValueAsDouble(key); // promote to double, GDAL style.
         double jsonValue = element.GetDouble();
         if (doubleValue != element.GetDouble())
         {
@@ -53,7 +53,7 @@ internal class Program
 
     public static void CompareRationalTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
     {
-        var csharpValue = fileDirectory.GetFileDirectoryValue<Rational>(key); // promote to double, GDAL style.
+        var csharpValue = fileDirectory.GetFileDirectoryValueAsRational(key); // promote to double, GDAL style.
         JsonElement[]? jsonValue = element.EnumerateArray().ToArray();
 
         var x = new Rational(jsonValue[0].GetInt32(), jsonValue[1].GetInt32());
@@ -137,7 +137,8 @@ internal class Program
                     GeotiffImage? resultImage = r.Images[i];
                     foreach (KeyValuePair<string, JsonElement> tag in resultImage.Tags)
                     {
-                        if (csharpImage.fileDirectory.TagDictionary.ContainsKey(tag.Key) is false)
+                        if (csharpImage.FileDirectory.HasTag(tag.Key) is false)
+                        //if (csharpImage.fileDirectory.TagDictionary.ContainsKey(tag.Key) is false)
                         {
                             Console.WriteLine($"Tag {tag.Key} was missing in csharp read image");
                         }
@@ -146,18 +147,19 @@ internal class Program
                             switch (tag.Value.ValueKind)
                             {
                                 case JsonValueKind.Array:
+                                    // If the tag is an array, but the tag isn't a known array type, it's probably a rational.
                                     if (FieldTypes.ArrayTypeFields.Contains(FieldTypes.FieldTags.GetByValue(tag.Key)) ==
                                         false)
                                     {
-                                        CompareRationalTags(tag.Value, tag.Key, csharpImage.fileDirectory);
-                                        break; // probably a rational
+                                        CompareRationalTags(tag.Value, tag.Key, csharpImage.FileDirectory);
+                                        break;
                                     }
 
                                     JsonElement[]? array = tag.Value.EnumerateArray().ToArray();
-                                    CompareArrayTags(array, tag.Key, csharpImage.fileDirectory);
+                                    CompareArrayTags(array, tag.Key, csharpImage.FileDirectory);
                                     break;
                                 case JsonValueKind.Number:
-                                    CompareNumberTags(tag.Value, tag.Key, csharpImage.fileDirectory);
+                                    CompareNumberTags(tag.Value, tag.Key, csharpImage.FileDirectory);
                                     break;
                                 case JsonValueKind.String:
                                     break;
@@ -174,7 +176,7 @@ internal class Program
                     //     tagCount += csharpImage.fileDirectory.GeoKeyDirectory.Count;
                     // }
 
-                    ShouldBeError($"Tag Count on image {i};", csharpImage.fileDirectory.TagDictionary.Count,
+                    ShouldBeError($"Tag Count on image {i};", csharpImage.FileDirectory.TagDictionary.Count,
                         resultImage.Tags.Count);
                 }
             }

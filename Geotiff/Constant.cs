@@ -25,7 +25,7 @@ public enum GeotiffSampleDataType
 }
 
 
-public enum GeotiffFieldDataType
+internal enum GeotiffFieldDataType
 {
     BYTE,
     ASCII,
@@ -45,10 +45,44 @@ public enum GeotiffFieldDataType
     IFD8
 }
 
+public enum TagDataType
+{
+    BYTE,
+    ASCII,
+    SHORT,
+    LONG,
+    RATIONAL,
+    SBYTE,
+    UNDEFINED,
+    SSHORT,
+    SLONG,
+    SRATIONAL,
+    FLOAT,
+    DOUBLE,
+    IFD,
+    LONG8,
+    SLONG8,
+    IFD8,
+    BYTE_ARRAY,
+    SHORT_ARRAY,
+    LONG_ARRAY,
+    RATIONAL_ARRAY,
+    SBYTE_ARRAY,
+    SSHORT_ARRAY,
+    SLONG_ARRAY,
+    SRATIONAL_ARRAY,
+    FLOAT_ARRAY,
+    DOUBLE_ARRAY,
+    IFD_ARRAY,
+    LONG8_ARRAY,
+    SLONG8_ARRAY,
+    IFD8_ARRAY
+}
+
 
 public static class FieldTypes
 {
-    public static Dictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
+    internal static Dictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
     {
         { 0x0001, GeotiffFieldDataType.BYTE },
         { 0x0002, GeotiffFieldDataType.ASCII },
@@ -505,19 +539,6 @@ public static class FieldTypes
         FieldTags.GetByValue(GeoKeyDirectory),
         FieldTags.GetByValue(ModelTransformation),
         FieldTags.GetByValue(JPEGTables)
-
-
-        // FieldTags.GetByValue(BitsPerSample),
-        // FieldTags.GetByValue(ExtraSamples),
-        // FieldTags.GetByValue(SampleFormat),
-        // FieldTags.GetByValue(StripByteCounts),
-        // FieldTags.GetByValue(StripOffsets),
-        // FieldTags.GetByValue(StripRowCounts),
-        // FieldTags.GetByValue(TileByteCounts),
-        // FieldTags.GetByValue(TileOffsets),
-        // FieldTags.GetByValue(SubIFDs),
-        // FieldTags.GetByValue(PageNumber),
-        // FieldTags.GetByValue(ColorMap),
     };
 
 

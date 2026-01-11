@@ -29,13 +29,13 @@ public class MaskedGeoTIFFReader
     /// </summary>
     /// <param name="multiGeoTiff"></param>
     /// <returns></returns>
-    /// <exception cref="InvalidMaskedGeoTIFFException"></exception>
+    /// <exception cref="InvalidMaskedGeoTiffException"></exception>
     public static async Task<MaskedGeoTIFFReader> FromMultiGeoTiff(MultiGeoTIFF multiGeoTiff)
     {
         var count = await multiGeoTiff.GetImageCountAsync();
         if (count < 2)
         {
-            throw new InvalidMaskedGeoTIFFException("Masked MultiGeoTIFFs require at least 2 images");
+            throw new InvalidMaskedGeoTiffException("Masked MultiGeoTIFFs require at least 2 images");
         }
 
         var mainImage = await multiGeoTiff.GetImageAsync();
@@ -44,7 +44,7 @@ public class MaskedGeoTIFFReader
         
         if (mainImage.GetHeight() != maskImage.GetHeight() || mainImage.GetWidth() != maskImage.GetWidth())
         {
-            throw new InvalidMaskedGeoTIFFException("Mask file must have the same dimensions as the main file");
+            throw new InvalidMaskedGeoTiffException("Mask file must have the same dimensions as the main file");
         }
         
         return new MaskedGeoTIFFReader(multiGeoTiff);
