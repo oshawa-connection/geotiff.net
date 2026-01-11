@@ -25,10 +25,11 @@ class Program
         foreach (var knownTag in knownTags.Where(d => d.IsArray))
         {
             Console.WriteLine($"{knownTag.TagName}");
-            // foreach (var lv in (List<object>)knownTag.Value)
-            // {
-            //     Console.WriteLine();
-            // }
+            
+            foreach (var lv in knownTag.GetArrayOfObjects())
+            {
+                Console.WriteLine();
+            }
         }
         var origin = image.GetOrigin();
         var geotiffSampleType = image.GetSampleType();
