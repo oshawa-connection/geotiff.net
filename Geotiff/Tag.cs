@@ -22,23 +22,79 @@ public class Tag
     /// <returns></returns>
     public IEnumerable<object> GetArrayOfObjects() => this.Value.GetArrayOfElements();
     public ulong[] GetULongArray() => this.Value.GetUInt64Array();
-    public ulong GetULong() => this.Value.GetUInt64();
+    public ulong GetULong()
+    {
+        if (this.Value.IsUint16)
+        {
+            return this.Value.GetUInt16();
+        }
+
+        if (this.Value.IsUInt32)
+        {
+            return this.Value.GetUInt32();    
+        }
+        
+        return this.Value.GetUInt64();
+    }
+
     public short[] GetShortArray() => this.Value.GetInt16Array();
     public short GetShort() => this.Value.GetInt16();
     public sbyte[] GetSByteArray()=> this.Value.GetSByteArray();
     public sbyte GetSByte()=> this.Value.GetSByte();
     public long[] GetLongArray()=> this.Value.GetInt64Array();
-    public long GetLong()=> this.Value.GetInt64();
-    public double[] GetDoubleArray() => this.Value.GetFloat64Array();
-    public double GetDouble()=> this.Value.GetFloat64();
+
+    public long GetLong()
+    {
+        if (this.Value.IsInt16)
+        {
+            return this.Value.GetInt16();
+        }
+        if (this.Value.IsUInt32)
+        {
+            return this.Value.GetInt32();
+        }
+        return this.Value.GetInt64();
+    }
+
+    public double[] GetDoubleArray() => Value.GetFloat64Array();
+
+    public double GetDouble()
+    {
+        if (this.Value.IsFloat32)
+        {
+            return this.Value.GetFloat32();
+        }
+        return this.Value.GetFloat64();  
+    } 
     public float[] GetFloatArray()=> this.Value.GetFloat32Array();
     public float GetFloat()=> this.Value.GetFloat32();
     public ushort[] GetUShortArray()=> this.Value.GetUInt16Array();
     public ushort GetUShort()=> this.Value.GetUInt16();
     public uint[] GetUIntArray()=> this.Value.GetUInt32Array();
-    public uint GetUInt()=> this.Value.GetUInt32();
+
+    public uint GetUInt()
+    {
+        if (this.Value.IsUint16)
+        {
+            return this.Value.GetUInt16();
+        }
+        return this.Value.GetUInt32();    
+    }
     public int[] GetIntArray()=> this.Value.GetInt32Array();
-    public int GetInt()=> this.Value.GetInt32();
+
+    public int GetInt()
+    {
+        if (this.Value.IsUint16)
+        {
+            return this.Value.GetUInt16();
+        }
+        if (this.Value.IsInt16)
+        {
+            return this.Value.GetInt16();
+        }
+        
+        return this.Value.GetInt32();    
+    }
     public Rational[] GetRationalArray()=> this.Value.GetRationalArray();
     public Rational GetRational()=> this.Value.GetRational();
     public int[] GetSRationalArray() => this.Value.GetSRationalArray();

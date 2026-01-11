@@ -20,7 +20,7 @@ public class DecoderRegistry
 
     public GeotiffDecoder GetDecoder(ImageFileDirectory fileDirectory)
     {
-        int? compressionCode = fileDirectory.GetFileDirectoryValue<int?>("Compression");
+        int? compressionCode = fileDirectory.GetFileDirectoryValueIntOrNull("Compression");
         if (compressionCode is null)
         {
             return new RawGeotiffDecoder();

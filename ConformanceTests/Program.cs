@@ -43,7 +43,7 @@ internal class Program
 
     public static void CompareNumberTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
     {
-        double doubleValue = fileDirectory.GetFileDirectoryValue<double>(key); // promote to double, GDAL style.
+        double doubleValue = fileDirectory.GetFileDirectoryValueAsDouble(key); // promote to double, GDAL style.
         double jsonValue = element.GetDouble();
         if (doubleValue != element.GetDouble())
         {
@@ -53,7 +53,7 @@ internal class Program
 
     public static void CompareRationalTags(JsonElement element, string key, ImageFileDirectory fileDirectory)
     {
-        var csharpValue = fileDirectory.GetFileDirectoryValue<Rational>(key); // promote to double, GDAL style.
+        var csharpValue = fileDirectory.GetFileDirectoryValueAsRational(key); // promote to double, GDAL style.
         JsonElement[]? jsonValue = element.EnumerateArray().ToArray();
 
         var x = new Rational(jsonValue[0].GetInt32(), jsonValue[1].GetInt32());

@@ -1,3 +1,4 @@
+using Geotiff.Exceptions;
 using Rationals;
 
 namespace Geotiff;
@@ -35,120 +36,120 @@ internal class GeotiffTagValueResult
     public bool IsSRational => _resultSRational != null;
     
     public ulong[] GetUInt64Array() =>
-        _resultUInt64 ?? throw new InvalidOperationException("Result is not a UInt64 array.");
+        _resultUInt64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt64", this.DataType.ToString());
     
     public ulong GetUInt64()
     {
         if (_resultUInt64 is null)
         {
-            throw new InvalidOperationException("Result is not a UInt64 array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt64", this.DataType.ToString());
         }
 
         return _resultUInt64.First();
     }
 
     public short[] GetInt16Array() =>
-        _resultInt16 ?? throw new InvalidOperationException("Result is not an Int16 array.");
+        _resultInt16 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int16", this.DataType.ToString());
 
     public short GetInt16()
     {
         if (_resultInt16 is null)
-            throw new InvalidOperationException("Result is not an Int16 array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int16", this.DataType.ToString());
         return _resultInt16.First();
     }
 
     public sbyte[] GetSByteArray() =>
-        _resultSByte ?? throw new InvalidOperationException("Result is not an SByte array.");
+        _resultSByte ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("SByte", this.DataType.ToString());
 
     public sbyte GetSByte()
     {
         if (_resultSByte is null)
-            throw new InvalidOperationException("Result is not an SByte array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("SByte", this.DataType.ToString());
         return _resultSByte.First();
     }
 
     public long[] GetInt64Array() =>
-        _resultInt64 ?? throw new InvalidOperationException("Result is not an Int64 array.");
+        _resultInt64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int64", this.DataType.ToString());
 
     public long GetInt64()
     {
         if (_resultInt64 is null)
-            throw new InvalidOperationException("Result is not an Int64 array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int64", this.DataType.ToString());
         return _resultInt64.First();
     }
 
     public double[] GetFloat64Array() =>
-        _resultFloat64 ?? throw new InvalidOperationException("Result is not a Float64 array.");
+        _resultFloat64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Float64", this.DataType.ToString());
 
     public double GetFloat64()
     {
         if (_resultFloat64 is null)
-            throw new InvalidOperationException("Result is not a Float64 array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Float64", this.DataType.ToString());
         return _resultFloat64.First();
     }
 
     public float[] GetFloat32Array() =>
-        _resultFloat32 ?? throw new InvalidOperationException("Result is not a Float32 array.");
+        _resultFloat32 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Float32", this.DataType.ToString());
 
     public float GetFloat32()
     {
         if (_resultFloat32 is null)
-            throw new InvalidOperationException("Result is not a Float32 array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Float32", this.DataType.ToString());
         return _resultFloat32.First();
     }
 
     public ushort[] GetUInt16Array() =>
-        _resultUInt16 ?? throw new InvalidOperationException("Result is not a UInt16 array.");
+        _resultUInt16 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt16", this.DataType.ToString());
 
     public ushort GetUInt16()
     {
         if (_resultUInt16 is null)
-            throw new InvalidOperationException("Result is not a UInt16 array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt16", this.DataType.ToString());
         return _resultUInt16.First();
     }
 
     public uint[] GetUInt32Array() =>
-        _resultUInt32 ?? throw new InvalidOperationException("Result is not a UInt32 array.");
+        _resultUInt32 ??  throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt32", this.DataType.ToString());
 
     public uint GetUInt32()
     {
         if (_resultUInt32 is null)
-            throw new InvalidOperationException("Result is not a UInt32 array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt32", this.DataType.ToString());
         return _resultUInt32.First();
     }
 
     public int[] GetInt32Array() =>
-        _resultInt32 ?? throw new InvalidOperationException("Result is not an Int32 array.");
+        _resultInt32 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int32", this.DataType.ToString());
 
     public int GetInt32()
     {
         if (_resultInt32 is null)
-            throw new InvalidOperationException("Result is not an Int32 array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int32", this.DataType.ToString());
         return _resultInt32.First();
     }
 
     public Rational[] GetRationalArray() =>
-        _resultRational ?? throw new InvalidOperationException("Result is not a Rational array.");
+        _resultRational ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.RATIONAL.ToString(), this.DataType.ToString());
 
     public Rational GetRational()
     {
         if (_resultRational is null)
-            throw new InvalidOperationException("Result is not a Rational array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.RATIONAL.ToString(), this.DataType.ToString());
         return _resultRational.First();
     }
 
     public int[] GetSRationalArray() =>
-        _resultSRational ?? throw new InvalidOperationException("Result is not an SRational array.");
+        _resultSRational ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.SRATIONAL.ToString(), this.DataType.ToString());
 
     public int GetSRational()
     {
         if (_resultSRational is null)
-            throw new InvalidOperationException("Result is not an SRational array.");
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.SRATIONAL.ToString(), this.DataType.ToString());
         return _resultSRational.First();
     }
 
     public string GetString() =>
-        _decodedAsciiResult ?? throw new InvalidOperationException("Result is not a string.");
+        _decodedAsciiResult ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.ASCII.ToString(), this.DataType.ToString());
     
     public static GeotiffTagValueResult FromSBytes(sbyte[] data)
     {
@@ -286,6 +287,28 @@ internal class GeotiffTagValueResult
 
         return objs;
     }
+    
+    public TagDataType DataType
+    {
+        get
+        {
+            if (this.IsInt16) return TagDataType.SSHORT;
+            if (this.IsSByte) return TagDataType.SBYTE;
+            if (this.IsInt64) return TagDataType.SLONG8;
+            if (this.IsString) return TagDataType.ASCII;
+            if (this.IsFloat64) return TagDataType.DOUBLE;
+            if (this.IsFloat32) return TagDataType.FLOAT;
+            if (this.IsUint16) return TagDataType.SHORT;
+            if (this.IsUInt64) return TagDataType.LONG8;
+            if (this.IsUInt32) return TagDataType.LONG;
+            if (this.IsInt32) return TagDataType.SLONG;
+            if (this.IsRational) return TagDataType.RATIONAL;
+            if (this.IsSRational) return TagDataType.SRATIONAL;
+            
+            throw new GeoTiffException("Unrecognised tag type");
+        }
+    }
+    
     
     private GeotiffTagValueResult() { }
 }

@@ -21,7 +21,7 @@ public class GeoTiffImage
         tiles = cache ? new Dictionary<int, ArrayBuffer>() : null;
 
         isTiled = fileDirectory.TagDictionary.ContainsKey("StripOffsets") is false;
-        ushort? planarConfiguration = fileDirectory.GetFileDirectoryValue<ushort?>(FieldTypes.PlanarConfiguration);
+        ushort? planarConfiguration = fileDirectory.GetFileDirectoryValueUShortOrNull(FieldTypes.PlanarConfiguration);
 
         if (planarConfiguration is null)
         {
@@ -117,7 +117,7 @@ public class GeoTiffImage
     /// <returns></returns>
     public uint GetWidth()
     {
-        return FileDirectory.GetFileDirectoryValue<uint>(FieldTypes.ImageWidth);
+        return (uint)FileDirectory.GetFileDirectoryValueUInt(FieldTypes.ImageWidth);
     }
 
     /// <summary>
@@ -126,7 +126,7 @@ public class GeoTiffImage
     /// <returns></returns>
     public uint GetHeight()
     {
-        return FileDirectory.GetFileDirectoryValue<uint>(FieldTypes.ImageLength);
+        return FileDirectory.GetFileDirectoryValueUInt(FieldTypes.ImageLength);
     }
 
     public Tuple<double, double, double> GetResolution()
@@ -227,7 +227,7 @@ public class GeoTiffImage
     /// <returns></returns>
     public ulong GetSamplesPerPixel()
     {
-        ulong samplesPerPixel = FileDirectory.GetFileDirectoryValue<ulong>(FieldTypes.SamplesPerPixel);
+        ulong samplesPerPixel = FileDirectory.GetFileDirectoryValueULong(FieldTypes.SamplesPerPixel);
         return samplesPerPixel != 0 ? samplesPerPixel : 1;
     }
 
@@ -259,7 +259,7 @@ public class GeoTiffImage
     /// </summary>
     public int GetSampleByteSize(int i)
     {
-        ushort[] bitsPerSample = FileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
+        ushort[] bitsPerSample = FileDirectory.GetFileDirectoryValueUShortArray(FieldTypes.BitsPerSample).ToArray();
         if (i >= bitsPerSample.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(i), $"Sample index {i} is out of range.");
@@ -276,7 +276,7 @@ public class GeoTiffImage
     public uint GetTileWidth()
     {
         return isTiled
-            ? FileDirectory.GetFileDirectoryValue<uint>(FieldTypes.TileWidth)
+            ? (uint)FileDirectory.GetFileDirectoryValueUInt(FieldTypes.TileWidth)
             : GetWidth();
     }
 
@@ -288,10 +288,10 @@ public class GeoTiffImage
     {
         if (isTiled)
         {
-            return FileDirectory.GetFileDirectoryValue<uint>(FieldTypes.TileLength);
+            return (uint)FileDirectory.GetFileDirectoryValueUInt(FieldTypes.TileLength);
         }
 
-        uint? rowsPerStrip = FileDirectory.GetFileDirectoryValue<uint?>(FieldTypes.RowsPerStrip);
+        uint? rowsPerStrip = FileDirectory.GetFileDirectoryValueUInt(FieldTypes.RowsPerStrip);
         if (rowsPerStrip.HasValue)
         {
             return Math.Min(rowsPerStrip.Value, GetHeight());
