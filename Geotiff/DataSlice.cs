@@ -1,6 +1,6 @@
 using Geotiff.Exceptions;
 using Geotiff.JavaScriptCompatibility;
-using Geotiff.Primitives;
+using Rationals;
 
 namespace Geotiff;
 

@@ -1,4 +1,4 @@
-using Geotiff.Primitives;
+using Rationals;
 
 namespace Geotiff;
 

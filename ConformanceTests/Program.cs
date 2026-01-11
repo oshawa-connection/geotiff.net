@@ -2,7 +2,7 @@
 using System.Text.Json.Nodes;
 using ConformanceTests.Exceptions;
 using Geotiff;
-using Geotiff.Primitives;
+using Rationals;
 using Shouldly;
 
 namespace ConformanceTests;

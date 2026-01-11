@@ -1,5 +1,5 @@
 using Geotiff.Exceptions;
-using Geotiff.Primitives;
+using Rationals;
 
 namespace Geotiff;
 
@@ -70,7 +70,7 @@ public class Tag
         if (Value.IsSByte)
             return (double)Value.GetSByte();
         if (Value.IsRational)
-            return Value.GetRational().ToDouble();
+            return (double)Value.GetRational();
         if (Value.IsSRational)
             return (double)Value.GetSRational();
 
@@ -99,7 +99,7 @@ public class Tag
         if (Value.IsSByte)
             return Value.GetSByteArray().Select(sb => (double)sb).ToArray();
         if (Value.IsRational)
-            return Value.GetRationalArray().Select(r => r.ToDouble()).ToArray();
+            return Value.GetRationalArray().Select(r => (double)r).ToArray();
         if (Value.IsSRational)
             return Value.GetSRationalArray().Select(sr => (double)sr).ToArray();
 

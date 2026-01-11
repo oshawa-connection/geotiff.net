@@ -1,3 +1,5 @@
+using Rationals;
+
 namespace Geotiff;
 
 using System.Collections.Generic;
