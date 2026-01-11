@@ -221,33 +221,32 @@ public class GeoTIFF
             ushort count = rawGeoKeyDirectory[i + 2];
             ushort offset = rawGeoKeyDirectory[i + 3];
 
-            Tag? value = null;
-            geoKeyDirectory[key] = null;
+            object valueToSet = null;
+            geoKeyDirectory[key] = valueToSet;
             if (location is null)
             {
                 geoKeyDirectory[key] = offset;
             }
             else
             {
-                value = fileDirectory[location]; // TODO: could throw, error out if so.
+                Tag value = fileDirectory[location];
                 
                 if (value is null)
                 {
                     throw new GeoTiffException($"Could not get value of geoKey '{key}'");
                 }
-
-                value = ((Tag)value).Value;
-                if (value is string)
+                
+                if (value.DataType == TagDataType.ASCII)
                 {
-                    string? cast = (string)value;
-                    value = cast.JSSubString(offset, offset + count - 1);
+                    valueToSet = value.GetString().JSSubString(offset, offset + count - 1);
                 }
-                else if (value is List<object>)
+                else if (value.IsArray)
                 {
                     // value = value.subarray(offset, offset + count);
                     if (count == 1)
                     {
-                        value = ((List<object>)value).First();
+                        valueToSet = value.GetAsDoubleArray().First(); // TODO: with explicit mapping, read the exact numeric type and store in a class
+                        // value = ((List<object>)value).First();
                     }
                 }
                 else
@@ -256,7 +255,7 @@ public class GeoTIFF
                 }
             }
 
-            geoKeyDirectory[key] = value;
+            geoKeyDirectory[key] = valueToSet;
         }
 
         return geoKeyDirectory;
@@ -333,7 +332,7 @@ public class GeoTIFF
                     throw new NotImplementedException($"SRationals not supported: {fieldTypeName}"); // TODO: Is this true anymore?
                 }
 
-                value = fieldValues.GetListOfElements();
+                value = fieldValues.GetArrayOfElements();
                 isList = true;
             }
 

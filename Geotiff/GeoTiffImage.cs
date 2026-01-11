@@ -6,7 +6,7 @@ namespace Geotiff;
 
 public class GeoTiffImage
 {
-    private readonly ImageFileDirectory fileDirectory;
+    public readonly ImageFileDirectory FileDirectory;
     public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
@@ -16,7 +16,7 @@ public class GeoTiffImage
 
     public GeoTiffImage(ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {
-        this.fileDirectory = fileDirectory;
+        this.FileDirectory = fileDirectory;
         this.littleEndian = littleEndian;
         tiles = cache ? new Dictionary<int, ArrayBuffer>() : null;
 
@@ -42,14 +42,14 @@ public class GeoTiffImage
 
     public bool HasValidTiePoints()
     {
-        IEnumerable<double>? tiePoint = fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
+        IEnumerable<double>? tiePoint = FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
         return tiePoint is not null && tiePoint.Count() == 6;
     }
 
     public bool HasValidModelTransformation()
     {
         IEnumerable<double>? modelTransformation =
-            fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
         return modelTransformation is not null && modelTransformation.Count() > 11;
     }
 
@@ -69,9 +69,9 @@ public class GeoTiffImage
     /// <exception cref="GeoTiffException">Thrown if the affine transformation is invalid</exception>
     public VectorXYZ? GetOrigin()
     {
-        IEnumerable<double>? tiePoint = fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
+        IEnumerable<double>? tiePoint = FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
         IEnumerable<double>? modelTransformation =
-            fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
 
         if (HasValidTiePoints())
         {
@@ -95,10 +95,10 @@ public class GeoTiffImage
 
         return null;
     }
-
+    
     public IEnumerable<Tag> GetAllRawTags()
     {
-        return this.fileDirectory.RawFileDirectory.Values;
+        return this.FileDirectory.RawFileDirectory.Values;
     }
     
     /// <summary>
@@ -108,7 +108,7 @@ public class GeoTiffImage
     /// <returns></returns>
     public IEnumerable<Tag> GetAllKnownTags()
     {
-        return this.fileDirectory.TagDictionary.Values;
+        return this.FileDirectory.TagDictionary.Values;
     }
 
     /// <summary>
@@ -117,7 +117,7 @@ public class GeoTiffImage
     /// <returns></returns>
     public uint GetWidth()
     {
-        return fileDirectory.GetFileDirectoryValue<uint>(FieldTypes.ImageWidth);
+        return FileDirectory.GetFileDirectoryValue<uint>(FieldTypes.ImageWidth);
     }
 
     /// <summary>
@@ -126,15 +126,15 @@ public class GeoTiffImage
     /// <returns></returns>
     public uint GetHeight()
     {
-        return fileDirectory.GetFileDirectoryValue<uint>(FieldTypes.ImageLength);
+        return FileDirectory.GetFileDirectoryValue<uint>(FieldTypes.ImageLength);
     }
 
     public Tuple<double, double, double> GetResolution()
     {
         IEnumerable<double>? modelPixelScaleR =
-            fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelPixelScale);
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelPixelScale);
         IEnumerable<double>? modelTransformationR =
-            fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
 
         if (modelPixelScaleR is not null)
         {
@@ -181,7 +181,7 @@ public class GeoTiffImage
         uint height = GetHeight();
         uint width = GetWidth();
         IEnumerable<double>? modelTransformationList =
-            fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
         if (modelTransformationList is not null && !tilegrid)
         {
             ModelTransformation mt = ModelTransformation.FromIEnumerable(modelTransformationList);
@@ -227,14 +227,14 @@ public class GeoTiffImage
     /// <returns></returns>
     public ulong GetSamplesPerPixel()
     {
-        ulong samplesPerPixel = fileDirectory.GetFileDirectoryValue<ulong>(FieldTypes.SamplesPerPixel);
+        ulong samplesPerPixel = FileDirectory.GetFileDirectoryValue<ulong>(FieldTypes.SamplesPerPixel);
         return samplesPerPixel != 0 ? samplesPerPixel : 1;
     }
 
 
     public uint GetBitsPerSample(int sampleIndex = 0)
     {
-        ushort[] bitsPerSample = fileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
+        ushort[] bitsPerSample = FileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
         return bitsPerSample[sampleIndex];
     }
 
@@ -244,7 +244,7 @@ public class GeoTiffImage
     /// </summary>
     public int GetBytesPerPixel()
     {
-        ushort[] bitsPerSample = fileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
+        ushort[] bitsPerSample = FileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
         int bytes = 0;
         for (int i = 0; i < bitsPerSample.Length; ++i)
         {
@@ -259,7 +259,7 @@ public class GeoTiffImage
     /// </summary>
     public int GetSampleByteSize(int i)
     {
-        ushort[] bitsPerSample = fileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
+        ushort[] bitsPerSample = FileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
         if (i >= bitsPerSample.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(i), $"Sample index {i} is out of range.");
@@ -276,7 +276,7 @@ public class GeoTiffImage
     public uint GetTileWidth()
     {
         return isTiled
-            ? fileDirectory.GetFileDirectoryValue<uint>(FieldTypes.TileWidth)
+            ? FileDirectory.GetFileDirectoryValue<uint>(FieldTypes.TileWidth)
             : GetWidth();
     }
 
@@ -288,10 +288,10 @@ public class GeoTiffImage
     {
         if (isTiled)
         {
-            return fileDirectory.GetFileDirectoryValue<uint>(FieldTypes.TileLength);
+            return FileDirectory.GetFileDirectoryValue<uint>(FieldTypes.TileLength);
         }
 
-        uint? rowsPerStrip = fileDirectory.GetFileDirectoryValue<uint?>(FieldTypes.RowsPerStrip);
+        uint? rowsPerStrip = FileDirectory.GetFileDirectoryValue<uint?>(FieldTypes.RowsPerStrip);
         if (rowsPerStrip.HasValue)
         {
             return Math.Min(rowsPerStrip.Value, GetHeight());
@@ -307,7 +307,7 @@ public class GeoTiffImage
     /// <returns></returns>
     private int GetSampleFormat(int sampleIndex = 0)
     {
-        IEnumerable<int>? samplesFormat = fileDirectory.GetFileDirectoryListValue<int>(FieldTypes.SampleFormat);
+        IEnumerable<int>? samplesFormat = FileDirectory.GetFileDirectoryListValue<int>(FieldTypes.SampleFormat);
         return samplesFormat?.ElementAt(sampleIndex) ?? 1;
     }
 
@@ -593,7 +593,7 @@ public class GeoTiffImage
             if (planarConfiguration == 1)
             {
                 // fileDirectory.BitsPerSample.ElementAt(samples[i])
-                srcSampleOffsets.Add(sum(this.fileDirectory.BitsPerSample, 0, samples[i]) / 8);
+                srcSampleOffsets.Add(sum(this.FileDirectory.BitsPerSample, 0, samples[i]) / 8);
                 // srcSampleOffsets.Add(fileDirectory.BitsPerSample.Take(samples[i] / 8).Sum());
             }
             else
@@ -741,10 +741,10 @@ public class GeoTiffImage
     /// <returns></returns>
     public GeotiffSampleDataType GetSampleType(int sampleIndex = 0)
     {
-        int format = fileDirectory.SampleFormat is not null
-            ? fileDirectory.SampleFormat[sampleIndex]
+        int format = FileDirectory.SampleFormat is not null
+            ? FileDirectory.SampleFormat[sampleIndex]
             : 1;
-        int bitsPerSample = fileDirectory.BitsPerSample[sampleIndex];
+        int bitsPerSample = FileDirectory.BitsPerSample[sampleIndex];
         switch (format)
         {
             case 1: // unsigned integer data
@@ -801,10 +801,10 @@ public class GeoTiffImage
     
     private Func<DataView, long, bool, object> GetReaderForSample(int sampleIndex)
     {
-        int format = fileDirectory.SampleFormat is not null
-            ? fileDirectory.SampleFormat[sampleIndex]
+        int format = FileDirectory.SampleFormat is not null
+            ? FileDirectory.SampleFormat[sampleIndex]
             : 1;
-        int bitsPerSample = fileDirectory.BitsPerSample[sampleIndex];
+        int bitsPerSample = FileDirectory.BitsPerSample[sampleIndex];
         switch (format)
         {
             case 1: // unsigned integer data
@@ -888,13 +888,13 @@ public class GeoTiffImage
         int byteCount;
         if (isTiled)
         {
-            offset = fileDirectory.GetFileDirectoryListValue<int>("TileOffsets").ElementAt(index);
-            byteCount = fileDirectory.GetFileDirectoryListValue<int>("TileByteCounts").ElementAt(index);
+            offset = FileDirectory.GetFileDirectoryListValue<int>("TileOffsets").ElementAt(index);
+            byteCount = FileDirectory.GetFileDirectoryListValue<int>("TileByteCounts").ElementAt(index);
         }
         else
         {
-            offset = fileDirectory.GetFileDirectoryListValue<int>("StripOffsets").ElementAt(index);
-            byteCount = fileDirectory.GetFileDirectoryListValue<int>("StripByteCounts").ElementAt(index);
+            offset = FileDirectory.GetFileDirectoryListValue<int>("StripOffsets").ElementAt(index);
+            byteCount = FileDirectory.GetFileDirectoryListValue<int>("StripByteCounts").ElementAt(index);
         }
 
         if (byteCount == 0)
@@ -932,7 +932,7 @@ public class GeoTiffImage
             // resolve each request by potentially applying array normalization
             request = async () =>
             {
-                ArrayBuffer data = await poolOrDecoder.DecodeAsync(fileDirectory, slice);
+                ArrayBuffer data = await poolOrDecoder.DecodeAsync(FileDirectory, slice);
                 // var data = slice;
                 int sampleFormat = GetSampleFormat();
                 uint bitsPerSample = GetBitsPerSample();
@@ -1006,12 +1006,12 @@ public class GeoTiffImage
     /// <returns></returns>
     private int? GetGDALNoData()
     {
-        if (fileDirectory.GDAL_NODATA == null)
+        if (FileDirectory.GDAL_NODATA == null)
         {
             return null;
         }
 
-        string? str = fileDirectory.GDAL_NODATA;
+        string? str = FileDirectory.GDAL_NODATA;
         return int.Parse(str.Substring(0, str.Length - 1));
     }
 
@@ -1138,9 +1138,9 @@ public class GeoTiffImage
     /// Not part of GeoTiff.js
     /// </summary>
     /// <returns></returns>
-    public int? GetProjectionString()
+    public short? GetProjectionString()
     {
-        return fileDirectory.GetGeoDirectoryValue<int?>("GeographicTypeGeoKey");
+        return FileDirectory.GetGeoDirectoryValue<short?>("GeographicTypeGeoKey");
     }
 
     /// <summary>
@@ -1153,7 +1153,7 @@ public class GeoTiffImage
         CancellationToken? cancellationToken = null) where T : struct
     {
         IEnumerable<double>? modelTransformationList =
-            fileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
         if (modelTransformationList is not null)
         {
             throw new NotImplementedException("Model transformations not yet supported");

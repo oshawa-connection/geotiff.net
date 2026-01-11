@@ -92,6 +92,10 @@ public class ImageFileDirectory
         if (GeoKeyDirectory.TryGetValue(key, out object obj))
         {
             Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            if (obj == null)
+            {
+                return default!; 
+            }
             object? converted = Convert.ChangeType(obj, targetType);
             return (T)converted;
         }
@@ -110,12 +114,17 @@ public class ImageFileDirectory
             }
             else
             {
-                var arr = tag.GetDouble();
+                var arr = tag.GetAsDouble();
                 Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
                 return (T)Convert.ChangeType(arr, targetType);
             }
         }
         return default!;
+    }
+    
+    public bool HasTag(string tagName)
+    {
+        return this.TagDictionary.ContainsKey(tagName);
     }
     
     public int[] BitsPerSample => GetFileDirectoryArrayValue<int>("BitsPerSample");

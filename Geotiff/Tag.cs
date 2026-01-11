@@ -9,10 +9,22 @@ public class Tag
     public string? TagName { get; }
     private GeotiffTagValueResult Value { get; set; }
     public string GetString() => this.Value.GetString();
+    
+    /// <summary>
+    /// Useful in the case where the type of object isn't important, e.g. Console.WriteLine
+    /// If you call this on an Array Tag, it will return the first value of that array.
+    /// </summary>
+    /// <returns></returns>
+    public object GetFirstObject() => this.Value.GetFirstElement();
+    /// <summary>
+    /// Useful in the case where the type of object isn't important, e.g. Console.WriteLine
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<object> GetArrayOfObjects() => this.Value.GetArrayOfElements();
     public ulong[] GetULongArray() => this.Value.GetUInt64Array();
     public ulong GetULong() => this.Value.GetUInt64();
     public short[] GetShortArray() => this.Value.GetInt16Array();
-    public short GetShort()=> this.Value.GetInt16();
+    public short GetShort() => this.Value.GetInt16();
     public sbyte[] GetSByteArray()=> this.Value.GetSByteArray();
     public sbyte GetSByte()=> this.Value.GetSByte();
     public long[] GetLongArray()=> this.Value.GetInt64Array();

@@ -19,7 +19,7 @@ class Program
         Console.WriteLine("Known Tags:");
         foreach (var knownTag in knownTags.Where(d => d.IsArray is false))
         {
-            Console.WriteLine($"{knownTag.TagName}: {knownTag.Value}");
+            Console.WriteLine($"{knownTag.TagName}: {knownTag.GetFirstObject()}");
         }
 
         foreach (var knownTag in knownTags.Where(d => d.IsArray))

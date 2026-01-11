@@ -12,8 +12,7 @@ public readonly struct Rational : IEquatable<Rational>, IConvertible
             ? throw new DivideByZeroException("Denominator cannot be zero.")
             : denominator;
     }
-
-
+    
     public Rational(int numerator, int denominator) : this((uint)numerator, (uint)denominator)
     {
     }

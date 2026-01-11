@@ -275,9 +275,8 @@ internal class GeotiffTagValueResult
     {
         return GetList().GetValue(0);
     }
-
-    [Obsolete("Desperately needs removing")]
-    public List<object> GetListOfElements()
+    
+    public List<object> GetArrayOfElements()
     {
         var objs = new List<object>();
         foreach (object? o in GetList())
