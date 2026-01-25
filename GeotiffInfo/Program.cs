@@ -32,9 +32,9 @@ class Program
             }
         }
         var origin = image.GetOrigin();
-        var geotiffSampleType = image.GetSampleType();
+        GeoTiffSampleDataType geoTiffSampleType = image.GetSampleType();
         
-        Console.WriteLine(geotiffSampleType);
+        Console.WriteLine(geoTiffSampleType);
         var readResult = await image.ReadRastersAsync<byte>();
         var sampleResult = readResult.GetSampleResultAt(0);
         Console.WriteLine(sampleResult.FlatData.GetValue(0));
