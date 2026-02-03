@@ -33,6 +33,18 @@ public class UnitTest1
     }
 
     [TestMethod]
+    public async Task LoopedReading()
+    {
+        string quebec = Path.Combine(GetDataFolderPath(), "ca_nrc_NA83SCRS.tif");
+        await using var fsSource = new FileStream(quebec, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        
+        GeoTiffImage? image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRastersAsync<float>(cancellationToken: cts.Token);
+    }
+    
+    
+    [TestMethod]
     public async Task TestQuebec()
     {
         string quebec = Path.Combine(GetDataFolderPath(), "ca_nrc_NA83SCRS.tif");
@@ -143,8 +155,8 @@ public class UnitTest1
                 var xSample = result.GetSampleResultAt(1);
                 var ySample =  result.GetSampleResultAt(0);
                 
-                object? x = xSample.FlatData.GetValue(0);
-                object? y = ySample.FlatData.GetValue(0);
+                object? x = xSample._doubleData.GetValue(0);
+                object? y = ySample._doubleData.GetValue(0);
                 Console.WriteLine($"LAT was {lat} rLAT {x}. LON: {lon} rLON {y}");
                 x.ShouldBe(lon);
                 y.ShouldBe(lat);
@@ -168,7 +180,7 @@ public class UnitTest1
         for (int bandIndex = 2; bandIndex < 100; bandIndex++)
         {
             var sample = readResult.GetSampleResultAt(bandIndex);
-            sample.FlatData[10].ShouldBe(bandIndex + 1);
+            sample._doubleData[10].ShouldBe(bandIndex + 1);
         }
     }
     
@@ -239,7 +251,7 @@ public class UnitTest1
         var readResult3 = await image.ReadRastersAsync<int>(cancellationToken: cts.Token);
         var readResult4 = await image.ReadRastersAsync<int>(cancellationToken: cts.Token);
         
-        readResult1.GetSampleResultAt(0).FlatData[0].ShouldBe(readResult4.GetSampleResultAt(0).FlatData[0]);
+        readResult1.GetSampleResultAt(0)._doubleData[0].ShouldBe(readResult4.GetSampleResultAt(0)._doubleData[0]);
     }
 
 

@@ -14,7 +14,7 @@ public static class Constant
 public enum GeotiffSampleDataType
 {
     Uint8,
-    Int8,
+    Int8, // errr... Not supported by GDAL or QGIS.
     Int16,
     Uint16,
     Uint32,

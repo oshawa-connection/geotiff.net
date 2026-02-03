@@ -1,6 +1,8 @@
+using Geotiff.Exceptions;
+
 namespace Geotiff;
 
-public class GeoTIFFReadResult<T>(IEnumerable<T[]> sampleData, uint width, uint height, GeoTiffImage parentImage) where T : struct
+public class GeoTIFFReadResult(IEnumerable<GeoTiffSampleReadResult> sampleData, uint width, uint height, GeoTiffImage parentImage)
 {
     public uint Height { get; set; } = height;
     public uint Width { get; set; } = width;
@@ -10,18 +12,55 @@ public class GeoTIFFReadResult<T>(IEnumerable<T[]> sampleData, uint width, uint 
     public IEnumerable<T[]> SampleData { get; set; } = sampleData;
     private readonly GeoTiffImage ParentImage = parentImage;
 
-    public SampleReadResult<T> GetSampleResultAt(int sampleIndex)
+    public GeoTiffSampleReadResult<T> GetSampleResultAt(int sampleIndex)
     {
-        return new SampleReadResult<T>(this.SampleData.ElementAt(sampleIndex), width, height, parentImage);
+        return new GeoTiffSampleReadResult<T>(this.SampleData.ElementAt(sampleIndex), width, height, parentImage);
     }
 }
 
-public class SampleReadResult<T>(T[] flatData, uint width, uint height, GeoTiffImage parentImage)
+public class GeoTiffSampleReadResult
 {
-    public uint Height { get; set; } = height;
-    public uint Width { get; set; } = width;
-    public T[] FlatData { get; set; } = flatData;
-    private readonly GeoTiffImage ParentImage = parentImage;
+
+    public GeoTiffSampleReadResult(uint width, uint height, GeoTiffImage parentImage)
+    {
+        
+    }
+    
+    public static GeoTiffSampleReadResult FromDouble(double[] data, uint width, uint height, GeoTiffImage parentImage)
+    {
+        var result = new GeoTiffSampleReadResult(width, height, parentImage);
+        result._doubleResult = data;
+        return result;
+    }
+
+    public static GeoTiffSampleReadResult FromFloat(float[] data, uint width, uint height, GeoTiffImage parentImage)
+    {
+        var result = new GeoTiffSampleReadResult(width, height, parentImage);
+        result._floatResult = data;
+        return result;
+    }
+    
+    public static GeoTiffSampleReadResult FromInt(int[] data, uint width, uint height, GeoTiffImage parentImage)
+    {
+        var result = new GeoTiffSampleReadResult(width, height, parentImage);
+        result._IntResult = data;
+        return result;
+    }
+    
+    public uint Height { get; set; }
+    public uint Width { get; set; }
+    private double[] _doubleResult { get; set; }
+    private float[] _floatResult { get; set; }
+    private int[] _IntResult { get; set; }
+    private long[] _Int64Result { get; set; }
+    private uint[] _UInt32Result { get; set; }
+    private ushort[] _uInt16Result { get; set; }
+    private short[] _Int16Result { get; set; }
+    private byte[] _UInt8Result { get; set; }
+    private byte[] _Int8Result { get; set; }
+    
+    
+    private readonly GeoTiffImage ParentImage;
     
     /// <summary>
     /// This rearranges the data into a 2D array, indexed by result[pixelColumn, pixelRow] (x, y)
@@ -30,7 +69,7 @@ public class SampleReadResult<T>(T[] flatData, uint width, uint height, GeoTiffI
     /// <exception cref="InvalidOperationException"></exception>
     public T[,] To2DArray()
     {
-        if (FlatData.Length != Height * Width)
+        if (_doubleResult.Length != Height * Width)
         {
             throw new InvalidOperationException("RawArrayData length does not match Height * Width.");    
         }
@@ -40,18 +79,9 @@ public class SampleReadResult<T>(T[] flatData, uint width, uint height, GeoTiffI
         {
             for (uint row = 0; row < Height; row++)
             {
-                result[col, row] = FlatData[row * Width + col];
+                result[col, row] = _doubleResult[row * Width + col];
             }
         }
         return result;
     }
-}
-
-
-public class GeoTIFFReadResultUnknownType(Array rawArrayData, uint height, uint width, GeotiffSampleDataType sampleType)
-{
-    public uint Height { get; set; } = height;
-    public uint Width { get; set; } = width;
-    public Array RawArrayData { get; set; } = rawArrayData;
-    public GeotiffSampleDataType SampleType = sampleType;
 }

@@ -59,7 +59,7 @@ public class MaskedGeoTIFFReader
         var maskedReadResult = await maskImage.ReadRastersAsync<byte>(window, cancellationToken);
         
         return new MaskBandGeoTIFFReadResult<T>(
-            maskedReadResult.GetSampleResultAt(0).FlatData, 
+            maskedReadResult.GetSampleResultAt(0)._doubleData, 
             mainReadResult.SampleData, 
             maskedReadResult.Width, 
             maskedReadResult.Height, 

@@ -551,7 +551,13 @@ public class GeoTiffImage
         }
         return s;
     }
-    
+
+    private async Task<GeoTIFFReadResult<int>> _ReadRasterIntAsync<T>(uint[] imageWindow, int[] samples,
+        List<T[]> valueArrays,
+        DecoderRegistry decoder, uint? width, uint? height, CancellationToken? cancellationToken)
+    {
+        
+    }
     
     /// <summary>
     /// TODO: Check why deocderRegistry is not used here
