@@ -35,10 +35,10 @@ class Program
         var geotiffSampleType = image.GetSampleType();
         
         Console.WriteLine(geotiffSampleType);
-        var readResult = await image.ReadRastersAsync<byte>();
-        var sampleResult = readResult.GetSampleResultAt(0);
-        Console.WriteLine(sampleResult._doubleData.GetValue(0));
-        Console.WriteLine(sampleResult.To2DArray()[0,0]);
-        Console.WriteLine(sampleResult.To2DArray()[sampleResult.Width - 1, 0]);
+        var readResult = await image.ReadRastersAsync();
+        // var sampleResult = readResult.GetSampleResultAt(0);
+        // Console.WriteLine(sampleResult._doubleData.GetValue(0));
+        // Console.WriteLine(sampleResult.To2DArray()[0,0]);
+        // Console.WriteLine(sampleResult.To2DArray()[sampleResult.Width - 1, 0]);
     }
 }

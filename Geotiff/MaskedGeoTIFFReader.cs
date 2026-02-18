@@ -52,17 +52,18 @@ public class MaskedGeoTIFFReader
 
     public async Task<MaskBandGeoTIFFReadResult<T>> ReadMaskedRasters<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct
     {
-        var mainImage = await multiGeoTiff.GetImageAsync();
-        var maskImage = await multiGeoTiff.GetImageAsync(1);
-
-        var mainReadResult = await mainImage.ReadRastersAsync<T>(window, cancellationToken);
-        var maskedReadResult = await maskImage.ReadRastersAsync<byte>(window, cancellationToken);
-        
-        return new MaskBandGeoTIFFReadResult<T>(
-            maskedReadResult.GetSampleResultAt(0)._doubleData, 
-            mainReadResult.SampleData, 
-            maskedReadResult.Width, 
-            maskedReadResult.Height, 
-            mainImage);
+        throw new NotImplementedException();
+        // var mainImage = await multiGeoTiff.GetImageAsync();
+        // var maskImage = await multiGeoTiff.GetImageAsync(1);
+        //
+        // var mainReadResult = await mainImage.ReadRastersAsync<T>(window, cancellationToken);
+        // var maskedReadResult = await maskImage.ReadRastersAsync<byte>(window, cancellationToken);
+        //
+        // return new MaskBandGeoTIFFReadResult<T>(
+        //     maskedReadResult.GetSampleResultAt(0)._doubleData, 
+        //     mainReadResult.SampleData, 
+        //     maskedReadResult.Width, 
+        //     maskedReadResult.Height, 
+        //     mainImage);
     }
 }

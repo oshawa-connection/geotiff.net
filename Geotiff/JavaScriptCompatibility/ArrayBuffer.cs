@@ -1,8 +1,8 @@
-using System;
+using System.Collections;
 
 namespace Geotiff.JavaScriptCompatibility;
 
-public class ArrayBuffer
+public class ArrayBuffer :IEnumerable<byte>
 {
     private readonly byte[] buffer;
 
@@ -11,6 +11,12 @@ public class ArrayBuffer
     public Span<byte> AsSpan()
     {
         return buffer.AsSpan();
+    }
+
+    public Span<byte> SpanSlice(int start, int length)
+    {
+        Span<byte> bytes = buffer;
+        return bytes.Slice(start: start, length: length);
     }
 
     public Memory<byte> AsMemory()
@@ -92,6 +98,17 @@ public class ArrayBuffer
         buffer[index] = value;
     }
 
+    public void SetInt16(int index, byte value)
+    {
+        index *= 2;
+        if (index < 0 || index >= buffer.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        buffer[index] = value;
+    }
+
     public void Fill(byte value, int start = 0, int? end = null)
     {
         int actualEnd = end ?? buffer.Length;
@@ -110,5 +127,16 @@ public class ArrayBuffer
         {
             buffer[i] = value;
         }
+    }
+
+
+    public IEnumerator<byte> GetEnumerator()
+    {
+        return this.buffer.Cast<byte>().GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }
