@@ -17,8 +17,8 @@ await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.R
 var geotiff = await GeoTIFF.FromStream(fsSource);
 int count = await geotiff.GetImageCount();
 var image = await geotiff.GetImage();
-var readResult = await image.ReadRasters<int>();
-var sampleResult = readResult.GetSampleResultAt(0).To2DArray();
+var readResult = await image.ReadRastersAsync();
+var result = readResult.GetSampleAt(0).GetDoubleArray();
 ```
 
 
@@ -61,7 +61,6 @@ This project is a WIP, new contributors are very welcome. If you’d like to get
 
 Before release, the bare minimum:
 
-- Handle case where the user does not know the type of the raster data before reading it, e.g. in cases where they are reading a user-passed tiff file.
 - Image resampling
 - User examples
 - More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`

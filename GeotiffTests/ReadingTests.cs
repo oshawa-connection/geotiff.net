@@ -187,12 +187,13 @@ public class ReadingTests : GeoTiffTestBaseClass
 
                 var xSample = result.GetSampleAt(1);
                 var ySample =  result.GetSampleAt(0);
+
+                var x =xSample.GetIntArray().GetValue(0);
+                var y = ySample.GetIntArray().GetValue(0);
                 
-                // object? x = xSample._doubleData.GetValue(0);
-                // object? y = ySample._doubleData.GetValue(0);
-                // Console.WriteLine($"LAT was {lat} rLAT {x}. LON: {lon} rLON {y}");
-                // x.ShouldBe(lon);
-                // y.ShouldBe(lat);
+                Console.WriteLine($"LAT was {lat} rLAT {x}. LON: {lon} rLON {y}");
+                x.ShouldBe(lon);
+                y.ShouldBe(lat);
             }
         }
     }

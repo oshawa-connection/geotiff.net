@@ -54,7 +54,4 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
         var result = readResult.GetSampleAt(0).GetShortArray();
         result.ShouldBe([1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4]);
     }
-    
-    
-
 }
