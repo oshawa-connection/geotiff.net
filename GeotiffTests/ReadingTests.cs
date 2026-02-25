@@ -5,10 +5,9 @@ using Geotiff;
 namespace GeotiffTests;
 
 [TestClass]
+[DoNotParallelize]
 public class ReadingTests : GeoTiffTestBaseClass
 {
-    private CancellationTokenSource cts = new();
-
     private string GetDataFolderPath()
     {
         // Start from the directory where the test assembly is located
@@ -79,7 +78,7 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
         readResult.GetNumberOfSamples().ShouldBe(4);
-        var doubleArray = readResult.GetSampleAt(0).GetDataAs2DDoubleArray();
+        var doubleArray = readResult.GetSampleAt(0).GetAs2DDoubleArray();
         Console.WriteLine(doubleArray[0,0]);
     }
     
@@ -97,7 +96,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
         readResult.GetNumberOfSamples().ShouldBe(1);
-        var doubleArray = readResult.GetSampleAt(0).GetDataAs2DDoubleArray();
+        var doubleArray = readResult.GetSampleAt(0).GetAs2DDoubleArray();
         Console.WriteLine(doubleArray[0,0]);
 
         // Console.WriteLine(image.GetProjectionString());
@@ -166,6 +165,55 @@ public class ReadingTests : GeoTiffTestBaseClass
         // var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
     }
 
+    [TestMethod]
+    public async Task TestMultiBand()
+    {
+        string multiBand = Path.Combine(GetDataFolderPath(), "ten_band_2x2.tif");
+        await using var fsSource = new FileStream(multiBand, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        int count = await geotiff.GetImageCountAsync();
+        GeoTiffImage? image = await geotiff.GetImageAsync();
+        var resultAll = await image.ReadRastersAsync();
+
+        for (int i = 0; i < resultAll.GetNumberOfSamples(); i++)
+        {
+            var sample = resultAll.GetSampleAt(i);
+            var ints = sample.GetByteArray();
+            ints.ShouldAllBe(d => d == i + 1);
+        }
+    }
+    
+    
+    [TestMethod]
+    public async Task Test2DReshaping()
+    {
+        string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
+        await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRastersAsync();
+        var reshaped = readResult.GetSampleAt(0).GetAs2DDoubleArray();
+        reshaped[0,0].ShouldBe(49);
+        reshaped[1,0].ShouldBe(49);
+        reshaped[1,1].ShouldBe(48);
+
+    }
+    
+    [TestMethod]
+    public async Task TestWindowedReading()
+    {
+        string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
+        await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var bbox = image.GetBoundingBox();
+        // bbox.
+        var readResult = await image.ReadRastersAsync(new ImageWindow() { });
+        var reshaped = readResult.GetSampleAt(0).GetAsDoubleArray();
+        
+        
+    }
+    
 
     [TestMethod]
     public async Task TestReadAtLonLat()
@@ -177,21 +225,23 @@ public class ReadingTests : GeoTiffTestBaseClass
         count.ShouldBe(1);
 
         GeoTiffImage? image = await geotiff.GetImageAsync();
+        var resultAll = await image.ReadRastersAsync();
+        
         for (int lon = 0; lon < 50; lon++)
         {
             for (int lat = 0; lat < 50; lat++)
             {
-                var
+                Raster
                     result = await image.ReadValueAtCoordinateAsync<int>(lon + 0.5,
                         lat + 0.5); // add 0.5 to be in the centre of the pixel.
-
-                var xSample = result.GetSampleAt(1);
-                var ySample =  result.GetSampleAt(0);
-
-                var x =xSample.GetIntArray().GetValue(0);
-                var y = ySample.GetIntArray().GetValue(0);
                 
-                Console.WriteLine($"LAT was {lat} rLAT {x}. LON: {lon} rLON {y}");
+                RasterSample xSample = result.GetSampleAt(1);
+                RasterSample ySample =  result.GetSampleAt(0);
+                
+                var x = xSample.GetIntArray()[0];
+                var y = ySample.GetIntArray()[0];
+                
+                Console.WriteLine($"LAT was {lat} rLAT {y}. LON: {lon} rLON {x}");
                 x.ShouldBe(lon);
                 y.ShouldBe(lat);
             }

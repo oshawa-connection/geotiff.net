@@ -12,7 +12,6 @@ public class RasterSample
     private double[]? DoubleResult { get; set; }
     private float[]? FloatResult { get; set; }
     private int[]? IntResult { get; set; }
-    
     private uint[]? UInt32Result { get; set; }
     private ushort[]? UInt16Result { get; set; }
     private short[]? Int16Result { get; set; }
@@ -58,6 +57,16 @@ public class RasterSample
             default:
                 throw new ArgumentOutOfRangeException(nameof(sampleType), sampleType, null);
         }
+    }
+
+    public bool IsFloatingPoint()
+    {
+        return this.SampleType == GeotiffSampleDataType.Float32 || this.SampleType == GeotiffSampleDataType.Double;
+    }
+
+    public bool IsInteger()
+    {
+        return !IsFloatingPoint();
     }
     
     public void CheckType(GeotiffSampleDataType sampleDataType)
@@ -193,10 +202,10 @@ public class RasterSample
         return this.FloatResult;
     }
     
-    public double[,] Get2DDoubleArray()
+    public float[,] Get2DFloatArray()
     {
-        CheckType(GeotiffSampleDataType.Double);
-        return this.To2DArray<double>(this.DoubleResult);
+        CheckType(GeotiffSampleDataType.Float32);
+        return this.To2DArray<float>(this.FloatResult);
     }
     
     public double[] GetDoubleArray()
@@ -205,12 +214,12 @@ public class RasterSample
         return this.DoubleResult;
     }
     
-    public float[,] Get2DFloatArray()
+    public double[,] Get2DDoubleArray()
     {
-        CheckType(GeotiffSampleDataType.Float32);
-        return this.To2DArray<float>(this.FloatResult);
+        CheckType(GeotiffSampleDataType.Double);
+        return this.To2DArray<double>(this.DoubleResult);
     }
-
+    
     private double[] ConvertAllToDouble<T>(IEnumerable<T> array)
     {
         return array.Select(d => Convert.ToDouble(d)).ToArray();
@@ -259,10 +268,59 @@ public class RasterSample
         return array;
     }
 
-    public double[,] GetDataAs2DDoubleArray()
+    public double[,] GetAs2DDoubleArray()
     {
-        var array = this.GetAsDoubleArray();
-        return To2DArray(array);
+        var doubles = this.GetAsDoubleArray();
+        return this.To2DArray(doubles);
+    }
+    
+    
+    private int[] ConvertAllToInt<T>(IEnumerable<T> array)
+    {
+        return array.Select(d => Convert.ToInt32(d)).ToArray();
+    }
+    
+    /// <summary>
+    /// This converts your results to int32
+    /// </summary>
+    /// <returns></returns>
+    public int[] GetAsIntArray()
+    {
+        int[] array;
+        switch (this.SampleType)
+        {
+            case GeotiffSampleDataType.UInt8:
+                array = this.ConvertAllToInt(this.UInt8Result);
+                break;
+            case GeotiffSampleDataType.Int8:
+                array = this.ConvertAllToInt(this.Int8Result);
+                break;
+            case GeotiffSampleDataType.Int16:
+                array = this.ConvertAllToInt(this.Int16Result);
+                break;
+            case GeotiffSampleDataType.UInt16:
+                array = this.ConvertAllToInt(this.UInt16Result);
+                break;
+            case GeotiffSampleDataType.UInt32:
+                array = this.ConvertAllToInt(this.UInt32Result);
+                break;
+            case GeotiffSampleDataType.UInt64:
+                throw new NotImplementedException();
+                break;
+            case GeotiffSampleDataType.Int32:
+                array = this.ConvertAllToInt(this.IntResult);
+                break;
+            case GeotiffSampleDataType.Float32:
+                array = this.ConvertAllToInt(this.FloatResult);
+                break;
+            case GeotiffSampleDataType.Double:
+                array = this.ConvertAllToInt(this.DoubleResult);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        return array;
     }
     
     /// <summary>
@@ -287,5 +345,4 @@ public class RasterSample
         }
         return result;
     }
-
 }

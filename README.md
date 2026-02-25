@@ -14,11 +14,11 @@ Read everything as a 2D array from the first sample of the first image from a fi
 ```csharp
 var lonLatTif = Path.Combine(GetDataFolderPath(), "elevationData.tif");
 await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-var geotiff = await GeoTIFF.FromStream(fsSource);
-int count = await geotiff.GetImageCount();
-var image = await geotiff.GetImage();
-var readResult = await image.ReadRastersAsync();
-var result = readResult.GetSampleAt(0).GetDoubleArray();
+GeoTIFF geotiff = await GeoTIFF.FromStream(fsSource);
+GeoTIFFImage image = await geotiff.GetImage(0);
+Raster readResult = await image.ReadRastersAsync();
+RasterSample sample0 = readResult.GetSampleAt(0);
+ushort[] result = sample0.GetUShortArray();
 ```
 
 
@@ -29,8 +29,8 @@ var gtAWSClient = new GeotiffAWSClient("testbucket", "modelOutputDataCOG.tif", c
 GeoTIFF? geotiff = await GeoTIFF.FromRemoteClient(gtAWSClient);
 var image = await geotiff.GetImage();
 var result = await image.ReadValueAtCoordinate<double>(lon, lat); 
-var waterVelocityAtCoordinate =  result.GetSampleResultAt(0).FlatData.GetValue(0);
-var waterDepthAtCoordinate = result.GetSampleResultAt(1).FlatData.GetValue(0);
+var waterVelocityAtCoordinate =  result.GetSampleResultAt(0).GetDoubleArray()[0];
+var waterDepthAtCoordinate = result.GetSampleResultAt(1).GetDoubleArray()[0];
 ```
 
 Read data from a file that has external overviews in an `.ovr` sidecar file
@@ -45,6 +45,72 @@ var overviewMultiTiff = await MultiGeoTIFF.FromStreams(mainStream, new[] { ovrSt
 var imageCount = await overviewMultiTiff.GetImageCount();// 4; 1 from the main file and 3 from the overviews.
 var hasOverviews = await overviewMultiTiff.HasOverviews(); // true
 ```
+
+Read data from a file that you don't know the data type of ahead of time (e.g. a user uploads a file, or iterating over files in a folder)
+```csharp
+var unknownDataTypeTif = Path.Combine(GetDataFolderPath(), "mystery.tif");
+await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+var geotiff = await GeoTIFF.FromStream(fsSource);
+int count = await geotiff.GetImageCount();
+var image = await geotiff.GetImage();
+var readResult = await image.ReadRastersAsync();
+
+var sample0 = readResult.GetSampleAt(0);
+
+var result = sample0.GetAsDoubleArray(); // Get As -> Converts your datatype, useful if you don't mind much about the datatype.
+var result = sample0.GetAsIntArray();
+
+
+if (result.IsInteger()) // any signed or unsigned integer type.
+{
+    var result = sample0.GetAsIntArray();
+}
+
+if (result.IsFloatingPoint) // either a double of float
+{
+        var result = sample0.GetAsDoubleArray();
+}
+
+// Lastly, if precision is important or your data values are close to the upper/ lower limits of the storage type, you can do:
+switch (sample0.SampleType)
+{
+    case GeotiffSampleDataType.UInt8:
+        break;
+    case GeotiffSampleDataType.Int8:
+        break;
+    case GeotiffSampleDataType.Int16:
+        break;
+    case GeotiffSampleDataType.UInt16:
+        break;
+    case GeotiffSampleDataType.UInt32:
+        break;
+    case GeotiffSampleDataType.UInt64:
+        break;
+    case GeotiffSampleDataType.Int32:
+        break;
+    case GeotiffSampleDataType.Float32:
+        break;
+    case GeotiffSampleDataType.Double:
+        break;
+    default:
+        throw new ArgumentOutOfRangeException();
+}
+
+```
+
+Lastly, if you want to reshape the data into a 2D array organised so that the first element is at the top left (as per geotiff convention, at its origin):
+
+```csharp
+string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
+await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+var image = await geotiff.GetImageAsync(0);
+var readResult = await image.ReadRastersAsync();
+var reshaped = readResult.GetSampleAt(0).GetAs2DDoubleArray();
+
+Console.WriteLine(reshaped[0,0]); // value at the geotiff origin
+```
+
 
 ## Alternatives libraries
 

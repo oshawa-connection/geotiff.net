@@ -1,5 +1,8 @@
 namespace Geotiff;
 
+/// <summary>
+/// This defines coordinates in pixel space 
+/// </summary>
 public class ImageWindow
 {
     public uint Left { get; set; }

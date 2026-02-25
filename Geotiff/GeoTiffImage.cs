@@ -129,7 +129,7 @@ public class GeoTiffImage
         return FileDirectory.GetFileDirectoryValueUInt(FieldTypes.ImageLength);
     }
 
-    public Tuple<double, double, double> GetResolution()
+    public VectorXYZ GetResolution()
     {
         IEnumerable<double>? modelPixelScaleR =
             FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelPixelScale);
@@ -139,7 +139,7 @@ public class GeoTiffImage
         if (modelPixelScaleR is not null)
         {
             double[] modelPixelScale = modelPixelScaleR.ToArray();
-            return new Tuple<double, double, double>(
+            return new VectorXYZ(
                 modelPixelScale[0],
                 -modelPixelScale[1],
                 modelPixelScale[2]);
@@ -150,13 +150,13 @@ public class GeoTiffImage
             double[] modelTransformation = modelTransformationR.ToArray();
             if (modelTransformation[1] == 0 && modelTransformation[4] == 0)
             {
-                return new Tuple<double, double, double>(
+                return new VectorXYZ(
                     modelTransformation[0],
                     -modelTransformation[5],
                     modelTransformation[10]);
             }
 
-            return new Tuple<double, double, double>(
+            return new VectorXYZ(
                 Math.Sqrt((modelTransformation[0] * modelTransformation[0])
                           + (modelTransformation[4] * modelTransformation[4])),
                 -Math.Sqrt((modelTransformation[1] * modelTransformation[1])
@@ -206,13 +206,13 @@ public class GeoTiffImage
         else
         {
             VectorXYZ origin = GetOrigin();
-            Tuple<double, double, double> resolution = GetResolution();
+            VectorXYZ resolution = GetResolution();
 
             double x1 = origin.X;
             double y1 = origin.Y;
 
-            double x2 = x1 + (resolution.Item1 * width);
-            double y2 = y1 + (resolution.Item2 * height);
+            double x2 = x1 + (resolution.X * width);
+            double y2 = y1 + (resolution.Y * height);
 
             return new BoundingBox()
             {
@@ -569,8 +569,6 @@ public class GeoTiffImage
     }
 
     /// <summary>
-    /// By specifying the type parameter, you specify that all samples are of the same type. If this is not true, use GeoTIFFReadResultUnknownType instead.
-    /// TODO: allow users to specify which samples they want to read rather than reading all of them.
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
@@ -603,8 +601,8 @@ public class GeoTiffImage
         int[] samples =
             Enumerable.Range(0, (int)samplesPerPixel)
                 .ToArray(); // TODO: change away from using Enumerable.Range here as it doesn't accept ulong, or write extension.
-        SparseList<RasterSample> valueArrays = new();
         
+        SparseList<RasterSample> valueArrays = new();
         
         for (int i = 0; i < samples.Count(); ++i)
         {
@@ -658,14 +656,16 @@ public class GeoTiffImage
             for (int xTile = minXTile; xTile < maxXTile; ++xTile)
             {
                 Task<TileOrStripResult> getPromise = null;
-                if (planarConfiguration == 1)
-                {
-                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
-                }
+
 
                 for (int sampleIndex = 0; sampleIndex < samples.Length; ++sampleIndex)
                 {
                     int sample = samples[sampleIndex];
+                    if (planarConfiguration == 1)
+                    {
+                        getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(), cancellationToken);
+                    }
+                    
                     if (planarConfiguration == 2)
                     {
                         bytesPerPixel = GetSampleByteSize(sample);
@@ -992,30 +992,31 @@ public class GeoTiffImage
         throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
 
-    /**
-   * Returns the decoded strip or tile.
-   * @param {Number} x the strip or tile x-offset
-   * @param {Number} y the tile y-offset (0 for stripped images)
-   * @param {Number} sample the sample to get for separated samples
-   * @param {import("./geotiff").Pool|import("./geotiff").BaseDecoder} poolOrDecoder the decoder or decoder pool
-   * @param {AbortSignal} [signal] An AbortSignal that may be signalled if the request is
-   *                               to be aborted
-   * @returns {Promise.<{x: number, y: number, sample: number, data: ArrayBuffer}>} the decoded strip or tile
-   */
+
+    /// <summary>
+    /// Returns the decoded strip or tile.
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="sample"></param>
+    /// <param name="poolOrDecoder"></param>
+    /// <param name="signal"></param>
+    /// <returns></returns>
     private async Task<TileOrStripResult> GetTileOrStripAsync(int x, int y, int sample, DecoderRegistry poolOrDecoder,
         CancellationToken? signal)
     {
         int numTilesPerRow = (int)Math.Ceiling((int)GetWidth() / (double)GetTileWidth());
         int numTilesPerCol = (int)Math.Ceiling((double)GetHeight() / (double)GetTileHeight());
         int index = 0;
-
+        var sampleToUse = 0;
         if (planarConfiguration == 1)
         {
             index = (y * numTilesPerRow) + x;
         }
         else if (planarConfiguration == 2)
         {
-            index = (sample * numTilesPerRow * numTilesPerCol) + (y * numTilesPerRow) + x;
+            sampleToUse = sample;
+            index = (sampleToUse * numTilesPerRow * numTilesPerCol) + (y * numTilesPerRow) + x;
         }
 
         int offset;
@@ -1035,10 +1036,10 @@ public class GeoTiffImage
         {
             long nPixels = GetBlockHeight(y) * GetTileWidth();
             int bytesPerPixel = planarConfiguration == 2
-                ? GetSampleByteSize(sample)
+                ? GetSampleByteSize(sampleToUse)
                 : GetBytesPerPixel();
             var data = new ArrayBuffer(nPixels * bytesPerPixel);
-            Array view = GetArrayForSample(sample, data);
+            Array view = GetArrayForSample(sampleToUse, data);
 
             int valueToFill = 0;
             int? temp = GetGDALNoData();
@@ -1066,7 +1067,7 @@ public class GeoTiffImage
             // resolve each request by potentially applying array normalization
             request = async () =>
             {
-                var z = x + y + sample;
+                var z = x + y + sampleToUse;
                 int sampleFormat = GetSampleFormat();
                 uint bitsForCurrentSample = GetBitsForSample(); // TODO: pass sample index here; works right now because most tiffs only contain one sample type. 
                 var bitsPerSample = GetBitsPerSample();
@@ -1290,6 +1291,7 @@ public class GeoTiffImage
     {
         IEnumerable<double>? modelTransformationList =
             FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+        
         if (modelTransformationList is not null)
         {
             throw new NotImplementedException("Model transformations not yet supported");
@@ -1297,14 +1299,14 @@ public class GeoTiffImage
 
         //TODO: Check not out of bounds
         VectorXYZ origin = GetOrigin();
-        Tuple<double, double, double> res = GetResolution();
+        VectorXYZ res = GetResolution();
         // If the user passed a low x, we want to be close to the orgin.
-        double left = (x - origin.X) / res.Item1;
-        double right = left + res.Item1;
+        double left = (x - origin.X) / res.X;
+        double right = left + res.X;
 
         // if the user passed a low y, be far away from the origin.
 
-        double top = (y - origin.Y) / res.Item2;
+        double top = (y - origin.Y) / res.Y;
         double bottom = top + 1;
 
         var window = new ImageWindow()
@@ -1313,5 +1315,17 @@ public class GeoTiffImage
         };
 
         return await ReadRastersAsync(window, cancellationToken);
+    }
+    
+    // private 
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public ImageWindow BoundingBoxToImageWindow(BoundingBox bbox)
+    {
+        throw new NotImplementedException();
+        // bbox.XMin
     }
 }
