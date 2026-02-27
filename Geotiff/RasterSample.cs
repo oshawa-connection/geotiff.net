@@ -346,7 +346,8 @@ public class RasterSample
         {
             for (uint row = 0; row < Height; row++)
             {
-                result[col, row] = array[row * Width + col];
+                var x = array[row * Width + col];
+                result[col, row] = x;
             }
         }
         return result;

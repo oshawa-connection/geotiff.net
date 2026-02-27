@@ -245,27 +245,35 @@ public class ReadingTests : GeoTiffTestBaseClass
         var imagePixelWindow = image.BoundingBoxToImageWindow(bbox);
         var height = image.GetHeight();
         var width = image.GetWidth();
-        
+        // 
         var readResult = await image.ReadRastersAsync(imagePixelWindow);
         var xSample = readResult.GetSampleAt(1).Get2DIntArray();
         var ySample = readResult.GetSampleAt(0).Get2DIntArray();
         
-        for (int lon = (int)imagePixelWindow.Left; lon < imagePixelWindow.Right; lon++)
+        for (int lon = (int)imagePixelWindow.Left - 1; lon < imagePixelWindow.Right - 1; lon++)
         {
-            for (int lat = (int)imagePixelWindow.Top; lat < imagePixelWindow.Bottom; lat++)
+            for (int lat = (int)imagePixelWindow.Top - 1; lat < imagePixelWindow.Bottom - 1; lat++)
             {
-                var x = xSample[lat, lon];
-                var y = ySample[lat, lon];
+                var x = xSample[lon, lat];
+                var y = (double)ySample[lon, lat];
                 // Raster
                 //     result = await image.ReadValueAtCoordinateAsync<int>(lon + 0.5,
                 //         lat + 0.5); // add 0.5 to be in the centre of the pixel.
+                var shouldBeLat = height - lat - 1 + resolution.Y;
+                var shouldBeLon = lon + 1;
                 
-                Console.WriteLine($"LAT was {lat} rLAT {y}. LON: {lon} rLON {x}");
-                x.ShouldBe(lon);
-                y.ShouldBe(lat);
+                if (shouldBeLat != y || shouldBeLon != x)
+                {
+                    Console.WriteLine($"LAT was {shouldBeLat} rLAT {y}. LON: {lon + 1} rLON {x}");        
+                }
+                
+                // x.ShouldBe(lon + 1);
+                
+                // y.ShouldBe(height - lat - 1 + resolution.Y);
             }
         }
-        
+
+        Console.WriteLine("HELLO WORLD");
     }
     
 

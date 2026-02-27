@@ -626,9 +626,6 @@ public class GeoTiffImage
             var sampleDataType = SampleDataTypeForSample(samples.ElementAt(i));
             valueArrays[samples.ElementAt(i)] = new RasterSample(imageWindowWidth, imageWindowHeight, this, sampleDataType, (int)numPixels);
         }
-
-        var poolOrDecoder = new DecoderRegistry(); // TODO: construct this elsewhere?
-        
         uint tileWidth = GetTileWidth();
         uint tileHeight = GetTileHeight();
         uint imageWidth = GetWidth();
@@ -681,7 +678,6 @@ public class GeoTiffImage
                     
                     if (planarConfiguration == 2)
                     {
-                        bytesPerPixel = GetSampleByteSize(sample);
                         getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(),
                             cancellationToken);
                     }
@@ -706,10 +702,13 @@ public class GeoTiffImage
                         {
                             for (long x = Math.Max(0, imageWindow[0] - firstCol); (ulong)x < xmax; ++x)
                             {
-                                long pixelOffset = ((y * tileWidth) + x) * bytesPerPixel;
-                                long windowCoordinate;
-
-                                windowCoordinate = (
+                                var bytesPerPixelToUse = bytesPerPixel;
+                                if (planarConfiguration == 2)
+                                {
+                                    bytesPerPixelToUse = GetSampleByteSize(tile.sample);
+                                }
+                                long pixelOffset = ((y * tileWidth) + x) * bytesPerPixelToUse;
+                                long windowCoordinate = (
                                     (y + firstLine - imageWindow[1]) * windowWidth
                                 ) + x + firstCol - imageWindow[0];
 
