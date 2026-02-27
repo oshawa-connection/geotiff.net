@@ -129,6 +129,12 @@ public class GeoTiffImage
         return FileDirectory.GetFileDirectoryValueUInt(FieldTypes.ImageLength);
     }
 
+    /// <summary>
+    /// One quirk to be aware of with tiffs is that the resolution can actually be negative; that is they start
+    /// from the top and then work their way downwards.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
     public VectorXYZ GetResolution()
     {
         IEnumerable<double>? modelPixelScaleR =
@@ -568,12 +574,18 @@ public class GeoTiffImage
         return ArrayForType(format, bitsPerSample, buffer);
     }
 
+
     /// <summary>
+    /// 
     /// </summary>
+    /// <param name="window">Pixel ranges to read</param>
+    /// <param name="sampleSelection">sample indices (0 indexed) to read</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    public async Task<Raster> ReadRastersAsync(ImageWindow? window = null, CancellationToken? cancellationToken = null) 
+    /// <exception cref="GeoTiffException"></exception>
+    /// <exception cref="NotImplementedException"></exception>
+    /// <exception cref="InvalidTiffException"></exception>
+    public async Task<Raster> ReadRastersAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null) 
     {
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
@@ -595,19 +607,24 @@ public class GeoTiffImage
 
         ulong numPixels =
             (ulong)imageWindowWidth * (ulong)imageWindowHeight; // ignore resharper telling you that cast is redundant.
-        // TODO: allow user to specify which samples to be read rather than reading all of them.
+        
         ulong samplesPerPixel = GetSamplesPerPixel();
         // TODO: this will need to change when we add support for choosing the samples to be read.
-        int[] samples =
+        IEnumerable<int> samples =
             Enumerable.Range(0, (int)samplesPerPixel)
                 .ToArray(); // TODO: change away from using Enumerable.Range here as it doesn't accept ulong, or write extension.
+        
+        if (sampleSelection is not null)
+        {
+            samples = sampleSelection.ToArray();
+        }
         
         SparseList<RasterSample> valueArrays = new();
         
         for (int i = 0; i < samples.Count(); ++i)
         {
-            var sampleDataType = SampleDataTypeForSample(samples[i]);
-            valueArrays[i] = new RasterSample(imageWindowWidth, imageWindowHeight, this, sampleDataType, (int)numPixels);
+            var sampleDataType = SampleDataTypeForSample(samples.ElementAt(i));
+            valueArrays[samples.ElementAt(i)] = new RasterSample(imageWindowWidth, imageWindowHeight, this, sampleDataType, (int)numPixels);
         }
 
         var poolOrDecoder = new DecoderRegistry(); // TODO: construct this elsewhere?
@@ -630,37 +647,33 @@ public class GeoTiffImage
 
         int bytesPerPixel = GetBytesPerPixel();
 
-        List<int> srcSampleOffsets = new();
-        List<Func<DataView, long, bool, object>> sampleReaders = new();
-        for (int i = 0; i < samples.Length; ++i)
+        SparseList<int> srcSampleOffsets = new();
+        SparseList<Func<DataView, long, bool, object>> sampleReaders = new();
+        for (int i = 0; i < samples.Count(); ++i)
         {
             if (planarConfiguration == 1)
             {
-                // fileDirectory.BitsPerSample.ElementAt(samples[i])
-                srcSampleOffsets.Add(sum(this.FileDirectory.BitsPerSample, 0, samples[i]) / 8);
-                // srcSampleOffsets.Add(fileDirectory.BitsPerSample.Take(samples[i] / 8).Sum());
+                srcSampleOffsets.Add(samples.ElementAt(i),sum(this.FileDirectory.BitsPerSample, 0, samples.ElementAt(i)) / 8);
             }
             else
             {
-                srcSampleOffsets.Add(0);
+                srcSampleOffsets.Add(samples.ElementAt(i),0);
             }
 
-            sampleReaders.Add(GetReaderForSample(samples[i]));
+            sampleReaders.Add(samples.ElementAt(i),GetReaderForSample(samples.ElementAt(i)));
         }
 
         var promises = new List<Task>();
-
-
+        
         for (int yTile = minYTile; yTile < maxYTile; ++yTile)
         {
             for (int xTile = minXTile; xTile < maxXTile; ++xTile)
             {
                 Task<TileOrStripResult> getPromise = null;
-
-
-                for (int sampleIndex = 0; sampleIndex < samples.Length; ++sampleIndex)
+                
+                for (int sampleIndex = 0; sampleIndex < samples.Count(); ++sampleIndex)
                 {
-                    int sample = samples[sampleIndex];
+                    int sample = samples.ElementAt(sampleIndex);
                     if (planarConfiguration == 1)
                     {
                         getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(), cancellationToken);
@@ -1300,32 +1313,58 @@ public class GeoTiffImage
         //TODO: Check not out of bounds
         VectorXYZ origin = GetOrigin();
         VectorXYZ res = GetResolution();
-        // If the user passed a low x, we want to be close to the orgin.
+        // If the user passed a low x, we want to be close to the origin.
         double left = (x - origin.X) / res.X;
         double right = left + res.X;
 
         // if the user passed a low y, be far away from the origin.
 
         double top = (y - origin.Y) / res.Y;
-        double bottom = top + 1;
+        double bottom = top + 1; // TODO: Why add + 1 here instead of res.Y?
 
-        var window = new ImageWindow()
+        var window = new ImagePixelWindow()
         {
-            Left = (uint)left, Right = (uint)right, Bottom = (uint)bottom, Top = (uint)top
+            Left = (uint)left, 
+            Right = (uint)right, 
+            Bottom = (uint)bottom, 
+            Top = (uint)top
         };
 
-        return await ReadRastersAsync(window, cancellationToken);
+        return await ReadRastersAsync(window, null, cancellationToken);
     }
     
-    // private 
-
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    public ImageWindow BoundingBoxToImageWindow(BoundingBox bbox)
+    public ImagePixelWindow BoundingBoxToImageWindow(BoundingBox bbox)
     {
-        throw new NotImplementedException();
-        // bbox.XMin
+        IEnumerable<double>? modelTransformationList =
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+        
+        if (modelTransformationList is not null)
+        {
+            throw new NotImplementedException("Model transformations not yet supported");
+        }
+
+        //TODO: Check not out of bounds
+        VectorXYZ origin = GetOrigin();
+        VectorXYZ res = GetResolution();
+        // If the user passed a low x, we want to be close to the origin.
+        double left = (bbox.XMin - origin.X) / res.X;
+        double right = (bbox.XMax - origin.X) / res.X;
+
+        // if the user passed a low y, be far away from the origin.
+
+        double top = (bbox.YMax - origin.Y) / res.Y;
+        double bottom = (bbox.YMin - origin.Y) / res.Y;
+
+        return new ImagePixelWindow()
+        {
+            Left = (uint)left, 
+            Right = (uint)right, 
+            Bottom = (uint)bottom, 
+            Top = (uint)top
+        };
     }
 }

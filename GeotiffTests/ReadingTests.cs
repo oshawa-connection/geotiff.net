@@ -165,6 +165,10 @@ public class ReadingTests : GeoTiffTestBaseClass
         // var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
     }
 
+    /// <summary>
+    /// Test that we read all the bands and the correct number of them when
+    /// there are multiple, and read in the correct order.
+    /// </summary>
     [TestMethod]
     public async Task TestMultiBand()
     {
@@ -174,12 +178,37 @@ public class ReadingTests : GeoTiffTestBaseClass
         int count = await geotiff.GetImageCountAsync();
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var resultAll = await image.ReadRastersAsync();
-
+        resultAll.GetNumberOfSamples().ShouldBe(10);
         for (int i = 0; i < resultAll.GetNumberOfSamples(); i++)
         {
             var sample = resultAll.GetSampleAt(i);
             var ints = sample.GetByteArray();
             ints.ShouldAllBe(d => d == i + 1);
+        }
+    }
+    
+    
+    /// <summary>
+    /// Test that a user can select the samples that they want during reading
+    /// </summary>
+    [TestMethod]
+    public async Task TestMultiBandSampleSelection()
+    {
+        string multiBand = Path.Combine(GetDataFolderPath(), "ten_band_2x2.tif");
+        await using var fsSource = new FileStream(multiBand, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiffImage? image = await geotiff.GetImageAsync();
+        var resultAll = await image.ReadRastersAsync(null, new [] {5,6});
+        resultAll.GetNumberOfSamples().ShouldBe(2);
+
+        int i = 0;
+        
+        foreach(var sampleIndex in resultAll.ListSampleIndices())
+        {
+            var sample = resultAll.GetSampleAt(sampleIndex);
+            var ints = sample.GetByteArray();
+            ints.ShouldAllBe(d => d == sampleIndex + 1);
+            i++;
         }
     }
     
@@ -207,10 +236,35 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         var bbox = image.GetBoundingBox();
-        // bbox.
-        var readResult = await image.ReadRastersAsync(new ImageWindow() { });
-        var reshaped = readResult.GetSampleAt(0).GetAsDoubleArray();
+        var resolution = image.GetResolution();
+        bbox.XMin += resolution.X;
+        bbox.YMin -= resolution.Y;
+        bbox.XMax -= resolution.X;
+        bbox.YMax += resolution.Y;
         
+        var imagePixelWindow = image.BoundingBoxToImageWindow(bbox);
+        var height = image.GetHeight();
+        var width = image.GetWidth();
+        
+        var readResult = await image.ReadRastersAsync(imagePixelWindow);
+        var xSample = readResult.GetSampleAt(1).Get2DIntArray();
+        var ySample = readResult.GetSampleAt(0).Get2DIntArray();
+        
+        for (int lon = (int)imagePixelWindow.Left; lon < imagePixelWindow.Right; lon++)
+        {
+            for (int lat = (int)imagePixelWindow.Top; lat < imagePixelWindow.Bottom; lat++)
+            {
+                var x = xSample[lat, lon];
+                var y = ySample[lat, lon];
+                // Raster
+                //     result = await image.ReadValueAtCoordinateAsync<int>(lon + 0.5,
+                //         lat + 0.5); // add 0.5 to be in the centre of the pixel.
+                
+                Console.WriteLine($"LAT was {lat} rLAT {y}. LON: {lon} rLON {x}");
+                x.ShouldBe(lon);
+                y.ShouldBe(lat);
+            }
+        }
         
     }
     

@@ -274,6 +274,12 @@ public class RasterSample
         return this.To2DArray(doubles);
     }
     
+    public int[,] GetAs2DIntArray()
+    {
+        var ints = this.GetAsIntArray();
+        return this.To2DArray(ints);
+    }
+    
     
     private int[] ConvertAllToInt<T>(IEnumerable<T> array)
     {

@@ -50,7 +50,7 @@ public class MaskedGeoTIFFReader
         return new MaskedGeoTIFFReader(multiGeoTiff);
     }
 
-    public async Task<MaskBandGeoTIFFReadResult<T>> ReadMaskedRasters<T>(ImageWindow? window = null, CancellationToken? cancellationToken = null) where T : struct
+    public async Task<MaskBandGeoTIFFReadResult<T>> ReadMaskedRasters<T>(ImagePixelWindow? window = null, CancellationToken? cancellationToken = null) where T : struct
     {
         throw new NotImplementedException();
         // var mainImage = await multiGeoTiff.GetImageAsync();

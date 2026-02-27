@@ -128,12 +128,14 @@ This project is a WIP, new contributors are very welcome. If you’d like to get
 Before release, the bare minimum:
 
 - Image resampling
-- User examples
 - More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`
+- Handle http servers that respond in different ways in GeotiffHTTPClient.cs - check todo comments in that file.
+
 - BigTIFF is working well, but needs some tests to cover it. 
 - Also some tests for cases where precision is important.
-- Handle http servers that respond in different ways in GeotiffHTTPClient.cs - check todo comments in that file.
-- Allow users to specify which samples they want to read rather than reading all of them.
+- Test for multi-strip dataset.
+- Test for same data in both planar configurations
+- Test for windowed reading + 2D Data
 
 Post initial release:
 
@@ -144,6 +146,7 @@ Post initial release:
 - JPEG compression and decompression
 - More spatial operation support - currently only `ReadValueAtCoordinate` is supported
 - Support multi-threading/ parallel?
+- Way to stream over all the tiles or strips if the file is tiled/ stripped. This one needs some thought; different planar configurations require different handling.
 
 ## Compliance tests
 

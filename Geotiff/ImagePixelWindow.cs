@@ -3,7 +3,7 @@ namespace Geotiff;
 /// <summary>
 /// This defines coordinates in pixel space 
 /// </summary>
-public class ImageWindow
+public class ImagePixelWindow
 {
     public uint Left { get; set; }
     public uint Bottom { get; set; }
