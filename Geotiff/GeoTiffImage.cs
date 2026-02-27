@@ -645,7 +645,6 @@ public class GeoTiffImage
         int bytesPerPixel = GetBytesPerPixel();
 
         SparseList<int> srcSampleOffsets = new();
-        SparseList<Func<DataView, long, bool, object>> sampleReaders = new();
         for (int i = 0; i < samples.Count(); ++i)
         {
             if (planarConfiguration == 1)
@@ -656,8 +655,6 @@ public class GeoTiffImage
             {
                 srcSampleOffsets.Add(samples.ElementAt(i),0);
             }
-
-            sampleReaders.Add(samples.ElementAt(i),GetReaderForSample(samples.ElementAt(i)));
         }
 
         var promises = new List<Task>();
@@ -691,7 +688,6 @@ public class GeoTiffImage
                         long firstCol = tile.x * tileWidth;
                         long lastLine = firstLine + blockHeight;
                         long lastCol = (tile.x + 1) * tileWidth;
-                        Func<DataView, long, bool, object>? reader = sampleReaders[tile.sample];
 
                         long ymax = JSMath.Min(blockHeight, blockHeight - (lastLine - imageWindow[3]),
                             imageHeight - firstLine);
@@ -719,7 +715,7 @@ public class GeoTiffImage
 
                                 var myArray = valueArrays[tile.sample];
                                 var dv = dataView;
-                                // dataView, pixelOffset + srcSampleOffsets[sampleIndex], littleEndian
+                                
                                 switch (format)
                                 {
                                     case 1: // unsigned integer data
@@ -760,7 +756,6 @@ public class GeoTiffImage
                                         {
                                             var read = dv.GetInt32((int)pixelOffset + srcSampleOffsets[tile.sample], littleEndian);
                                             myArray.SetInt32(read, (int)windowCoordinate);
-                                            // return (dv, offset, endianNess) => dv.GetInt32((int)offset, endianNess);
                                         }
 
                                         break;
@@ -774,13 +769,11 @@ public class GeoTiffImage
                                                                           srcSampleOffsets[tile.sample], littleEndian);
                                                 myArray.SetFloat32(read1, (int)windowCoordinate);
                                                 break;
-                                            // return (dv, offset, endianNess) => dv.GetFloat32((int)offset, endianNess);
                                             case 64:
                                                 var read2 = dv.GetFloat64((int)pixelOffset +
                                                                           srcSampleOffsets[tile.sample], littleEndian);
                                                 myArray.SetDouble(read2, (int)windowCoordinate);
                                                 break;
-                                            // return (dv, offset, endianNess) => dv.GetFloat64((int)offset, endianNess);
                                             default:
                                                 throw new InvalidTiffException("Unsupported data format/bitsPerSample");
                                         }
@@ -788,14 +781,6 @@ public class GeoTiffImage
                                         break;
                                     default:
                                         throw new InvalidTiffException("Unsupported data format/bitsPerSample");
-
-                                    // object? value = reader(
-                                    //     dataView, pixelOffset + srcSampleOffsets[sampleIndex], littleEndian
-                                    // );
-                                    //
-                                    //
-                                    //
-                                    // myArray.SetValue(value, (int)windowCoordinate);
                                 }
                             }
                         }
