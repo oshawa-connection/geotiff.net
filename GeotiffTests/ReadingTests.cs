@@ -293,8 +293,52 @@ public class ReadingTests : GeoTiffTestBaseClass
             twos.GetIntArray().ShouldAllBe(d => d == 2);
         }
     }
-    
 
+    
+    [TestMethod]
+    public async Task TestReadEvenOdd()
+    {
+        string lonLatTif = Path.Combine(GetDataFolderPath(), "two_band_even_odd_int32.tif");
+        await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        int count = await geotiff.GetImageCountAsync();
+        GeoTiffImage? image = await geotiff.GetImageAsync();
+        for (var i = 0; i < 1000; i++)
+        {
+            for (int lon = 0; lon < 50; lon++)
+            {
+                for (int lat = 0; lat < 50; lat++)
+                {
+                    
+                    // Flip Y because raster origin is top-left
+                    int rowFromTop = 49 - lat;
+        
+                    int linearIndex = rowFromTop * 50 + lon;
+        
+                    int expectedOdd  = 2 * linearIndex + 1; // band 0
+                    int expectedEven = 2 * linearIndex + 2; // band 1
+                    
+                    // add 0.5 to be in the centre of the pixel.
+                    Raster
+                        result = await image.ReadValueAtCoordinateAsync<int>(lon + 0.5,
+                            lat + 0.5,null, expectedOdd, expectedEven); 
+                    
+                    RasterSample xSample = result.GetSampleAt(1);
+                    RasterSample ySample =  result.GetSampleAt(0);
+                    
+                    
+                    var x = xSample.GetIntArray()[0];
+                    var y = ySample.GetIntArray()[0];
+        
+                    y.ShouldBe(expectedOdd);
+                    x.ShouldBe(expectedEven);
+        
+        
+                }
+            }
+        }
+    }
+    
     [TestMethod]
     public async Task TestReadAtLonLat()
     {
@@ -348,8 +392,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         for (var i = 0; i < 100_000; i++)
         {
             Raster
-                result = await image.ReadValueAtCoordinateAsync<int>(0 + 0.5,
-                    17 + 0.5); // add 0.5 to be in the centre of the pixel.
+                result = await image.ReadValueAtCoordinateAsync<int>(17 + 0.5,
+                    0 + 0.5); // add 0.5 to be in the centre of the pixel.
             
             RasterSample xSample = result.GetSampleAt(1);
             RasterSample ySample =  result.GetSampleAt(0);
@@ -358,8 +402,8 @@ public class ReadingTests : GeoTiffTestBaseClass
             var y = ySample.GetIntArray()[0];
             
             Console.WriteLine($"LAT was 10 rLAT {y}. LON: 10 rLON {x}");
-            x.ShouldBe(0);
-            y.ShouldBe(17);
+            x.ShouldBe(17);
+            y.ShouldBe(0);
                 
         }
     }

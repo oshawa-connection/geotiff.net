@@ -13,7 +13,6 @@ public class GeoTiffImage
     private readonly Dictionary<int, ArrayBuffer>? tiles;
     private readonly bool isTiled;
     private readonly ushort planarConfiguration;
-
     public GeoTiffImage(ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {
         this.FileDirectory = fileDirectory;
@@ -585,8 +584,9 @@ public class GeoTiffImage
     /// <exception cref="GeoTiffException"></exception>
     /// <exception cref="NotImplementedException"></exception>
     /// <exception cref="InvalidTiffException"></exception>
-    public async Task<Raster> ReadRastersAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null) 
+    public async Task<Raster> ReadRastersAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null, int? expectedXValue = null, int? expectedYValue = null)
     {
+        var z = expectedYValue + expectedXValue;
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
         if (window is not null)
@@ -664,24 +664,23 @@ public class GeoTiffImage
             for (int xTile = minXTile; xTile < maxXTile; ++xTile)
             {
                 Task<TileOrStripResult> getPromise = null;
-                
+                if (planarConfiguration == 1)
+                {
+                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken, expectedXValue, expectedYValue, imageWindow);
+                }
                 for (int sampleIndex = 0; sampleIndex < samples.Count(); ++sampleIndex)
                 {
                     int sample = samples.ElementAt(sampleIndex);
-                    if (planarConfiguration == 1)
-                    {
-                        getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(), cancellationToken);
-                    }
-                    
                     if (planarConfiguration == 2)
                     {
                         getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(),
-                            cancellationToken);
+                            cancellationToken, expectedXValue, expectedYValue, imageWindow);
                     }
 
-                    Task<bool> promise = getPromise.Then<TileOrStripResult, bool>((tile) =>
+                    Task<bool> promise = getPromise.Then<TileOrStripResult, bool>(sample,(tile, si) =>
                     {
                         ArrayBuffer buffer = tile.data;
+                        
                         var dataView = new DataView(buffer);
                         long blockHeight = GetBlockHeight(tile.y);
                         long firstLine = tile.y * tileHeight;
@@ -689,31 +688,31 @@ public class GeoTiffImage
                         long lastLine = firstLine + blockHeight;
                         long lastCol = (tile.x + 1) * tileWidth;
 
-                        long ymax = JSMath.Min(blockHeight, blockHeight - (lastLine - imageWindow[3]),
+                        long ymax = JSMath.Min(blockHeight, blockHeight - (lastLine - tile.window[3]),
                             imageHeight - firstLine);
-                        ulong xmax = JSMath.Min((ulong)tileWidth, (ulong)(tileWidth - (lastCol - imageWindow[2])),
+                        ulong xmax = JSMath.Min((ulong)tileWidth, (ulong)(tileWidth - (lastCol - tile.window[2])),
                             (ulong)(imageWidth - firstCol));
 
-                        for (long y = Math.Max(0, imageWindow[1] - firstLine); y < ymax; ++y)
+                        for (long y = Math.Max(0, tile.window[1] - firstLine); y < ymax; ++y)
                         {
-                            for (long x = Math.Max(0, imageWindow[0] - firstCol); (ulong)x < xmax; ++x)
+                            for (long x = Math.Max(0, tile.window[0] - firstCol); (ulong)x < xmax; ++x)
                             {
                                 var bytesPerPixelToUse = bytesPerPixel;
                                 if (planarConfiguration == 2)
                                 {
-                                    bytesPerPixelToUse = GetSampleByteSize(tile.sample);
+                                    bytesPerPixelToUse = GetSampleByteSize(si);
                                 }
                                 long pixelOffset = ((y * tileWidth) + x) * bytesPerPixelToUse;
                                 long windowCoordinate = (
-                                    (y + firstLine - imageWindow[1]) * windowWidth
-                                ) + x + firstCol - imageWindow[0];
+                                    (y + firstLine - tile.window[1]) * windowWidth
+                                ) + x + firstCol - tile.window[0];
 
                                 int format = FileDirectory.SampleFormat is not null
-                                    ? FileDirectory.SampleFormat[tile.sample]
+                                    ? FileDirectory.SampleFormat[si]
                                     : 1;
-                                int bitsPerSample = FileDirectory.BitsPerSample[tile.sample];
+                                int bitsPerSample = FileDirectory.BitsPerSample[si];
 
-                                var myArray = valueArrays[tile.sample];
+                                var myArray = valueArrays[si];
                                 var dv = dataView;
                                 
                                 switch (format)
@@ -721,18 +720,18 @@ public class GeoTiffImage
                                     case 1: // unsigned integer data
                                         if (bitsPerSample <= 8)
                                         {
-                                            var read = dv.GetUint8((int)pixelOffset + srcSampleOffsets[tile.sample]);
+                                            var read = dv.GetUint8((int)pixelOffset + srcSampleOffsets[si]);
                                             myArray.SetUInt8(read, (int)windowCoordinate);
                                         }
                                         else if (bitsPerSample <= 16)
                                         {
-                                            var read = dv.GetUint16((int)pixelOffset + srcSampleOffsets[tile.sample],
+                                            var read = dv.GetUint16((int)pixelOffset + srcSampleOffsets[si],
                                                 littleEndian);
                                             myArray.SetUInt16(read, (int)windowCoordinate);
                                         }
                                         else if (bitsPerSample <= 32)
                                         {
-                                            var read = dv.GetUint32((int)pixelOffset + srcSampleOffsets[tile.sample],
+                                            var read = dv.GetUint32((int)pixelOffset + srcSampleOffsets[si],
                                                 littleEndian);
                                             myArray.SetUInt32(read, (int)windowCoordinate);
                                             // return (dv, offset, endianNess) => dv.GetUint32((int)offset, endianNess);
@@ -742,19 +741,19 @@ public class GeoTiffImage
                                     case 2: // twos complement signed integer data
                                         if (bitsPerSample <= 8)
                                         {
-                                            var read = dv.GetInt8((int)pixelOffset + srcSampleOffsets[tile.sample]);
+                                            var read = dv.GetInt8((int)pixelOffset + srcSampleOffsets[si]);
                                             myArray.SetInt8(read, (int)windowCoordinate);
                                             // return (dv, offset, endianNess) => dv.GetInt8((int)offset);
                                         }
                                         else if (bitsPerSample <= 16)
                                         {
-                                            var read = dv.GetInt16((int)pixelOffset + srcSampleOffsets[tile.sample], littleEndian);
+                                            var read = dv.GetInt16((int)pixelOffset + srcSampleOffsets[si], littleEndian);
                                             myArray.SetInt16(read, (int)windowCoordinate);
                                             // return (dv, offset, endianNess) => dv.GetInt16((int)offset, endianNess);
                                         }
                                         else if (bitsPerSample <= 32)
                                         {
-                                            var read = dv.GetInt32((int)pixelOffset + srcSampleOffsets[tile.sample], littleEndian);
+                                            var read = dv.GetInt32((int)pixelOffset + srcSampleOffsets[si], littleEndian);
                                             myArray.SetInt32(read, (int)windowCoordinate);
                                         }
 
@@ -766,12 +765,12 @@ public class GeoTiffImage
                                                 throw new NotImplementedException();
                                             case 32:
                                                 var read1 = dv.GetFloat32((int)pixelOffset +
-                                                                          srcSampleOffsets[tile.sample], littleEndian);
+                                                                          srcSampleOffsets[si], littleEndian);
                                                 myArray.SetFloat32(read1, (int)windowCoordinate);
                                                 break;
                                             case 64:
                                                 var read2 = dv.GetFloat64((int)pixelOffset +
-                                                                          srcSampleOffsets[tile.sample], littleEndian);
+                                                                          srcSampleOffsets[si], littleEndian);
                                                 myArray.SetDouble(read2, (int)windowCoordinate);
                                                 break;
                                             default:
@@ -1000,7 +999,7 @@ public class GeoTiffImage
     /// <param name="signal"></param>
     /// <returns></returns>
     private async Task<TileOrStripResult> GetTileOrStripAsync(int x, int y, int sample, DecoderRegistry poolOrDecoder,
-        CancellationToken? signal)
+        CancellationToken? signal, int? expectedXValue = null, int? expectedYValue = null, uint[]? window = null, Guid? requestId = null)
     {
         int numTilesPerRow = (int)Math.Ceiling((int)GetWidth() / (double)GetTileWidth());
         int numTilesPerCol = (int)Math.Ceiling((double)GetHeight() / (double)GetTileHeight());
@@ -1051,7 +1050,7 @@ public class GeoTiffImage
                 view.SetValue(valueToFill, i);
             }
 
-            return new TileOrStripResult { x = x, y = y, data = data, sample = sample };
+            return new TileOrStripResult { x = x, y = y, data = data, window = window};
         }
 
         ArrayBuffer slice =
@@ -1099,7 +1098,7 @@ public class GeoTiffImage
         }
 
         // cache the tile request
-        return new TileOrStripResult() { x = x, y = y, sample = sample, data = finalData };
+        return new TileOrStripResult() { x = x, y = y, data = finalData, window = window};
     }
 
     private bool NeedsNormalization(int format, int bitsPerSample)
@@ -1284,7 +1283,7 @@ public class GeoTiffImage
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public async Task<Raster> ReadValueAtCoordinateAsync<T>(double x, double y,
-        CancellationToken? cancellationToken = null) where T : struct
+        CancellationToken? cancellationToken = null, int? expectedX = null, int? expectedY = null) where T : struct
     {
         IEnumerable<double>? modelTransformationList =
             FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
@@ -1314,7 +1313,7 @@ public class GeoTiffImage
             Top = (uint)top
         };
 
-        return await ReadRastersAsync(window, null, cancellationToken);
+        return await ReadRastersAsync(window, null, cancellationToken, expectedX, expectedY);
     }
     
     /// <summary>
