@@ -5,16 +5,16 @@ namespace Geotiff.JavaScriptCompatibility;
 public class DataView
 {
     private readonly byte[] stream;
-    public readonly GeotiffSampleDataType? type;
+    public readonly GeoTiffSampleDataType? type;
     public bool IsTyped => type != null;
 
-    public DataView(byte[] stream, GeotiffSampleDataType? type = null)
+    public DataView(byte[] stream, GeoTiffSampleDataType? type = null)
     {
         this.type = type;
         this.stream = stream;
     }
 
-    public DataView(int size, GeotiffSampleDataType? type = null) : this(new byte[size], type) { }
+    public DataView(int size, GeoTiffSampleDataType? type = null) : this(new byte[size], type) { }
 
     /// <summary>
     /// TODO: Check if the ctor is necessary, and if so, if a datatype can be defined.
@@ -46,7 +46,7 @@ public class DataView
         }
     }
 
-    private void CheckType(GeotiffSampleDataType type, bool read)
+    private void CheckType(GeoTiffSampleDataType type, bool read)
     {
         if (this.type == null)
         {
@@ -62,7 +62,7 @@ public class DataView
 
     public float GetFloat32(int offset, bool isLittleEndian = false)
     {
-        CheckType(GeotiffSampleDataType.Float32, true);
+        CheckType(GeoTiffSampleDataType.Float32, true);
         byte[]? x = stream.Skip(offset).Take(4).ToArray();
         if (x.Count() < 4)
         {
@@ -84,7 +84,7 @@ public class DataView
 
     public void SetFloat32(int byteOffset, float value, bool isLittleEndian = false)
     {
-        CheckType(GeotiffSampleDataType.Float32, false);
+        CheckType(GeoTiffSampleDataType.Float32, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
@@ -102,7 +102,7 @@ public class DataView
 
     public double GetFloat64(int offset, bool isLittleEndian = false)
     {
-        CheckType(GeotiffSampleDataType.Double, true);
+        CheckType(GeoTiffSampleDataType.Double, true);
         byte[]? x = stream.Skip(offset).Take(8).ToArray();
         if (x.Count() < 8)
         {
@@ -119,7 +119,7 @@ public class DataView
 
     public void SetFloat64(int offset, double value, bool isLittleEndian = false)
     {
-        CheckType(GeotiffSampleDataType.Double, false);
+        CheckType(GeoTiffSampleDataType.Double, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
@@ -147,7 +147,7 @@ public class DataView
 
     public short GetInt16(int offset, bool isLittleEndian = false)
     {
-        CheckType(GeotiffSampleDataType.Int16, true);
+        CheckType(GeoTiffSampleDataType.Int16, true);
         byte[]? x = Read16(offset, isLittleEndian);
 
         return BitConverter.ToInt16(x);
@@ -176,13 +176,13 @@ public class DataView
 
     public sbyte GetInt8(int offset)
     {
-        CheckType(GeotiffSampleDataType.Int8, true);
+        CheckType(GeoTiffSampleDataType.Int8, true);
         return (sbyte)stream.Skip(offset).First();
     }
 
     public void Setint8(int offset, byte value)
     {
-        CheckType(GeotiffSampleDataType.Int8, false);
+        CheckType(GeoTiffSampleDataType.Int8, false);
         stream[offset] = value;
     }
 
@@ -228,7 +228,7 @@ public class DataView
 
     public int GetInt32(int offset, bool isLittleEndian = false)
     {
-        CheckType(GeotiffSampleDataType.Int32, true);
+        CheckType(GeoTiffSampleDataType.Int32, true);
         byte[]? x = stream.Skip(offset).Take(4).ToArray();
 
         if (isLittleEndian is false)
@@ -277,13 +277,13 @@ public class DataView
             case GeotiffSampleDataType.UInt8:
                 SetUint8(offset, (byte)value);
                 break;
-            case GeotiffSampleDataType.Int8:
+            case GeoTiffSampleDataType.Int8:
                 Setint8(offset, (byte)value);
                 break;
-            case GeotiffSampleDataType.Float32:
+            case GeoTiffSampleDataType.Float32:
                 SetFloat32(offset, (float)value);
                 break;
-            case GeotiffSampleDataType.Double:
+            case GeoTiffSampleDataType.Double:
                 SetFloat64(offset, (float)value);
                 break;
         }

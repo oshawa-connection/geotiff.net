@@ -531,7 +531,7 @@ public class GeoTiffImage
                         throw new NotImplementedException();
                     // return new Int16[size];
                     case 32:
-                        return new DataView(size, GeotiffSampleDataType.Int32);
+                        return new DataView(size, GeoTiffSampleDataType.Int32);
                 }
 
                 break;
@@ -540,9 +540,9 @@ public class GeoTiffImage
                 {
                     case 16:
                     case 32:
-                        return new DataView(size, GeotiffSampleDataType.Float32);
+                        return new DataView(size, GeoTiffSampleDataType.Float32);
                     case 64:
-                        return new DataView(size,GeotiffSampleDataType.Double);
+                        return new DataView(size,GeoTiffSampleDataType.Double);
                 }
 
                 break;
@@ -662,10 +662,10 @@ public class GeoTiffImage
         {
             for (int xTile = minXTile; xTile < maxXTile; ++xTile)
             {
-                Task<TileOrStripResult> getPromise = null;
+                Task<TileOrStripResult> getTask = null;
                 if (planarConfiguration == 1)
                 {
-                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
+                    getTask = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
                 }
                 for (int sampleIndex = 0; sampleIndex < samples.Count(); ++sampleIndex)
                 {
@@ -785,7 +785,7 @@ public class GeoTiffImage
 
                         return true;
                     });
-                    promises.Add(promise);
+                    taskList.Add(ptask);
                 }
             }
         }
@@ -869,7 +869,7 @@ public class GeoTiffImage
     /// </summary>
     /// <param name="sampleIndex"></param>
     /// <returns></returns>
-    public GeotiffSampleDataType GetSampleType(int sampleIndex = 0)
+    public GeoTiffSampleDataType GetSampleType(int sampleIndex = 0)
     {
         int format = FileDirectory.SampleFormat is not null
             ? FileDirectory.SampleFormat[sampleIndex]
@@ -895,15 +895,15 @@ public class GeoTiffImage
             case 2: // twos complement signed integer data
                 if (bitsPerSample <= 8)
                 {
-                    return GeotiffSampleDataType.Int8;
+                    return GeoTiffSampleDataType.Int8;
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    return GeotiffSampleDataType.Int16;
+                    return GeoTiffSampleDataType.Int16;
                 }
                 else if (bitsPerSample <= 32)
                 {
-                    return GeotiffSampleDataType.Int32;
+                    return GeoTiffSampleDataType.Int32;
                 }
 
                 break;
@@ -913,9 +913,9 @@ public class GeoTiffImage
                     case 16:
                         throw new NotImplementedException();
                     case 32:
-                        return GeotiffSampleDataType.Float32;
+                        return GeoTiffSampleDataType.Float32;
                     case 64:
-                        return GeotiffSampleDataType.Double;
+                        return GeoTiffSampleDataType.Double;
                     default:
                         break;
                 }

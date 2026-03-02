@@ -32,13 +32,22 @@ class Program
             }
         }
         var origin = image.GetOrigin();
-        var geotiffSampleType = image.GetSampleType();
+        GeoTiffSampleDataType geoTiffSampleType = image.GetSampleType();
         
+<<<<<<< HEAD
         Console.WriteLine(geotiffSampleType);
         var readResult = await image.ReadRastersAsync();
         // var sampleResult = readResult.GetSampleResultAt(0);
         // Console.WriteLine(sampleResult._doubleData.GetValue(0));
         // Console.WriteLine(sampleResult.To2DArray()[0,0]);
         // Console.WriteLine(sampleResult.To2DArray()[sampleResult.Width - 1, 0]);
+=======
+        Console.WriteLine(geoTiffSampleType);
+        var readResult = await image.ReadRastersAsync<byte>();
+        var sampleResult = readResult.GetSampleResultAt(0);
+        Console.WriteLine(sampleResult.FlatData.GetValue(0));
+        Console.WriteLine(sampleResult.To2DArray()[0,0]);
+        Console.WriteLine(sampleResult.To2DArray()[sampleResult.Width - 1, 0]);
+>>>>>>> origin/master
     }
 }
