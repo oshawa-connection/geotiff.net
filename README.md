@@ -130,12 +130,11 @@ Before release, the bare minimum:
 - Image resampling
 - More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`
 - Handle http servers that respond in different ways in GeotiffHTTPClient.cs - check todo comments in that file.
+- Make ReadValueAtCoordinate *not* generic
 
 - BigTIFF is working well, but needs some tests to cover it. 
 - Also some tests for cases where precision is important.
-- Test for multi-strip dataset.
 - Test for same data in both planar configurations
-- Test for windowed reading + 2D Data
 
 Post initial release:
 

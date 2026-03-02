@@ -584,9 +584,8 @@ public class GeoTiffImage
     /// <exception cref="GeoTiffException"></exception>
     /// <exception cref="NotImplementedException"></exception>
     /// <exception cref="InvalidTiffException"></exception>
-    public async Task<Raster> ReadRastersAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null, int? expectedXValue = null, int? expectedYValue = null)
+    public async Task<Raster> ReadRastersAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
-        var z = expectedYValue + expectedXValue;
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
         if (window is not null)
@@ -666,7 +665,7 @@ public class GeoTiffImage
                 Task<TileOrStripResult> getPromise = null;
                 if (planarConfiguration == 1)
                 {
-                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken, expectedXValue, expectedYValue, imageWindow);
+                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
                 }
                 for (int sampleIndex = 0; sampleIndex < samples.Count(); ++sampleIndex)
                 {
@@ -674,7 +673,7 @@ public class GeoTiffImage
                     if (planarConfiguration == 2)
                     {
                         getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(),
-                            cancellationToken, expectedXValue, expectedYValue, imageWindow);
+                            cancellationToken);
                     }
 
                     Task<bool> promise = getPromise.Then<TileOrStripResult, bool>(sample,(tile, si) =>
@@ -688,14 +687,14 @@ public class GeoTiffImage
                         long lastLine = firstLine + blockHeight;
                         long lastCol = (tile.x + 1) * tileWidth;
 
-                        long ymax = JSMath.Min(blockHeight, blockHeight - (lastLine - tile.window[3]),
+                        long ymax = JSMath.Min(blockHeight, blockHeight - (lastLine - imageWindow[3]),
                             imageHeight - firstLine);
-                        ulong xmax = JSMath.Min((ulong)tileWidth, (ulong)(tileWidth - (lastCol - tile.window[2])),
+                        ulong xmax = JSMath.Min((ulong)tileWidth, (ulong)(tileWidth - (lastCol - imageWindow[2])),
                             (ulong)(imageWidth - firstCol));
 
-                        for (long y = Math.Max(0, tile.window[1] - firstLine); y < ymax; ++y)
+                        for (long y = Math.Max(0, imageWindow[1] - firstLine); y < ymax; ++y)
                         {
-                            for (long x = Math.Max(0, tile.window[0] - firstCol); (ulong)x < xmax; ++x)
+                            for (long x = Math.Max(0, imageWindow[0] - firstCol); (ulong)x < xmax; ++x)
                             {
                                 var bytesPerPixelToUse = bytesPerPixel;
                                 if (planarConfiguration == 2)
@@ -704,8 +703,8 @@ public class GeoTiffImage
                                 }
                                 long pixelOffset = ((y * tileWidth) + x) * bytesPerPixelToUse;
                                 long windowCoordinate = (
-                                    (y + firstLine - tile.window[1]) * windowWidth
-                                ) + x + firstCol - tile.window[0];
+                                    (y + firstLine - imageWindow[1]) * windowWidth
+                                ) + x + firstCol - imageWindow[0];
 
                                 int format = FileDirectory.SampleFormat is not null
                                     ? FileDirectory.SampleFormat[si]
@@ -999,7 +998,7 @@ public class GeoTiffImage
     /// <param name="signal"></param>
     /// <returns></returns>
     private async Task<TileOrStripResult> GetTileOrStripAsync(int x, int y, int sample, DecoderRegistry poolOrDecoder,
-        CancellationToken? signal, int? expectedXValue = null, int? expectedYValue = null, uint[]? window = null, Guid? requestId = null)
+        CancellationToken? signal)
     {
         int numTilesPerRow = (int)Math.Ceiling((int)GetWidth() / (double)GetTileWidth());
         int numTilesPerCol = (int)Math.Ceiling((double)GetHeight() / (double)GetTileHeight());
@@ -1050,7 +1049,7 @@ public class GeoTiffImage
                 view.SetValue(valueToFill, i);
             }
 
-            return new TileOrStripResult { x = x, y = y, data = data, window = window};
+            return new TileOrStripResult { x = x, y = y, data = data};
         }
 
         ArrayBuffer slice =
@@ -1098,7 +1097,7 @@ public class GeoTiffImage
         }
 
         // cache the tile request
-        return new TileOrStripResult() { x = x, y = y, data = finalData, window = window};
+        return new TileOrStripResult() { x = x, y = y, data = finalData};
     }
 
     private bool NeedsNormalization(int format, int bitsPerSample)
@@ -1282,8 +1281,8 @@ public class GeoTiffImage
     /// <param name="y"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<Raster> ReadValueAtCoordinateAsync<T>(double x, double y,
-        CancellationToken? cancellationToken = null, int? expectedX = null, int? expectedY = null) where T : struct
+    public async Task<Raster> ReadValueAtCoordinateAsync(double x, double y,
+        CancellationToken? cancellationToken = null, int? expectedX = null, int? expectedY = null)
     {
         IEnumerable<double>? modelTransformationList =
             FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
@@ -1313,7 +1312,7 @@ public class GeoTiffImage
             Top = (uint)top
         };
 
-        return await ReadRastersAsync(window, null, cancellationToken, expectedX, expectedY);
+        return await ReadRastersAsync(window, null, cancellationToken);
     }
     
     /// <summary>

@@ -256,24 +256,13 @@ public class ReadingTests : GeoTiffTestBaseClass
             {
                 var x = xSample[lon, lat];
                 var y = (double)ySample[lon, lat];
-                // Raster
-                //     result = await image.ReadValueAtCoordinateAsync<int>(lon + 0.5,
-                //         lat + 0.5); // add 0.5 to be in the centre of the pixel.
                 var shouldBeLat = height - lat - 1 + resolution.Y;
                 var shouldBeLon = lon + 1;
                 
-                if (shouldBeLat != y || shouldBeLon != x)
-                {
-                    Console.WriteLine($"LAT was {shouldBeLat} rLAT {y}. LON: {lon + 1} rLON {x}");        
-                }
-                
-                // x.ShouldBe(lon + 1);
-                
-                // y.ShouldBe(height - lat - 1 + resolution.Y);
+                x.ShouldBe(shouldBeLon);
+                y.ShouldBe(shouldBeLat);
             }
         }
-
-        Console.WriteLine("HELLO WORLD");
     }
 
     [TestMethod]
@@ -320,7 +309,7 @@ public class ReadingTests : GeoTiffTestBaseClass
                     
                     // add 0.5 to be in the centre of the pixel.
                     Raster
-                        result = await image.ReadValueAtCoordinateAsync<int>(lon + 0.5,
+                        result = await image.ReadValueAtCoordinateAsync(lon + 0.5,
                             lat + 0.5,null, expectedOdd, expectedEven); 
                     
                     RasterSample xSample = result.GetSampleAt(1);
@@ -357,7 +346,7 @@ public class ReadingTests : GeoTiffTestBaseClass
                 for (int lat = 0; lat < 50; lat++)
                 {
                     Raster
-                        result = await image.ReadValueAtCoordinateAsync<int>(lon + 0.5,
+                        result = await image.ReadValueAtCoordinateAsync(lon + 0.5,
                             lat + 0.5); // add 0.5 to be in the centre of the pixel.
                     
                     RasterSample xSample = result.GetSampleAt(1);
@@ -392,7 +381,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         for (var i = 0; i < 100_000; i++)
         {
             Raster
-                result = await image.ReadValueAtCoordinateAsync<int>(17 + 0.5,
+                result = await image.ReadValueAtCoordinateAsync(17 + 0.5,
                     0 + 0.5); // add 0.5 to be in the centre of the pixel.
             
             RasterSample xSample = result.GetSampleAt(1);
