@@ -539,7 +539,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     }
 
     [TestMethod]
-    public async Task Resample()
+    public async Task BiLinearResample()
     {
         string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
         await using var stream = File.OpenRead(resampleTestTif);
@@ -555,5 +555,25 @@ public class ReadingTests : GeoTiffTestBaseClass
         var first = resampledResult.GetSampleAt(0);
         var final = first.Get2DDoubleArray();
         final[1,1].ShouldBe(31.888888888888893);
+    }
+    
+    
+    [TestMethod]
+    public async Task BiLinearNearestNeighbour()
+    {
+        string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
+        await using var stream = File.OpenRead(resampleTestTif);
+        
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRastersAsync();
+        var firstSampleOriginal = readResult.GetSampleAt(0);
+        var firstSampleData= firstSampleOriginal.Get2DDoubleArray();
+        var resampler = new NearestNeighbourRasterResampler();
+        var resampledResult = resampler.Resample(readResult, 3, 3);
+        
+        var first = resampledResult.GetSampleAt(0);
+        var final = first.Get2DIntArray();
+        final[1,1].ShouldBe(55);
     }
 }

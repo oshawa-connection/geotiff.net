@@ -128,7 +128,7 @@ This project is a WIP, new contributors are very welcome. If you’d like to get
 Before release, the bare minimum:
 
 - Image resampling
-- More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`
+- More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`. This needs to handle resampling too.
 - Handle http servers that respond in different ways in GeotiffHTTPClient.cs - check todo comments in that file.
 
 - BigTIFF is working well, but needs some tests to cover it. 

@@ -21,6 +21,17 @@ public class RasterSample
     public readonly GeotiffSampleDataType SampleType;
 
     public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        int[] intResult)
+    {
+        this.Width = width;
+        this.Height = height;
+        this.ParentImage = parentImage;
+        this.SampleType = GeotiffSampleDataType.Int32;
+        this.IntResult = intResult;
+    }
+    
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
         double[] doubleResult)
     {
         this.Width = width;
