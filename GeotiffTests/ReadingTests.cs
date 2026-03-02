@@ -1,6 +1,7 @@
 using System.Text;
 using Shouldly;
 using Geotiff;
+using Geotiff.Resampling;
 
 namespace GeotiffTests;
 
@@ -223,7 +224,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         var readResult = await image.ReadRastersAsync();
         var reshaped = readResult.GetSampleAt(0).GetAs2DDoubleArray();
         reshaped[0,0].ShouldBe(49);
-        reshaped[1,0].ShouldBe(49);
+        reshaped[0,1].ShouldBe(49);
         reshaped[1,1].ShouldBe(48);
 
     }
@@ -513,7 +514,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         hasOverviews.ShouldBe(true);
     }
 
-
+    [TestMethod]
     public async Task MaskedMultiTiffReader()
     {
         // TODO: would be nice to have this in the main code someplace.
@@ -535,5 +536,24 @@ public class ReadingTests : GeoTiffTestBaseClass
         var maskedValue = sample1.MaskedValues.ElementAt(0);
         maskedValue.Masked.ShouldBe(true);
         maskedValue.Value.ShouldBe(10);
+    }
+
+    [TestMethod]
+    public async Task Resample()
+    {
+        string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
+        await using var stream = File.OpenRead(resampleTestTif);
+        
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRastersAsync();
+        var firstSampleOriginal = readResult.GetSampleAt(0);
+        var firstSampleData= firstSampleOriginal.Get2DDoubleArray();
+        var resampler = new BiLinearRasterResampler();
+        var resampledResult = resampler.Resample(readResult, 3, 3);
+        
+        var first = resampledResult.GetSampleAt(0);
+        var final = first.Get2DDoubleArray();
+        final[1,1].ShouldBe(31.888888888888893);
     }
 }

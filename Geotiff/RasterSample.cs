@@ -19,6 +19,16 @@ public class RasterSample
     private sbyte[]? Int8Result { get; set; }
     private readonly GeoTiffImage ParentImage;
     public readonly GeotiffSampleDataType SampleType;
+
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        double[] doubleResult)
+    {
+        this.Width = width;
+        this.Height = height;
+        this.ParentImage = parentImage;
+        this.SampleType = GeotiffSampleDataType.Double;
+        this.DoubleResult = doubleResult;
+    }
     public RasterSample(uint width, uint height, GeoTiffImage parentImage, GeotiffSampleDataType sampleType, int size)
     {
         this.Width = width;
@@ -334,7 +344,7 @@ public class RasterSample
     /// </summary>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    private T[,] To2DArray<T>(T[] array)
+    private T[,] To2DArrayReversed<T>(T[] array)
     {
         if (array.Length != Height * Width)
         {
@@ -350,6 +360,31 @@ public class RasterSample
                 result[col, row] = x;
             }
         }
+        return result;
+    }
+    
+    
+    /// <summary>
+    /// Rearranges the data into a 2D array indexed by result[pixelRow, pixelColumn] (y, x)
+    /// </summary>
+    /// <exception cref="InvalidOperationException"></exception>
+    private T[,] To2DArray<T>(T[] array)
+    {
+        if (array.Length != Height * Width)
+        {
+            throw new InvalidOperationException("RawArrayData length does not match Height * Width.");
+        }
+
+        var result = new T[Height, Width];
+
+        for (uint row = 0; row < Height; row++)
+        {
+            for (uint col = 0; col < Width; col++)
+            {
+                result[row, col] = array[row * Width + col];
+            }
+        }
+
         return result;
     }
 }

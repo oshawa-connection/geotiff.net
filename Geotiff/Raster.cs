@@ -22,6 +22,7 @@ public class Raster
     
     public uint Height { get; set; }
     public uint Width { get; set; }
+    public readonly GeoTiffImage ParentImage;
     /// <summary>
     /// A SparseList of samples. Samples are indexed by their index in the
     /// parent image. E.g. if you request samples 1 and 10, elements 1 and 10 will be set in this list and the
@@ -38,6 +39,11 @@ public class Raster
     {
         return this.SampleData.GetIndices();
     }
+
+    public IEnumerable<RasterSample> GetSamples()
+    {
+        return this.SampleData.ToList();
+    }
     
     /// <summary>
     /// 
@@ -52,6 +58,4 @@ public class Raster
         }
         return this.SampleData[sampleIndex];
     }
-
-    private readonly GeoTiffImage ParentImage;
 }
