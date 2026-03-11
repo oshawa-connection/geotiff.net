@@ -2,6 +2,7 @@ namespace Geotiff.Resampling;
 
 /// <summary>
 /// Your raster will be converted to a double after resampling.
+/// Note that this does not account for masked pixels.
 /// </summary>
 public class BiLinearRasterResampler : IRasterResampler
 {

@@ -2,6 +2,7 @@ namespace Geotiff.Resampling;
 
 /// <summary>
 /// This resampling method preserves your original data type i.e. doubles stay as doubles, bytes and bytes etc.
+/// Note that this does not account for masked pixels.
 /// </summary>
 public class NearestNeighbourRasterResampler : IRasterResampler
 {

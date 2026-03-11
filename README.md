@@ -51,17 +51,19 @@ string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
 await using var stream = File.OpenRead(resampleTestTif);
 
 GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
-var image = await geotiff.GetImageAsync();
-var readResult = await image.ReadRastersAsync();
-var firstSampleOriginal = readResult.GetSampleAt(0);
-var firstSampleData= firstSampleOriginal.Get2DDoubleArray();
-var resampler = new BiLinearRasterResampler();
-var resampledResult = resampler.Resample(readResult, 3, 3);
+GeoTiffImage image = await geotiff.GetImageAsync();
+Raster readResult = await image.ReadRastersAsync();
+RasterSample firstSampleOriginal = readResult.GetSampleAt(0);
+double[,] firstSampleData= firstSampleOriginal.Get2DDoubleArray();
+IRasterResampler resampler = new BiLinearRasterResampler();
+Raster resampledResult = resampler.Resample(readResult, 3, 3);
 
-var first = resampledResult.GetSampleAt(0);
-var final = first.Get2DDoubleArray();
+RasterSample first = resampledResult.GetSampleAt(0);
+double[,] final = first.Get2DDoubleArray();
 
 ```
+
+Note that conceptually, a `Raster` is independent of the GeoTiffImage that it was read from, and so it stores its own information on its bounding box, affine transformation and resolution. So the affine transformation and resolution will change when resampling.
 
 
 Read data from a file that you don't know the data type of ahead of time (e.g. a user uploads a file, or iterating over files in a folder)
@@ -150,6 +152,8 @@ Before release, the bare minimum:
 
 - BigTIFF is working well, but needs some tests to cover it. 
 - Also some tests for cases where precision is important.
+- Also some tests on geotiffs without affine transformations.
+- Change ReadRastersAsync so that it accepts BoundingBox (i.e. Geographic coordinates) instead of Pixel coordinates.
 
 Post initial release:
 

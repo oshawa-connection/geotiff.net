@@ -64,7 +64,7 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         await using var fsSource = new FileStream(quebec, FileMode.Open, FileAccess.Read);
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
-        //
+        
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(14);
         GeoTiffImage? image = await geotiff.GetImageAsync();
@@ -77,6 +77,11 @@ public class ReadingTests : GeoTiffTestBaseClass
         bbox.XMax.ShouldBe(-55.916, 0.001);
         bbox.YMax.ShouldBe(63, 0.001);
 
+        var resolution = image.GetResolution();
+        resolution.X.ShouldBe(0.08333333333333333d);
+        resolution.Y.ShouldBe(-0.08333333333333333d);
+        resolution.Z.ShouldBe(0d);
+        
         var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
         readResult.GetNumberOfSamples().ShouldBe(4);
         var doubleArray = readResult.GetSampleAt(0).GetAs2DDoubleArray();
@@ -594,4 +599,20 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         Console.WriteLine("hELLo");
     }
+
+    [TestMethod]
+    public async Task TestModelTransformationTag()
+    {
+        string transform = Path.Combine(GetDataFolderPath(), "image1.tif");
+        await using var stream = File.OpenRead(transform);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        
+        var image = await geotiff.GetImageAsync();
+
+        var x = image.GetResolution();
+        x.X.ShouldBe(0.3001842105263349d);
+        x.Y.ShouldBe(-0.1850509803921595d);
+
+    }
+    
 }
