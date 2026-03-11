@@ -1,5 +1,4 @@
 using Geotiff.Exceptions;
-using System.Collections;
 
 namespace Geotiff;
 

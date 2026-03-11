@@ -1,14 +1,13 @@
 namespace Geotiff.Resampling;
 
 /// <summary>
-/// This method is most useful for floating point data. Your raster will be converted to a double after resampling.
-/// For integer data, nearest neighbour would be a better choice.
+/// Your raster will be converted to a double after resampling.
 /// </summary>
 public class BiLinearRasterResampler : IRasterResampler
 {
-    private T[] CopyNewSize<T>(int width, int height, int samplesPerPixel = 1)
+    private T[] CopyNewSize<T>(int width, int height)
     {
-        return new T[width * height * samplesPerPixel];
+        return new T[width * height];
     }
     
     private double lerpDouble(double v0, double v1, double t)

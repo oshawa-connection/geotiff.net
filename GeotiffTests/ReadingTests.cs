@@ -518,7 +518,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     public async Task MaskedMultiTiffReader()
     {
         // TODO: would be nice to have this in the main code someplace.
-        string externalOverviewTifPath = Path.Combine(GetDataFolderPath(), "masked.tif");
+        string externalOverviewTifPath = Path.Combine(GetDataFolderPath(), "masked_image.tif");
         var mskFilePath = externalOverviewTifPath + ".msk";
         
         if (File.Exists(mskFilePath) is false)
@@ -544,22 +544,22 @@ public class ReadingTests : GeoTiffTestBaseClass
         string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
         await using var stream = File.OpenRead(resampleTestTif);
         
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        GeoTIFF geotiff = await GeoTIFF.FromStreamAsync(stream);
         var image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRastersAsync();
         var firstSampleOriginal = readResult.GetSampleAt(0);
-        var firstSampleData= firstSampleOriginal.Get2DDoubleArray();
-        var resampler = new BiLinearRasterResampler();
+        var firstSampleData= firstSampleOriginal.Get2DDoubleArray(); // A 5 * 5 array
+        IRasterResampler resampler = new BiLinearRasterResampler();
         var resampledResult = resampler.Resample(readResult, 3, 3);
         
         var first = resampledResult.GetSampleAt(0);
-        var final = first.Get2DDoubleArray();
+        var final = first.Get2DDoubleArray(); // A 3 * 3 array
         final[1,1].ShouldBe(31.888888888888893);
     }
     
     
     [TestMethod]
-    public async Task BiLinearNearestNeighbour()
+    public async Task NearestNeighbourResampling()
     {
         string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
         await using var stream = File.OpenRead(resampleTestTif);
@@ -569,11 +569,29 @@ public class ReadingTests : GeoTiffTestBaseClass
         var readResult = await image.ReadRastersAsync();
         var firstSampleOriginal = readResult.GetSampleAt(0);
         var firstSampleData= firstSampleOriginal.Get2DDoubleArray();
-        var resampler = new NearestNeighbourRasterResampler();
+        IRasterResampler resampler = new NearestNeighbourRasterResampler();
         var resampledResult = resampler.Resample(readResult, 3, 3);
         
         var first = resampledResult.GetSampleAt(0);
-        var final = first.Get2DIntArray();
+        var final = first.Get2DDoubleArray();
         final[1,1].ShouldBe(55);
+    }
+
+
+    [TestMethod]
+    public async Task PlanarConfiguration2()
+    {
+        string resampleTestTif = Path.Combine(GetDataFolderPath(), "two_band_planar_separate.tif");
+        await using var stream = File.OpenRead(resampleTestTif);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRastersAsync();
+        var firstSampleOriginal = readResult.GetSampleAt(0);
+
+        var firstSample = readResult.GetSampleAt(0).Get2DUShortArray();
+        var secondSample = readResult.GetSampleAt(1).Get2DUShortArray();
+
+        Console.WriteLine("hELLo");
     }
 }
