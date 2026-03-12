@@ -46,6 +46,26 @@ var imageCount = await overviewMultiTiff.GetImageCount();// 4; 1 from the main f
 var hasOverviews = await overviewMultiTiff.HasOverviews(); // true
 ```
 
+```csharp
+string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
+await using var stream = File.OpenRead(resampleTestTif);
+
+GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+GeoTiffImage image = await geotiff.GetImageAsync();
+Raster readResult = await image.ReadRastersAsync();
+RasterSample firstSampleOriginal = readResult.GetSampleAt(0);
+double[,] firstSampleData= firstSampleOriginal.Get2DDoubleArray();
+IRasterResampler resampler = new BiLinearRasterResampler();
+Raster resampledResult = resampler.Resample(readResult, 3, 3);
+
+RasterSample first = resampledResult.GetSampleAt(0);
+double[,] final = first.Get2DDoubleArray();
+
+```
+
+Note that conceptually, a `Raster` is independent of the GeoTiffImage that it was read from, and so it stores its own information on its bounding box, affine transformation and resolution. So the affine transformation and resolution will change when resampling.
+
+
 Read data from a file that you don't know the data type of ahead of time (e.g. a user uploads a file, or iterating over files in a folder)
 ```csharp
 var unknownDataTypeTif = Path.Combine(GetDataFolderPath(), "mystery.tif");
@@ -127,13 +147,13 @@ This project is a WIP, new contributors are very welcome. If you’d like to get
 
 Before release, the bare minimum:
 
-- Image resampling
-- More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`
+- More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`. This needs to handle resampling too.
 - Handle http servers that respond in different ways in GeotiffHTTPClient.cs - check todo comments in that file.
 
 - BigTIFF is working well, but needs some tests to cover it. 
 - Also some tests for cases where precision is important.
-- Test for same data in both planar configurations
+- Also some tests on geotiffs without affine transformations.
+- Change ReadRastersAsync so that it accepts BoundingBox (i.e. Geographic coordinates) instead of Pixel coordinates.
 
 Post initial release:
 

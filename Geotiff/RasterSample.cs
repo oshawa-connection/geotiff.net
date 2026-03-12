@@ -19,11 +19,72 @@ public class RasterSample
     private sbyte[]? Int8Result { get; set; }
     private readonly GeoTiffImage ParentImage;
     public readonly GeotiffSampleDataType SampleType;
-    public RasterSample(uint width, uint height, GeoTiffImage parentImage, GeotiffSampleDataType sampleType, int size)
+
+
+    private RasterSample(uint width, uint height, GeoTiffImage parentImage)
     {
         this.Width = width;
         this.Height = height;
         this.ParentImage = parentImage;
+    }
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        int[] intResult) : this(width, height, parentImage)
+    {
+        this.SampleType = GeotiffSampleDataType.Int32;
+        this.IntResult = intResult;
+    }
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        byte[] uInt8Result) : this(width, height, parentImage)
+    {
+        this.SampleType = GeotiffSampleDataType.UInt8;
+        this.UInt8Result = uInt8Result;
+    }
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        sbyte[] int8Result) : this(width, height, parentImage)
+    {
+        this.SampleType = GeotiffSampleDataType.Int8;
+        this.Int8Result = int8Result;
+    }
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        uint[] uIntResult) : this(width, height, parentImage)
+    {
+        this.SampleType = GeotiffSampleDataType.UInt32;
+        this.UInt32Result = uIntResult;
+    }
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        float[] floatResult) : this(width, height, parentImage)
+    {
+        this.SampleType = GeotiffSampleDataType.Float32;
+        this.FloatResult = floatResult;
+    }
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        ushort[] uShortResult) : this(width, height, parentImage)
+    {
+        this.SampleType = GeotiffSampleDataType.UInt16;
+        this.UInt16Result = uShortResult;
+    }
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        short[] shortResult) : this(width, height, parentImage)
+    {
+        this.SampleType = GeotiffSampleDataType.Int16;
+        this.Int16Result = shortResult;
+    }
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        double[] doubleResult) : this(width, height, parentImage)
+    {
+        this.SampleType = GeotiffSampleDataType.Double;
+        this.DoubleResult = doubleResult;
+    }
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage, GeotiffSampleDataType sampleType, int size): this(width, height, parentImage)
+    {
         this.SampleType = sampleType;
         switch (sampleType)
         {
@@ -334,7 +395,7 @@ public class RasterSample
     /// </summary>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    private T[,] To2DArray<T>(T[] array)
+    private T[,] To2DArrayReversed<T>(T[] array)
     {
         if (array.Length != Height * Width)
         {
@@ -350,6 +411,31 @@ public class RasterSample
                 result[col, row] = x;
             }
         }
+        return result;
+    }
+    
+    
+    /// <summary>
+    /// Rearranges the data into a 2D array indexed by result[pixelRow, pixelColumn] (y, x)
+    /// </summary>
+    /// <exception cref="InvalidOperationException"></exception>
+    private T[,] To2DArray<T>(T[] array)
+    {
+        if (array.Length != Height * Width)
+        {
+            throw new InvalidOperationException("RawArrayData length does not match Height * Width.");
+        }
+
+        var result = new T[Height, Width];
+
+        for (uint row = 0; row < Height; row++)
+        {
+            for (uint col = 0; col < Width; col++)
+            {
+                result[row, col] = array[row * Width + col];
+            }
+        }
+
         return result;
     }
 }

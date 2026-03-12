@@ -1,6 +1,7 @@
 using System.Text;
 using Shouldly;
 using Geotiff;
+using Geotiff.Resampling;
 
 namespace GeotiffTests;
 
@@ -63,7 +64,7 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         await using var fsSource = new FileStream(quebec, FileMode.Open, FileAccess.Read);
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
-        //
+        
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(14);
         GeoTiffImage? image = await geotiff.GetImageAsync();
@@ -76,6 +77,11 @@ public class ReadingTests : GeoTiffTestBaseClass
         bbox.XMax.ShouldBe(-55.916, 0.001);
         bbox.YMax.ShouldBe(63, 0.001);
 
+        var resolution = image.GetResolution();
+        resolution.X.ShouldBe(0.08333333333333333d);
+        resolution.Y.ShouldBe(-0.08333333333333333d);
+        resolution.Z.ShouldBe(0d);
+        
         var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
         readResult.GetNumberOfSamples().ShouldBe(4);
         var doubleArray = readResult.GetSampleAt(0).GetAs2DDoubleArray();
@@ -223,7 +229,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         var readResult = await image.ReadRastersAsync();
         var reshaped = readResult.GetSampleAt(0).GetAs2DDoubleArray();
         reshaped[0,0].ShouldBe(49);
-        reshaped[1,0].ShouldBe(49);
+        reshaped[0,1].ShouldBe(49);
         reshaped[1,1].ShouldBe(48);
 
     }
@@ -513,11 +519,11 @@ public class ReadingTests : GeoTiffTestBaseClass
         hasOverviews.ShouldBe(true);
     }
 
-
+    [TestMethod]
     public async Task MaskedMultiTiffReader()
     {
         // TODO: would be nice to have this in the main code someplace.
-        string externalOverviewTifPath = Path.Combine(GetDataFolderPath(), "masked.tif");
+        string externalOverviewTifPath = Path.Combine(GetDataFolderPath(), "masked_image.tif");
         var mskFilePath = externalOverviewTifPath + ".msk";
         
         if (File.Exists(mskFilePath) is false)
@@ -536,4 +542,96 @@ public class ReadingTests : GeoTiffTestBaseClass
         maskedValue.Masked.ShouldBe(true);
         maskedValue.Value.ShouldBe(10);
     }
+
+    [TestMethod]
+    public async Task BiLinearResample()
+    {
+        string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
+        await using var stream = File.OpenRead(resampleTestTif);
+        
+        GeoTIFF geotiff = await GeoTIFF.FromStreamAsync(stream);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRastersAsync();
+        var firstSampleOriginal = readResult.GetSampleAt(0);
+        var firstSampleData= firstSampleOriginal.Get2DDoubleArray(); // A 5 * 5 array
+        RasterResamplerBaseClass resamplerBaseClass = new BiLinearRasterResampler();
+        var resampledResult = resamplerBaseClass.Resample(readResult, 3, 3);
+        
+        var first = resampledResult.GetSampleAt(0);
+        var final = first.Get2DDoubleArray(); // A 3 * 3 array
+        final[1,1].ShouldBe(31.888888888888893);
+    }
+    
+    [TestMethod]
+    public async Task NearestNeighbourResamplingRes()
+    {
+        string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
+        await using var stream = File.OpenRead(resampleTestTif);
+        
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRastersAsync();
+        ((int)readResult.Height).ShouldBe(5); // This is just verifying the test data hasn't changed
+        ((int)readResult.Width).ShouldBe(5);
+        var originalRes = readResult.GetResolution();
+        
+        
+        RasterResamplerBaseClass resamplerBaseClass = new NearestNeighbourRasterResampler();
+        var resampledResult = resamplerBaseClass.Resample(readResult, 3, 3);
+        ((int)resampledResult.Height).ShouldBe(3);
+        ((int)resampledResult.Width).ShouldBe(3);
+        
+        var resampledRes = resampledResult.GetResolution();
+        resampledRes.X.ShouldBe(1.6666666666666667d);
+        resampledRes.Y.ShouldBe(-1.6666666666666667d);
+        resampledRes.Z.ShouldBe(0);
+        
+        
+        var first = resampledResult.GetSampleAt(0);
+        var final = first.Get2DDoubleArray();
+        final[1,1].ShouldBe(55);
+    }
+
+
+    [TestMethod]
+    public async Task PlanarConfiguration2()
+    {
+        string resampleTestTif = Path.Combine(GetDataFolderPath(), "two_band_planar_separate.tif");
+        await using var stream = File.OpenRead(resampleTestTif);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRastersAsync();
+        var firstSampleOriginal = readResult.GetSampleAt(0);
+
+        var firstSample = readResult.GetSampleAt(0).Get2DUShortArray();
+        var secondSample = readResult.GetSampleAt(1).Get2DUShortArray();
+
+        Console.WriteLine("hELLo");
+    }
+
+    [TestMethod]
+    public async Task TestModelTransformationTag()
+    {
+        string transform = Path.Combine(GetDataFolderPath(), "image1.tif");
+        await using var stream = File.OpenRead(transform);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        
+        var image = await geotiff.GetImageAsync();
+
+        var x = image.GetResolution();
+        x.X.ShouldBe(0.3001842105263349d);
+        x.Y.ShouldBe(-0.1850509803921595d);
+        var bbox = image.GetBoundingBox();
+        bbox.XMax.ShouldBe(129.053d);
+        bbox.YMax.ShouldBe(109.03599999999999d);
+        bbox.XMin.ShouldBe(-12.511000000002014d);
+        bbox.YMin.ShouldBe(-5.034000000007282d);
+
+        var origin = image.GetOrigin();
+        origin.X.ShouldBe(129.053);
+        origin.Y.ShouldBe(109.03599999999999);
+
+    }
+    
 }

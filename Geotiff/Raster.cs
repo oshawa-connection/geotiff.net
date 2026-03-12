@@ -1,5 +1,4 @@
 using Geotiff.Exceptions;
-using System.Collections;
 
 namespace Geotiff;
 
@@ -12,16 +11,18 @@ namespace Geotiff;
 /// <param name="parentImage"></param>
 public class Raster
 {
-    public Raster(SparseList<RasterSample> sampleData, uint width, uint height, GeoTiffImage parentImage)
+    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, uint width, uint height, GeoTiffImage parentImage)
     {
+        this.SampleData = sampleData;
+        this.AffineTransformation = affine;
         this.Height = height;
         this.Width = width;
-        this.SampleData = sampleData;
         this.ParentImage = parentImage;
     }
-    
+    public AffineTransformation? AffineTransformation { get; set; }
     public uint Height { get; set; }
     public uint Width { get; set; }
+    public readonly GeoTiffImage ParentImage;
     /// <summary>
     /// A SparseList of samples. Samples are indexed by their index in the
     /// parent image. E.g. if you request samples 1 and 10, elements 1 and 10 will be set in this list and the
@@ -38,6 +39,11 @@ public class Raster
     {
         return this.SampleData.GetIndices();
     }
+
+    public IEnumerable<RasterSample> GetSamples()
+    {
+        return this.SampleData.ToList();
+    }
     
     /// <summary>
     /// 
@@ -53,5 +59,13 @@ public class Raster
         return this.SampleData[sampleIndex];
     }
 
-    private readonly GeoTiffImage ParentImage;
+    public VectorXYZ? GetResolution()
+    {
+        if (this.AffineTransformation is null)
+        {
+            return null;
+        }
+
+        return this.AffineTransformation.GetResolution();
+    }
 }

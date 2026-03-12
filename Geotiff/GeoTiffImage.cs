@@ -54,6 +54,7 @@ public class GeoTiffImage
 
     /// <summary>
     /// Can use this before checking for origin or boundingbox to prevent exceptions
+    /// Very useful reference http://geotiff.maptools.org/spec/geotiff2.6.html
     /// </summary>
     /// <returns></returns>
     public bool HasAffineTransformation()
@@ -74,22 +75,14 @@ public class GeoTiffImage
 
         if (HasValidTiePoints())
         {
-            return new VectorXYZ() { X = tiePoint.ElementAt(3), Y = tiePoint.ElementAt(4), Z = tiePoint.ElementAt(5) };
+            var affine = AffineTransformation.FromTiepoint(tiePoint.ToArray());
+            return affine.GetOrigin();
         }
 
         if (modelTransformation is not null)
         {
-            // TODO: check modeltransformation length
-            if (modelTransformation.Count() < 12)
-            {
-                throw new GeoTiffException("The image has an invalid model transformation");
-            }
-            return new VectorXYZ()
-            {
-                X = modelTransformation.ElementAt(3),
-                Y = modelTransformation.ElementAt(7),
-                Z = modelTransformation.ElementAt(11)
-            };
+            var affine = AffineTransformation.FromModelTransformation(modelTransformation.ToArray());
+            return affine.GetOrigin();
         }
 
         return null;
@@ -138,35 +131,22 @@ public class GeoTiffImage
     {
         IEnumerable<double>? modelPixelScaleR =
             FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelPixelScale);
-        IEnumerable<double>? modelTransformationR =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
-
+        
         if (modelPixelScaleR is not null)
         {
             double[] modelPixelScale = modelPixelScaleR.ToArray();
-            return new VectorXYZ(
-                modelPixelScale[0],
-                -modelPixelScale[1],
-                modelPixelScale[2]);
+            var affine = AffineTransformation.FromModelPixelScale(modelPixelScale);
+            return affine.GetResolution();
         }
-
+        
+        IEnumerable<double>? modelTransformationR =
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+        
         if (modelTransformationR is not null)
         {
             double[] modelTransformation = modelTransformationR.ToArray();
-            if (modelTransformation[1] == 0 && modelTransformation[4] == 0)
-            {
-                return new VectorXYZ(
-                    modelTransformation[0],
-                    -modelTransformation[5],
-                    modelTransformation[10]);
-            }
-
-            return new VectorXYZ(
-                Math.Sqrt((modelTransformation[0] * modelTransformation[0])
-                          + (modelTransformation[4] * modelTransformation[4])),
-                -Math.Sqrt((modelTransformation[1] * modelTransformation[1])
-                           + (modelTransformation[5] * modelTransformation[5])),
-                modelTransformation[10]);
+            var affineTransformation = AffineTransformation.FromModelTransformation(modelTransformation);
+            return affineTransformation.GetResolution();
         }
 
         throw new GeoTiffException("The image does not have an affine transformation.");
@@ -187,11 +167,11 @@ public class GeoTiffImage
         uint width = GetWidth();
         IEnumerable<double>? modelTransformationList =
             FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+        
         if (modelTransformationList is not null && !tilegrid)
         {
             ModelTransformation mt = ModelTransformation.FromIEnumerable(modelTransformationList);
-
-
+            
             var corners = new List<List<double>>()
             {
                 new() { 0, 0 }, new() { 0, height }, new() { width, 0 }, new() { width, height }
@@ -224,6 +204,34 @@ public class GeoTiffImage
                 XMin = Math.Min(x1, x2), YMin = Math.Min(y1, y2), XMax = Math.Max(x1, x2), YMax = Math.Max(y1, y2)
             };
         }
+    }
+
+    
+    /// <summary>
+    /// Get the affine transformation for the image. If ModelPixelScaleTag+ModelTiepointTag are being used instead,
+    /// calculate the affine transform and return it. If there is no ModelPixelScaleTag+ModelTiepointTag/ affine
+    /// transformation set, return null. 
+    /// </summary>
+    /// <returns></returns>
+    public AffineTransformation? GetOrCalculateAffineTransformation()
+    {
+        IEnumerable<double>? modelPixelScaleR =
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelPixelScale);
+        IEnumerable<double>? tiePoint = FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
+        IEnumerable<double>? modelTransformation =
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+        
+        if (modelTransformation is not null)
+        {
+            return AffineTransformation.FromModelTransformation(modelTransformation.ToArray());
+        }
+        
+        if (modelPixelScaleR is not null && tiePoint is not null)
+        {
+            return AffineTransformation.FromModelPixelScaleAndTiePoints(modelPixelScaleR.ToArray(),tiePoint.ToArray());
+            
+        }
+        return null;
     }
 
     /// <summary>
@@ -791,68 +799,8 @@ public class GeoTiffImage
         }
 
         await Task.WhenAll(promises);
-
-        int? width = null;
-        int? height = null;
         
-        if ((width != null && imageWindow[2] - imageWindow[0] != width)
-            || (height != null && imageWindow[3] - imageWindow[1] != height))
-        {
-            throw new NotImplementedException("Resampling not yet implemented");
-            // var resampled;
-            // if (interleave)
-            // {
-            //   resampled = resampleInterleaved(
-            //     valueArrays,
-            //     imageWindow[2] - imageWindow[0],
-            //     imageWindow[3] - imageWindow[1],
-            //     width, height,
-            //     samples.length,
-            //     resampleMethod,
-            //   );
-            // }
-            // else
-            // {
-            //   resampled = resample(
-            //     valueArrays,
-            //     imageWindow[2] - imageWindow[0],
-            //     imageWindow[3] - imageWindow[1],
-            //     width, height,
-            //     resampleMethod,
-            //   );
-            // }
-            // resampled.width = width;
-            // resampled.height = height;
-            // return resampled;
-        }
-
-        // valueArrays.width = width || imageWindow[2] - imageWindow[0];
-        // valueArrays.height = height || imageWindow[3] - imageWindow[1];
-        // imageWidth
-        //     imageHeight
-        
-        return new Raster(valueArrays, imageWidth, imageHeight, this);
-        // var finalResult = new List<Array[,]>();
-        // foreach (var sample in valueArrays)
-        // {
-        //     // Use the correct element type for the 2D array
-        //     var elementType = sample.GetType().GetElementType() ?? typeof(object);
-        //     // var resizedSample = new Array[imageWidth,imageHeight];
-        //     var resizedSample = (Array[,])Array.CreateInstance(elementType, imageWidth, imageHeight);
-        //
-        //     for (int i = 0; i < imageWidth; i++)
-        //     {
-        //         for (int j = 0; j < imageHeight; j++)
-        //         {
-        //             int flattenedIndex = i * (int)imageHeight + j;
-        //             resizedSample.SetValue(sample.GetValue(flattenedIndex), i, j);
-        //         }
-        //     }
-        //     finalResult.Add(resizedSample);
-        // }
-        //
-        // return finalResult;
-        // return await _ReadRasterAsync(imageWindow, samples, valueArrays, poolOrDecoder, null, null, cancellationToken);
+        return new Raster(valueArrays,this.GetOrCalculateAffineTransformation(), imageWidth, imageHeight, this);
     }
     
     private int sum(IEnumerable<int> array, int start, int end) {
