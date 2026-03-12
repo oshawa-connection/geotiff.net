@@ -4,7 +4,7 @@ namespace Geotiff.Resampling;
 /// This resampling method preserves your original data type i.e. doubles stay as doubles, bytes and bytes etc.
 /// Note that this does not account for masked pixels.
 /// </summary>
-public class NearestNeighbourRasterResampler : IRasterResampler
+public class NearestNeighbourRasterResampler : RasterResamplerBaseClass
 {
     private T[] CopyNewSize<T>(int width, int height)
     {
@@ -30,7 +30,7 @@ public class NearestNeighbourRasterResampler : IRasterResampler
         return newArray;
     }
     
-    public Raster Resample(Raster raster, int outWidth, int outHeight)
+    public override Raster Resample(Raster raster, int outWidth, int outHeight)
     {
          var resampled = new SparseList<RasterSample>();
          var sampleIndices = raster.ListSampleIndices();
@@ -90,7 +90,16 @@ public class NearestNeighbourRasterResampler : IRasterResampler
                      throw new ArgumentOutOfRangeException();
              }
          }
-
-         return new Raster(resampled, (uint)outWidth, (uint)outHeight, raster.ParentImage);
+         
+         var affineToUse = raster.AffineTransformation; 
+        
+         if (affineToUse is not null)
+         {
+             var newRes = CalculateNewResolution(raster, outWidth, outHeight);
+             affineToUse = affineToUse.Copy();
+             affineToUse.SetResolution(newRes);
+         }
+         
+         return new Raster(resampled, affineToUse, (uint)outWidth, (uint)outHeight, raster.ParentImage);
     }
 }

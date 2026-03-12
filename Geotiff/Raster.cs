@@ -11,14 +11,15 @@ namespace Geotiff;
 /// <param name="parentImage"></param>
 public class Raster
 {
-    public Raster(SparseList<RasterSample> sampleData, AffineTransformation affine, uint width, uint height, GeoTiffImage parentImage)
+    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, uint width, uint height, GeoTiffImage parentImage)
     {
+        this.SampleData = sampleData;
+        this.AffineTransformation = affine;
         this.Height = height;
         this.Width = width;
-        this.SampleData = sampleData;
         this.ParentImage = parentImage;
     }
-    private AffineTransformation AffineTransformation { get; set; }
+    public AffineTransformation? AffineTransformation { get; set; }
     public uint Height { get; set; }
     public uint Width { get; set; }
     public readonly GeoTiffImage ParentImage;
@@ -58,8 +59,13 @@ public class Raster
         return this.SampleData[sampleIndex];
     }
 
-    public VectorXYZ GetResolution()
+    public VectorXYZ? GetResolution()
     {
-        
+        if (this.AffineTransformation is null)
+        {
+            return null;
+        }
+
+        return this.AffineTransformation.GetResolution();
     }
 }

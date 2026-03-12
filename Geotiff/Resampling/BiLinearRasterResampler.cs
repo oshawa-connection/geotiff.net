@@ -4,7 +4,7 @@ namespace Geotiff.Resampling;
 /// Your raster will be converted to a double after resampling.
 /// Note that this does not account for masked pixels.
 /// </summary>
-public class BiLinearRasterResampler : IRasterResampler
+public class BiLinearRasterResampler : RasterResamplerBaseClass
 {
     private T[] CopyNewSize<T>(int width, int height)
     {
@@ -52,7 +52,7 @@ public class BiLinearRasterResampler : IRasterResampler
         return newArray;
     }
     
-    public Raster Resample(Raster raster, int outWidth, int outHeight)
+    public override Raster Resample(Raster raster, int outWidth, int outHeight)
     {
         var resampled = new SparseList<RasterSample>();
         var sampleIndices = raster.ListSampleIndices();
@@ -75,6 +75,15 @@ public class BiLinearRasterResampler : IRasterResampler
             resampled.Add(sampleIndex, new RasterSample((uint)outWidth, (uint)outHeight, raster.ParentImage, resampledArr));
         }
 
-        return new Raster(resampled, (uint)outWidth, (uint)outHeight, raster.ParentImage);
+        var affineToUse = raster.AffineTransformation; 
+        
+        if (affineToUse is not null)
+        {
+            var newRes = CalculateNewResolution(raster, outWidth, outHeight);
+            affineToUse = affineToUse.Copy();
+            affineToUse.SetResolution(newRes);
+        }
+        
+        return new Raster(resampled, affineToUse, (uint)outWidth, (uint)outHeight, raster.ParentImage);
     }
 }

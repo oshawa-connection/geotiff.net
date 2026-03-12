@@ -75,22 +75,14 @@ public class GeoTiffImage
 
         if (HasValidTiePoints())
         {
-            return new VectorXYZ() { X = tiePoint.ElementAt(3), Y = tiePoint.ElementAt(4), Z = tiePoint.ElementAt(5) };
+            var affine = AffineTransformation.FromTiepoint(tiePoint.ToArray());
+            return affine.GetOrigin();
         }
 
         if (modelTransformation is not null)
         {
-            // TODO: check modeltransformation length
-            if (modelTransformation.Count() < 12)
-            {
-                throw new GeoTiffException("The image has an invalid model transformation");
-            }
-            return new VectorXYZ()
-            {
-                X = modelTransformation.ElementAt(3),
-                Y = modelTransformation.ElementAt(7),
-                Z = modelTransformation.ElementAt(11)
-            };
+            var affine = AffineTransformation.FromModelTransformation(modelTransformation.ToArray());
+            return affine.GetOrigin();
         }
 
         return null;
@@ -153,7 +145,7 @@ public class GeoTiffImage
         if (modelTransformationR is not null)
         {
             double[] modelTransformation = modelTransformationR.ToArray();
-            var affineTransformation = AffineTransformation.FromMatrix(modelTransformation);
+            var affineTransformation = AffineTransformation.FromModelTransformation(modelTransformation);
             return affineTransformation.GetResolution();
         }
 
@@ -217,13 +209,29 @@ public class GeoTiffImage
     
     /// <summary>
     /// Get the affine transformation for the image. If ModelPixelScaleTag+ModelTiepointTag are being used instead,
-    /// calculate the affine transform and return it. If there is no ModelPixelScaleTag+ModelTiepointTag/ affine transformation
-    /// set, return null. 
+    /// calculate the affine transform and return it. If there is no ModelPixelScaleTag+ModelTiepointTag/ affine
+    /// transformation set, return null. 
     /// </summary>
     /// <returns></returns>
     public AffineTransformation? GetOrCalculateAffineTransformation()
     {
+        IEnumerable<double>? modelPixelScaleR =
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelPixelScale);
+        IEnumerable<double>? tiePoint = FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
+        IEnumerable<double>? modelTransformation =
+            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
         
+        if (modelTransformation is not null)
+        {
+            return AffineTransformation.FromModelTransformation(modelTransformation.ToArray());
+        }
+        
+        if (modelPixelScaleR is not null && tiePoint is not null)
+        {
+            return AffineTransformation.FromModelPixelScaleAndTiePoints(modelPixelScaleR.ToArray(),tiePoint.ToArray());
+            
+        }
+        return null;
     }
 
     /// <summary>
@@ -791,8 +799,8 @@ public class GeoTiffImage
         }
 
         await Task.WhenAll(promises);
-
-        return new Raster(valueArrays, imageWidth, imageHeight, this);
+        
+        return new Raster(valueArrays,this.GetOrCalculateAffineTransformation(), imageWidth, imageHeight, this);
     }
     
     private int sum(IEnumerable<int> array, int start, int end) {
