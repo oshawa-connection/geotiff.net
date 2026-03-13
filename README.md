@@ -147,22 +147,22 @@ This project is a WIP, new contributors are very welcome. If you’d like to get
 
 Before release, the bare minimum:
 
-- More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`. This needs to handle resampling too.
 - Handle http servers that respond in different ways in GeotiffHTTPClient.cs - check todo comments in that file.
 
-- BigTIFF is working well, but needs some tests to cover it. 
-- Also some tests for cases where precision is important.
-- Also some tests on geotiffs without affine transformations.
-- Change ReadRastersAsync so that it accepts BoundingBox (i.e. Geographic coordinates) instead of Pixel coordinates.
+- Some tests with rasters that have rotation elements of their affine matrix.
+- Implement a loop over tiles/ strips
 
 Post initial release:
 
+- More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`. This needs to handle resampling too.
+- BigTIFF is working well, but needs some tests to cover it. 
+- Also some tests for cases where precision is important.
+- Writing, particularly to COG format with overviews
 - Offer up a synchronous API too for legacy codebases and environments where that is preferred.
 - Benchmarking
-- Writing, particularly to COG format with overviews
 - GeotiffAzureClient
 - JPEG compression and decompression
-- More spatial operation support - currently only `ReadValueAtCoordinate` is supported
+- More spatial operation support
 - Support multi-threading/ parallel?
 - Way to stream over all the tiles or strips if the file is tiled/ stripped. This one needs some thought; different planar configurations require different handling.
 

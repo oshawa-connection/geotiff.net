@@ -1,5 +1,8 @@
 namespace Geotiff;
 
+/// <summary>
+/// An area expressed in model space. For pixel space see ImagePixelWindow
+/// </summary>
 public class BoundingBox
 {
     public double XMin { get; set; }

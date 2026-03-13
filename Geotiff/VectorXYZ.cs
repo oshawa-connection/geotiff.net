@@ -17,4 +17,10 @@ public class VectorXYZ
         this.Y = y;
         this.Z = z;
     }
+    
+    public VectorXYZ(double x, double y)
+    {
+        this.X = x;
+        this.Y = y;
+    }
 }
