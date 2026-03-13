@@ -181,8 +181,7 @@ public class GeoTiffImage
 
             IEnumerable<double> xs = projected.Select((pt) => pt[0]);
             IEnumerable<double> ys = projected.Select((pt) => pt[1]);
-
-
+            
             return new BoundingBox() { XMin = xs.Min(), YMin = ys.Min(), XMax = xs.Max(), YMax = ys.Max() };
         }
         else
@@ -635,10 +634,10 @@ public class GeoTiffImage
             (ulong)imageWindowWidth * (ulong)imageWindowHeight; // ignore resharper telling you that cast is redundant.
         
         ulong samplesPerPixel = GetSamplesPerPixel();
-        // TODO: this will need to change when we add support for choosing the samples to be read.
+        
         IEnumerable<int> samples =
             Enumerable.Range(0, (int)samplesPerPixel)
-                .ToArray(); // TODO: change away from using Enumerable.Range here as it doesn't accept ulong, or write extension.
+                .ToArray(); 
         
         if (sampleSelection is not null)
         {
