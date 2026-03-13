@@ -353,7 +353,7 @@ public class ReadingTests : GeoTiffTestBaseClass
                     // add 0.5 to be in the centre of the pixel.
                     Raster
                         result = await image.ReadPixelSamplesAtCoordinateAsync(lon + 0.5,
-                            lat + 0.5,null, expectedOdd, expectedEven); 
+                            lat + 0.5); 
                     
                     RasterSample xSample = result.GetSampleAt(1);
                     RasterSample ySample =  result.GetSampleAt(0);
@@ -701,8 +701,7 @@ public class ReadingTests : GeoTiffTestBaseClass
             ex = e;
         }
         ex.ShouldBeNull();
-        result.ShouldNotBeNull();
-        result.GetNumberOfSamples().ShouldBe(0);
+        result.ShouldBeNull();
 
         // Reading with a bounding box should not throw, but may return null or empty Raster
         Raster? bboxResult = null;
@@ -716,7 +715,7 @@ public class ReadingTests : GeoTiffTestBaseClass
             bboxEx = e;
         }
         bboxEx.ShouldBeNull();
-        bboxResult.ShouldNotBeNull();
-        bboxResult.GetNumberOfSamples().ShouldBe(0);
+        bboxResult.ShouldBeNull();
+        
     }
 }

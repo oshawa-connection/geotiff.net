@@ -187,16 +187,11 @@ public class GeoTiffImage
         }
         else
         {
-            
-            IEnumerable<double>? modelTransformationR =
-                FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
-
-            if (modelTransformationR is null)
+            VectorXYZ origin = GetOrigin();
+            if (origin is null)
             {
                 return null;
             }
-            
-            VectorXYZ origin = GetOrigin();
             VectorXYZ resolution = GetResolution();
 
             double x1 = origin.X;
@@ -587,10 +582,21 @@ public class GeoTiffImage
         return ArrayForType(format, bitsPerSample, buffer);
     }
 
+    /// <summary>
+    /// Returns null if the affine transformation is not set.
+    /// </summary>
+    /// <param name="boundingBox"></param>
+    /// <param name="sampleSelection"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<Raster> ReadRasterBoundingBoxAsync(BoundingBox boundingBox,
         IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
         var window = this.BoundingBoxToPixelWindow(boundingBox);
+        if (boundingBox is null)
+        {
+            return null;
+        }
         return await this.ReadRasterAsync(window, sampleSelection, cancellationToken);
     }
     
@@ -1253,23 +1259,13 @@ public class GeoTiffImage
         }
         
         var pixelOrigin = affine.ModelToPixel(x, y);
-        
-        //TODO: Check not out of bounds
-        VectorXYZ origin = GetOrigin();
-
-        if (origin is null)
-        {
-            return null;
-        }
-        
-        VectorXYZ res = GetResolution();
         // If the user passed a low x, we want to be close to the origin.
-        double left = (x - origin.X) / res.X;
-        double right = left + res.X;
+        double left = pixelOrigin.X;
+        double right = left + 1; 
 
         // if the user passed a low y, be far away from the origin.
 
-        double top = (y - origin.Y) / res.Y;
+        double top = pixelOrigin.Y;
         double bottom = top + 1; 
 
         var window = new ImagePixelWindow()
@@ -1287,34 +1283,24 @@ public class GeoTiffImage
     /// 
     /// </summary>
     /// <returns></returns>
-    public ImagePixelWindow BoundingBoxToPixelWindow(BoundingBox bbox)
+    public ImagePixelWindow? BoundingBoxToPixelWindow(BoundingBox bbox)
     {
-        IEnumerable<double>? modelTransformationList =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
-        
-        if (modelTransformationList is not null)
+        var affine = this.GetOrCalculateAffineTransformation();
+
+        if (affine is null)
         {
-            throw new NotImplementedException("Model transformations not yet supported");
+            return null;
         }
 
-        //TODO: Check not out of bounds
-        VectorXYZ origin = GetOrigin();
-        VectorXYZ res = GetResolution();
-        // If the user passed a low x, we want to be close to the origin.
-        double left = (bbox.XMin - origin.X) / res.X;
-        double right = (bbox.XMax - origin.X) / res.X;
-
-        // if the user passed a low y, be far away from the origin.
-
-        double top = (bbox.YMax - origin.Y) / res.Y;
-        double bottom = (bbox.YMin - origin.Y) / res.Y;
-
+        var bottomLeft = affine.ModelToPixel(bbox.XMin, bbox.YMin);
+        var topRight = affine.ModelToPixel(bbox.XMax, bbox.YMax);
+        
         return new ImagePixelWindow()
         {
-            Left = (uint)left, 
-            Right = (uint)right, 
-            Bottom = (uint)bottom, 
-            Top = (uint)top
+            Left = (uint)bottomLeft.X, 
+            Right = (uint)topRight.X, 
+            Bottom = (uint)bottomLeft.Y, 
+            Top = (uint)topRight.Y
         };
     }
 }
