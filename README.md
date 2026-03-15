@@ -150,7 +150,6 @@ Before release, the bare minimum:
 - Handle http servers that respond in different ways in GeotiffHTTPClient.cs - check todo comments in that file.
 
 - Some tests with rasters that have rotation elements of their affine matrix.
-- Implement a loop over tiles/ strips
 
 Post initial release:
 
