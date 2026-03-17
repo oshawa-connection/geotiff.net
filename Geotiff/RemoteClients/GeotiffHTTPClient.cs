@@ -12,7 +12,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
     private HttpClient client { get; set; }
     private bool allowFullFile { get; set; }
 
-    public GeotiffHTTPClient(string url, HttpClient client, bool allowFullFile)
+    public GeotiffHTTPClient(string url, HttpClient client, bool allowFullFile = false)
     {
         this.url = url;
         this.client = client;
@@ -21,6 +21,7 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
 
     public async Task<IEnumerable<ArrayBuffer>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
     {
+        // Attempt to request all slices as one request
         using HttpRequestMessage request = new(
             HttpMethod.Get,
             url);
@@ -83,12 +84,15 @@ public class GeotiffHTTPClient : IGeotiffRemoteClient
             if (!allowFullFile)
             {
                 throw new GeoTiffNetworkException(
-                    "Server responded with full file. If this is intentional behaviour, call RemoteSource with allowFullFile = true");
+                    "Server responded with full file. If this is intentional behaviour, construct RemoteSource with allowFullFile = true");
             }
+            
+            var stream = await response.Content.ReadAsStreamAsync();
+            var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            ms.Position = 0;
 
-            ArrayBuffer? data = await ArrayBuffer.FromStreamAsync(await response.Content.ReadAsStreamAsync(), signal);
-
-            // this._fileSize = data.Length;
+            var data = new ArrayBuffer(ms.ToArray().Skip(slices.First().Offset).Take(slices.First().Length).ToArray());
             return new[] { data };
         }
     }

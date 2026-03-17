@@ -1,6 +1,6 @@
 # geotiff.net
 
-A (WIP) port of [geotiff.js](https://geotiffjs.github.io/) to .Net. 
+A port of [geotiff.js](https://geotiffjs.github.io/) to .Net.
 
 This project adds native .Net handling of geotiff files, the benefits being:
 - Easier cross platform compatibility (over GDAL which requires native dependencies to be compiled on the target platform)
@@ -21,6 +21,24 @@ RasterSample sample0 = readResult.GetSampleAt(0);
 ushort[] result = sample0.GetUShortArray();
 ```
 
+Read data within a bounding box from the first overview of a cloud optimised GeoTiff.
+
+```csharp
+using var httpclient = new HttpClient();
+var baseURL = "http://localhost:8002/TCI.tif";
+var geoTiffHttpClient = new GeotiffHTTPClient(baseURL, client);
+GeoTIFF? cog = await GeoTIFF.FromRemoteClientAsync(geoTiffHttpClient);
+
+var hasOverviews = await cog.HasOverviewsAsync(); // true
+GeoTiffImage? firstOverview = await cog.GetImageAsync();
+
+// Note that coordinates are in the same coordinate system as the Tiff itself.
+var bbox = new BoundingBox() { XMin = 585640, YMax = 1818911, XMax = 609070, YMin = 1791662 };
+var readResult = await firstOverview.ReadRasterBoundingBoxAsync(bbox);
+var sample1 = readResult.GetSampleAt(0);
+var ushorts = sample1.GetByteArray();
+```
+note that if your bounding box extends past the edge of the bounding box of the tiff, it will throw an exception. PR accepted to allow reading past the edge and padding!
 
 Read data at the pixel at a coordinate from an AWS S3 bucket:
 ```csharp
@@ -46,6 +64,8 @@ var imageCount = await overviewMultiTiff.GetImageCount();// 4; 1 from the main f
 var hasOverviews = await overviewMultiTiff.HasOverviews(); // true
 ```
 
+Read a tif file, then resample it:
+
 ```csharp
 string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
 await using var stream = File.OpenRead(resampleTestTif);
@@ -59,9 +79,11 @@ IRasterResampler resampler = new BiLinearRasterResampler();
 Raster resampledResult = resampler.Resample(readResult, 3, 3);
 
 RasterSample first = resampledResult.GetSampleAt(0);
-double[,] final = first.Get2DDoubleArray();
+double[,] final = first.Get2DDoubleArray(); // Default BiLinearRasterResampler converts results to double.
 
 ```
+
+There is also `NearestNeighbourRasterResampler` which is better suited to integer data. However, you can also implement your own resampling algorithms if these don't fit your use case. *The default resamplers do not account for masked data.*
 
 Note that conceptually, a `Raster` is independent of the GeoTiffImage that it was read from, and so it stores its own information on its bounding box, affine transformation and resolution. So the affine transformation and resolution will change when resampling.
 

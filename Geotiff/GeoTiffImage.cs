@@ -612,6 +612,7 @@ public class GeoTiffImage
     /// <exception cref="InvalidTiffException"></exception>
     public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
+        // TODO: Replace with ImagePixelWindow
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
         if (window is not null)
@@ -624,7 +625,7 @@ public class GeoTiffImage
 
         if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
         {
-            throw new GeoTiffException("Invalid subsets");
+            throw new GeoTiffException("Invalid image window");
         }
 
         uint imageWindowWidth = imageWindow[2] - imageWindow[0];
@@ -818,7 +819,7 @@ public class GeoTiffImage
 
         await Task.WhenAll(promises);
         
-        return new Raster(valueArrays,this.GetOrCalculateAffineTransformation(), imageWidth, imageHeight, this);
+        return new Raster(valueArrays, this.GetOrCalculateAffineTransformation(), imageWindowWidth, imageWindowHeight, this);
     }
     
     private int sum(IEnumerable<int> array, int start, int end) {
@@ -1293,6 +1294,12 @@ public class GeoTiffImage
 
         var bottomLeft = affine.ModelToPixel(bbox.XMin, bbox.YMin);
         var topRight = affine.ModelToPixel(bbox.XMax, bbox.YMax);
+
+        // Affine operation will wrap around; prevent this from being used.
+        if (bottomLeft.X < 0 || bottomLeft.Y < 0 || topRight.X < 0 || topRight.Y < 0)
+        {
+            throw new GeoTiffException("Specified bounding box extends beyond bounding box of image");
+        }
         
         return new ImagePixelWindow()
         {

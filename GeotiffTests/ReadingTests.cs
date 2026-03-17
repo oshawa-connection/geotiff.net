@@ -1,6 +1,7 @@
 using System.Text;
 using Shouldly;
 using Geotiff;
+using Geotiff.Exceptions;
 using Geotiff.Resampling;
 
 namespace GeotiffTests;
@@ -717,5 +718,33 @@ public class ReadingTests : GeoTiffTestBaseClass
         bboxEx.ShouldBeNull();
         bboxResult.ShouldBeNull();
         
+    }
+    
+    
+    
+    [TestMethod]
+    public async Task TestWindowedReadingOutOfBounds()
+    {
+        string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
+        await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var bbox = new BoundingBox() { XMin = 0, YMin = 0, XMax = 80, YMax = 80};
+        var resolution = image.GetResolution();
+
+        
+        var height = image.GetHeight();
+        var width = image.GetWidth();
+        GeoTiffException? ex = null;
+        try
+        {
+            var readResult = await image.ReadRasterBoundingBoxAsync(bbox);
+        }
+        catch (GeoTiffException exception)
+        {
+            ex = exception;
+        }
+
+        ex.ShouldNotBeNull();
     }
 }
