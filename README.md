@@ -165,16 +165,15 @@ Other than GDAL, there are several packages for reading (and possibly writing) g
 
 ## Contributing
 
-This project is a WIP, new contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Some ideas of good items to work on:
+New contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Some ideas of good items to work on:
 
 Before release, the bare minimum:
 
-- Handle http servers that respond in different ways in GeotiffHTTPClient.cs - check todo comments in that file.
 
-- Some tests with rasters that have rotation elements of their affine matrix.
 
 Post initial release:
 
+- Some tests with rasters that have rotation elements of their affine matrix.
 - More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`. This needs to handle resampling too.
 - BigTIFF is working well, but needs some tests to cover it. 
 - Also some tests for cases where precision is important.
