@@ -747,4 +747,22 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         ex.ShouldNotBeNull();
     }
+
+
+    [TestMethod]
+    public async Task TestBigTiff()
+    {
+        string bigTiffPath = Path.Combine("/home/james/Documents/temp/geotiff/bigger_cog.tif");
+        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+
+        var height = image.GetHeight();
+        var width = image.GetWidth();
+        
+        var tileWidth = image.GetTileWidth();
+        var tileHeight = image.GetTileHeight();
+        var readResult = await image.ReadRasterAsync();
+    }
 }

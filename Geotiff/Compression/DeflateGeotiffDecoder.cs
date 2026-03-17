@@ -14,13 +14,6 @@ public class DeflateGeotiffDecoder : GeotiffDecoder
     {
         return string.Join(" ", data.Select(b => b.ToString("x2")));
     }
-
-    public static void WriteBytesToFile(byte[] buffer)
-    {
-        var outputFile = "/home/james/Documents/temp/infgen/data/one.bin";
-        File.WriteAllBytes(outputFile, buffer);
-        Console.WriteLine("Written");
-    }
     
     /// <summary>
     /// DOn't know how efficient this is. Difficult to manage because we might not read the bytes of the tiff in one go!

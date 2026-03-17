@@ -13,6 +13,11 @@ public class GeoTiffImage
     private readonly Dictionary<int, ArrayBuffer>? tiles;
     private readonly bool isTiled;
     private readonly ushort planarConfiguration;
+    private long[]? StripOffsets;
+    
+    private int[]? StripByteCounts;
+    private long[]? TileOffsets;
+    private int[]? TileByteCounts;
     public GeoTiffImage(ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {
         this.FileDirectory = fileDirectory;
@@ -683,6 +688,17 @@ public class GeoTiffImage
             }
         }
 
+        if (isTiled is false)
+        {
+            StripOffsets = FileDirectory.GetFileDirectoryListValue<long>("StripOffsets").ToArray();
+            StripByteCounts = FileDirectory.GetFileDirectoryListValue<int>("StripByteCounts").ToArray();
+        }
+        else
+        {
+            TileOffsets = FileDirectory.GetFileDirectoryListValue<long>("TileOffsets").ToArray();
+            TileByteCounts = FileDirectory.GetFileDirectoryListValue<int>("TileByteCounts").ToArray();
+        }
+        
         var promises = new List<Task>();
         
         for (int yTile = minYTile; yTile < maxYTile; ++yTile)
@@ -981,17 +997,33 @@ public class GeoTiffImage
             index = (sampleToUse * numTilesPerRow * numTilesPerCol) + (y * numTilesPerRow) + x;
         }
 
-        int offset;
+        long offset;
         int byteCount;
         if (isTiled)
         {
-            offset = FileDirectory.GetFileDirectoryListValue<int>("TileOffsets").ElementAt(index);
-            byteCount = FileDirectory.GetFileDirectoryListValue<int>("TileByteCounts").ElementAt(index);
+            if (TileOffsets is not null)
+            {
+                offset = TileOffsets.ElementAt(index);
+                byteCount = TileByteCounts.ElementAt(index);
+            }
+            else
+            {
+                offset = FileDirectory.GetFileDirectoryListValue<long>("TileOffsets").ElementAt(index);
+                byteCount = FileDirectory.GetFileDirectoryListValue<int>("TileByteCounts").ElementAt(index);
+            }
         }
         else
         {
-            offset = FileDirectory.GetFileDirectoryListValue<int>("StripOffsets").ElementAt(index);
-            byteCount = FileDirectory.GetFileDirectoryListValue<int>("StripByteCounts").ElementAt(index);
+            if (StripOffsets is not null)
+            {
+                offset = StripOffsets.ElementAt(index);
+                byteCount = StripByteCounts.ElementAt(index);
+            }
+            else
+            {
+                offset = FileDirectory.GetFileDirectoryListValue<long>("StripOffsets").ElementAt(index);
+                byteCount = FileDirectory.GetFileDirectoryListValue<int>("StripByteCounts").ElementAt(index);    
+            }
         }
 
         if (byteCount == 0)

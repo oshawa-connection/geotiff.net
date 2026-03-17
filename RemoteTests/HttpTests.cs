@@ -34,10 +34,6 @@ public class HttpTests
     [TestMethod]
     public async Task TestServerResponseWithFullFile()
     {
-        var fileStreamDisk = File.OpenRead("/home/james/Documents/sharpFirehose/Geotiff/RemoteTests/tiffData/TCI.tif");
-        var diskFileTiff = await GeoTIFF.FromStreamAsync(fileStreamDisk);
-        var diskImage = await diskFileTiff.GetImageAsync();
-        
         using var client = new HttpClient();
         string baseURL = "http://localhost:8000/TCI.tif";
         var httpClient = new GeotiffHTTPClient(baseURL, client, true);

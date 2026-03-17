@@ -1,3 +1,4 @@
+using Geotiff.Exceptions;
 using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff.Compression;
@@ -26,7 +27,13 @@ public class DecoderRegistry
             return new RawGeotiffDecoder();
         }
 
-        return _register.First(d => d.codes.Contains((int)compressionCode));
+        var found = _register.FirstOrDefault(d => d.codes.Contains((int)compressionCode));
+        if (found is null)
+        {
+            throw new GeoTiffException($"No decompression method registered for code: {compressionCode}");
+        }
+
+        return found;
     }
 
     public async Task<ArrayBuffer> DecodeAsync(ImageFileDirectory fileDirectory, ArrayBuffer buffer, int tileWidth, int tileHeight, int predictor, int[] bitsPerSample, int planarConfiguration)

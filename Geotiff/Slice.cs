@@ -6,7 +6,11 @@ namespace Geotiff;
 /// </summary>
 public class Slice
 {
-    public Slice(int offset, int length)
+    public bool CheckByteLength { get; set; } = true;
+    public long Offset { get; set; }
+    public int Length { get; set; }
+    
+    public Slice(long offset, int length)
     {
         this.Offset = offset;
         this.Length = length;
@@ -16,8 +20,4 @@ public class Slice
     {
         this.CheckByteLength = checkByteLength;
     }
-
-    public bool CheckByteLength { get; set; } = true;
-    public int Offset { get; set; }
-    public int Length { get; set; }
 }

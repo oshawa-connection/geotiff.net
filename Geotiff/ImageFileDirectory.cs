@@ -51,8 +51,7 @@ public class ImageFileDirectory
     }
 
     /// <summary>
-    /// 
-    /// TODO: Replace with GetFileDirectoryArrayValue to maintain JS compatibility as much as possible
+    ///
     /// </summary>
     ///
     /// <param name="key"></param>
@@ -509,10 +508,34 @@ public class ImageFileDirectory
     {
         return this.TagDictionary.ContainsKey(tagName);
     }
-    
-    public int[] BitsPerSample => GetFileDirectoryArrayValue<int>("BitsPerSample");
 
-    public int[]? SampleFormat => GetFileDirectoryArrayValue<int>("SampleFormat");
+    public int[] bitsPerSampleCached;
+
+    public int[] BitsPerSample
+    {
+        get
+        {
+            if (bitsPerSampleCached is null)
+            {
+                bitsPerSampleCached = GetFileDirectoryArrayValue<int>("BitsPerSample");
+            }
+
+            return bitsPerSampleCached;
+        }
+    } 
+    private int[]? sampleFormatCached = null;
+    public int[]? SampleFormat
+    {
+        get
+        {
+            if (sampleFormatCached is null)
+            {
+                sampleFormatCached = GetFileDirectoryArrayValue<int>("SampleFormat");
+            }
+
+            return sampleFormatCached;
+        }
+    }
 
     public string? GDAL_NODATA => GetFileDirectoryValueString("GDAL_NODATA");
 }
