@@ -14,7 +14,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
         await using var fsSource = new FileStream(tinyDeflate, FileMode.Open, FileAccess.Read);
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
-        var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
+        var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         var result = readResult.GetSampleAt(0).Get2DIntArray();
     }
     
@@ -25,7 +25,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
         await using var fsSource = new FileStream(tinyDeflate, FileMode.Open, FileAccess.Read);
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
-        var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
+        var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         var result = readResult.GetSampleAt(0).GetFloatArray();
         result.ShouldBe([1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4]);
     }
@@ -37,7 +37,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
         await using var fsSource = new FileStream(tinyDeflate, FileMode.Open, FileAccess.Read);
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
-        var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
+        var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         var result = readResult.GetSampleAt(0).GetIntArray();
         result.ShouldBe(new []{1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4});
     }
@@ -50,7 +50,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
         await using var fsSource = new FileStream(tinyDeflate, FileMode.Open, FileAccess.Read);
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
-        var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
+        var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         var result = readResult.GetSampleAt(0).GetShortArray();
         result.ShouldBe([1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4]);
     }

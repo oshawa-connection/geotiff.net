@@ -102,7 +102,7 @@ public class AffineTransformation
         return new AffineTransformation()
         {
             a = modelPixelScale[0], 
-            f = modelPixelScale[1], 
+            f = -1 * modelPixelScale[1], 
             k = modelPixelScale[2]
         };
     }
@@ -153,6 +153,33 @@ public class AffineTransformation
     public VectorXYZ GetOrigin()
     {
         return new VectorXYZ() { X = this.d, Y = this.h, Z = this.l};
+    }
+    
+    public VectorXYZ PixelToModel(double I, double J, double K = 0)
+    {
+        double x = a * I + b * J + c * K + d;
+        double y = e * I + f * J + g * K + h;
+        double z = I * i + J * j + K * k + l;
+
+        return new VectorXYZ(x, y, z);
+    }
+    
+    public VectorXYZ ModelToPixel(double x, double y, double z = 0)
+    {
+        double xPrime = x - d;
+        double yPrime = y - h;
+
+        double det = a * f - b * e;
+        // TODO: One optimisation would be to calculate the affine transform determinant once during construction/ change.
+        if (Math.Abs(det) < 1e-12)
+            throw new GeoTiffException("Affine transform is not invertible.");
+
+        double i = ( f * xPrime - b * yPrime) / det;
+        double j = (-e * xPrime + a * yPrime) / det;
+
+        double k = this.k != 0 ? (z - l) / this.k : 0;
+
+        return new VectorXYZ(i, j, k);
     }
 
     private AffineTransformation()

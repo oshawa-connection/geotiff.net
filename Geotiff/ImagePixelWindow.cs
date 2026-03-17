@@ -1,7 +1,7 @@
 namespace Geotiff;
 
 /// <summary>
-/// This defines coordinates in pixel space 
+/// An area defined in pixel space; for model space see BoundingBox 
 /// </summary>
 public class ImagePixelWindow
 {

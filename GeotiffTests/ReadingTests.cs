@@ -50,7 +50,7 @@ public class ReadingTests : GeoTiffTestBaseClass
                 GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
         
                 GeoTiffImage? image = await geotiff.GetImageAsync();
-                var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
+                var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
                     
             }
         });
@@ -82,7 +82,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         resolution.Y.ShouldBe(-0.08333333333333333d);
         resolution.Z.ShouldBe(0d);
         
-        var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
+        var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         readResult.GetNumberOfSamples().ShouldBe(4);
         var doubleArray = readResult.GetSampleAt(0).GetAs2DDoubleArray();
         Console.WriteLine(doubleArray[0,0]);
@@ -100,7 +100,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         count.ShouldBe(1);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         
-        var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
+        var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         readResult.GetNumberOfSamples().ShouldBe(1);
         var doubleArray = readResult.GetSampleAt(0).GetAs2DDoubleArray();
         Console.WriteLine(doubleArray[0,0]);
@@ -166,7 +166,7 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         uint nPixels = image.GetHeight() * image.GetWidth();
 
-        var readResult = await image.ReadRastersAsync(cancellationToken: cts.Token);
+        var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         // Console.WriteLine(readResult.SampleData.Count());
         // var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
     }
@@ -183,7 +183,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         GeoTiffImage? image = await geotiff.GetImageAsync();
-        var resultAll = await image.ReadRastersAsync();
+        var resultAll = await image.ReadRasterAsync();
         resultAll.GetNumberOfSamples().ShouldBe(10);
         for (int i = 0; i < resultAll.GetNumberOfSamples(); i++)
         {
@@ -204,7 +204,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         await using var fsSource = new FileStream(multiBand, FileMode.Open, FileAccess.Read);
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
-        var resultAll = await image.ReadRastersAsync(null, new [] {5,6});
+        var resultAll = await image.ReadRasterAsync(null, new [] {5,6});
         resultAll.GetNumberOfSamples().ShouldBe(2);
 
         int i = 0;
@@ -226,7 +226,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
-        var readResult = await image.ReadRastersAsync();
+        var readResult = await image.ReadRasterAsync();
         var reshaped = readResult.GetSampleAt(0).GetAs2DDoubleArray();
         reshaped[0,0].ShouldBe(49);
         reshaped[0,1].ShouldBe(49);
@@ -248,17 +248,54 @@ public class ReadingTests : GeoTiffTestBaseClass
         bbox.XMax -= resolution.X;
         bbox.YMax += resolution.Y;
         
-        var imagePixelWindow = image.BoundingBoxToImageWindow(bbox);
+        var imagePixelWindow = image.BoundingBoxToPixelWindow(bbox);
         var height = image.GetHeight();
         var width = image.GetWidth();
-        // 
-        var readResult = await image.ReadRastersAsync(imagePixelWindow);
+        
+        var readResult = await image.ReadRasterAsync(imagePixelWindow);
         var xSample = readResult.GetSampleAt(1).Get2DIntArray();
         var ySample = readResult.GetSampleAt(0).Get2DIntArray();
         
         for (int lon = (int)imagePixelWindow.Left - 1; lon < imagePixelWindow.Right - 1; lon++)
         {
             for (int lat = (int)imagePixelWindow.Top - 1; lat < imagePixelWindow.Bottom - 1; lat++)
+            {
+                var x = xSample[lon, lat];
+                var y = (double)ySample[lon, lat];
+                var shouldBeLat = height - lat - 1 + resolution.Y;
+                var shouldBeLon = lon + 1;
+                
+                x.ShouldBe(shouldBeLon);
+                y.ShouldBe(shouldBeLat);
+            }
+        }
+    }
+    
+    [TestMethod]
+    public async Task TestWindowedReadingGeographic()
+    {
+        string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
+        await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var bbox = image.GetBoundingBox();
+        var resolution = image.GetResolution();
+        bbox.XMin += resolution.X;
+        bbox.YMin -= resolution.Y;
+        bbox.XMax -= resolution.X;
+        bbox.YMax += resolution.Y;
+        
+        
+        var height = image.GetHeight();
+        var width = image.GetWidth();
+        
+        var readResult = await image.ReadRasterBoundingBoxAsync(bbox);
+        var xSample = readResult.GetSampleAt(1).Get2DIntArray();
+        var ySample = readResult.GetSampleAt(0).Get2DIntArray();
+        
+        for (int lon = (int)bbox.XMin - 1; lon < bbox.XMax - 1; lon++)
+        {
+            for (int lat = (int)bbox.YMax - 1; lat < bbox.YMin - 1; lat++)
             {
                 var x = xSample[lon, lat];
                 var y = (double)ySample[lon, lat];
@@ -281,7 +318,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         for (var i = 0; i < 100; i++)
         {
-            var resultAll = await image.ReadRastersAsync();
+            var resultAll = await image.ReadRasterAsync();
             var ones = resultAll.GetSampleAt(0);
             var twos = resultAll.GetSampleAt(1);
             ones.GetIntArray().ShouldAllBe(d => d == 1);
@@ -315,8 +352,8 @@ public class ReadingTests : GeoTiffTestBaseClass
                     
                     // add 0.5 to be in the centre of the pixel.
                     Raster
-                        result = await image.ReadValueAtCoordinateAsync(lon + 0.5,
-                            lat + 0.5,null, expectedOdd, expectedEven); 
+                        result = await image.ReadPixelSamplesAtCoordinateAsync(lon + 0.5,
+                            lat + 0.5); 
                     
                     RasterSample xSample = result.GetSampleAt(1);
                     RasterSample ySample =  result.GetSampleAt(0);
@@ -344,7 +381,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         count.ShouldBe(1);
 
         GeoTiffImage? image = await geotiff.GetImageAsync();
-        var resultAll = await image.ReadRastersAsync();
+        var resultAll = await image.ReadRasterAsync();
         for (var i = 0; i < 1000; i++)
         {
             for (int lon = 0; lon < 50; lon++)
@@ -352,7 +389,7 @@ public class ReadingTests : GeoTiffTestBaseClass
                 for (int lat = 0; lat < 50; lat++)
                 {
                     Raster
-                        result = await image.ReadValueAtCoordinateAsync(lon + 0.5,
+                        result = await image.ReadPixelSamplesAtCoordinateAsync(lon + 0.5,
                             lat + 0.5); // add 0.5 to be in the centre of the pixel.
                     
                     RasterSample xSample = result.GetSampleAt(1);
@@ -383,11 +420,11 @@ public class ReadingTests : GeoTiffTestBaseClass
         count.ShouldBe(1);
 
         GeoTiffImage? image = await geotiff.GetImageAsync();
-        var resultAll = await image.ReadRastersAsync();
+        var resultAll = await image.ReadRasterAsync();
         for (var i = 0; i < 100_000; i++)
         {
             Raster
-                result = await image.ReadValueAtCoordinateAsync(17 + 0.5,
+                result = await image.ReadPixelSamplesAtCoordinateAsync(17 + 0.5,
                     0 + 0.5); // add 0.5 to be in the centre of the pixel.
             
             RasterSample xSample = result.GetSampleAt(1);
@@ -486,10 +523,10 @@ public class ReadingTests : GeoTiffTestBaseClass
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(4);
         GeoTiffImage? image = await geotiff.GetImageAsync(0);
-        var readResult1 = await image.ReadRastersAsync(cancellationToken: cts.Token);
-        var readResult2 = await image.ReadRastersAsync(cancellationToken: cts.Token);
-        var readResult3 = await image.ReadRastersAsync(cancellationToken: cts.Token);
-        var readResult4 = await image.ReadRastersAsync(cancellationToken: cts.Token);
+        var readResult1 = await image.ReadRasterAsync(cancellationToken: cts.Token);
+        var readResult2 = await image.ReadRasterAsync(cancellationToken: cts.Token);
+        var readResult3 = await image.ReadRasterAsync(cancellationToken: cts.Token);
+        var readResult4 = await image.ReadRasterAsync(cancellationToken: cts.Token);
         
         // readResult1.GetSampleResultAt(0)._doubleData[0].ShouldBe(readResult4.GetSampleResultAt(0)._doubleData[0]);
     }
@@ -551,7 +588,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         GeoTIFF geotiff = await GeoTIFF.FromStreamAsync(stream);
         var image = await geotiff.GetImageAsync();
-        var readResult = await image.ReadRastersAsync();
+        var readResult = await image.ReadRasterAsync();
         var firstSampleOriginal = readResult.GetSampleAt(0);
         var firstSampleData= firstSampleOriginal.Get2DDoubleArray(); // A 5 * 5 array
         RasterResamplerBaseClass resamplerBaseClass = new BiLinearRasterResampler();
@@ -570,7 +607,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
         var image = await geotiff.GetImageAsync();
-        var readResult = await image.ReadRastersAsync();
+        var readResult = await image.ReadRasterAsync();
         ((int)readResult.Height).ShouldBe(5); // This is just verifying the test data hasn't changed
         ((int)readResult.Width).ShouldBe(5);
         var originalRes = readResult.GetResolution();
@@ -601,7 +638,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
         
         var image = await geotiff.GetImageAsync();
-        var readResult = await image.ReadRastersAsync();
+        var readResult = await image.ReadRasterAsync();
         var firstSampleOriginal = readResult.GetSampleAt(0);
 
         var firstSample = readResult.GetSampleAt(0).Get2DUShortArray();
@@ -633,5 +670,52 @@ public class ReadingTests : GeoTiffTestBaseClass
         origin.Y.ShouldBe(109.03599999999999);
 
     }
-    
+
+    [TestMethod]
+    public async Task TestNoAffineTiffBehavior()
+    {
+        string noAffineTif = Path.Combine(GetDataFolderPath(), "no_affine.tif");
+        await using var fsSource = new FileStream(noAffineTif, FileMode.Open, FileAccess.Read);
+        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiffImage? image = await geotiff.GetImageAsync();
+
+        // Resolution should not throw, but may return null or default
+        var resolution = image.GetResolution();
+        Console.WriteLine($"Resolution: {resolution}");
+        resolution.ShouldBeNull();
+
+        // Bounding box should not throw, but may return null or default
+        var bbox = image.GetBoundingBox();
+        Console.WriteLine($"BoundingBox: {bbox}");
+        bbox.ShouldBeNull();
+
+        // Reading a pixel value at a coordinate should not throw, but may return null or empty Raster
+        Raster? result = null;
+        Exception? ex = null;
+        try
+        {
+            result = await image.ReadPixelSamplesAtCoordinateAsync(10, 10);
+        }
+        catch (Exception e)
+        {
+            ex = e;
+        }
+        ex.ShouldBeNull();
+        result.ShouldBeNull();
+
+        // Reading with a bounding box should not throw, but may return null or empty Raster
+        Raster? bboxResult = null;
+        Exception? bboxEx = null;
+        try
+        {
+            bboxResult = await image.ReadRasterBoundingBoxAsync(bbox);
+        }
+        catch (Exception e)
+        {
+            bboxEx = e;
+        }
+        bboxEx.ShouldBeNull();
+        bboxResult.ShouldBeNull();
+        
+    }
 }

@@ -121,13 +121,12 @@ public class GeoTiffImage
         return FileDirectory.GetFileDirectoryValueUInt(FieldTypes.ImageLength);
     }
 
+
     /// <summary>
-    /// One quirk to be aware of with tiffs is that the resolution can actually be negative; that is they start
-    /// from the top and then work their way downwards.
+    /// Get the resolution, or null if there is no affine transformation set.
     /// </summary>
     /// <returns></returns>
-    /// <exception cref="GeoTiffException"></exception>
-    public VectorXYZ GetResolution()
+    public VectorXYZ? GetResolution()
     {
         IEnumerable<double>? modelPixelScaleR =
             FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelPixelScale);
@@ -149,19 +148,17 @@ public class GeoTiffImage
             return affineTransformation.GetResolution();
         }
 
-        throw new GeoTiffException("The image does not have an affine transformation.");
+        return null;
     }
 
 
     /// <summary>
     /// Returns the image bounding box as an array of 4 values: min-x, min-y,
-    /// max-x and max-y. When the image has no affine transformation, then an
-    /// exception is thrown.
-    /// 
+    /// max-x and max-y. Returns null when the image has no affine transformation.
     /// </summary>
     /// <param name="tilegrid">If true return extent for a tilegrid without adjustment for ModelTransformation.</param>
     /// <returns>The bounding box</returns>
-    public BoundingBox GetBoundingBox(bool tilegrid = false)
+    public BoundingBox? GetBoundingBox(bool tilegrid = false)
     {
         uint height = GetHeight();
         uint width = GetWidth();
@@ -184,13 +181,16 @@ public class GeoTiffImage
 
             IEnumerable<double> xs = projected.Select((pt) => pt[0]);
             IEnumerable<double> ys = projected.Select((pt) => pt[1]);
-
-
+            
             return new BoundingBox() { XMin = xs.Min(), YMin = ys.Min(), XMax = xs.Max(), YMax = ys.Max() };
         }
         else
         {
             VectorXYZ origin = GetOrigin();
+            if (origin is null)
+            {
+                return null;
+            }
             VectorXYZ resolution = GetResolution();
 
             double x1 = origin.X;
@@ -581,18 +581,36 @@ public class GeoTiffImage
         return ArrayForType(format, bitsPerSample, buffer);
     }
 
+    /// <summary>
+    /// Returns null if the affine transformation is not set.
+    /// </summary>
+    /// <param name="boundingBox"></param>
+    /// <param name="sampleSelection"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<Raster> ReadRasterBoundingBoxAsync(BoundingBox boundingBox,
+        IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
+    {
+        var window = this.BoundingBoxToPixelWindow(boundingBox);
+        if (boundingBox is null)
+        {
+            return null;
+        }
+        return await this.ReadRasterAsync(window, sampleSelection, cancellationToken);
+    }
+    
 
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="window">Pixel ranges to read</param>
+    /// <param name="window">Pixel area to read</param>
     /// <param name="sampleSelection">sample indices (0 indexed) to read</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="GeoTiffException"></exception>
     /// <exception cref="NotImplementedException"></exception>
     /// <exception cref="InvalidTiffException"></exception>
-    public async Task<Raster> ReadRastersAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
+    public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
         uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
 
@@ -616,10 +634,10 @@ public class GeoTiffImage
             (ulong)imageWindowWidth * (ulong)imageWindowHeight; // ignore resharper telling you that cast is redundant.
         
         ulong samplesPerPixel = GetSamplesPerPixel();
-        // TODO: this will need to change when we add support for choosing the samples to be read.
+        
         IEnumerable<int> samples =
             Enumerable.Range(0, (int)samplesPerPixel)
-                .ToArray(); // TODO: change away from using Enumerable.Range here as it doesn't accept ulong, or write extension.
+                .ToArray(); 
         
         if (sampleSelection is not null)
         {
@@ -1222,35 +1240,32 @@ public class GeoTiffImage
     {
         return FileDirectory.GetGeoDirectoryValue<short?>("GeographicTypeGeoKey");
     }
-
+    
     /// <summary>
+    /// Returns null if the affine transformation is not set.
     /// </summary>
     /// <param name="x"></param>
     /// <param name="y"></param>
+    /// <param name="sampleSelection"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<Raster> ReadValueAtCoordinateAsync(double x, double y,
-        CancellationToken? cancellationToken = null, int? expectedX = null, int? expectedY = null)
+    public async Task<Raster?> ReadPixelSamplesAtCoordinateAsync(double x, double y, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
-        IEnumerable<double>? modelTransformationList =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
-        
-        if (modelTransformationList is not null)
+        var affine = this.GetOrCalculateAffineTransformation();
+        if (affine is null)
         {
-            throw new NotImplementedException("Model transformations not yet supported");
+            return null;
         }
-
-        //TODO: Check not out of bounds
-        VectorXYZ origin = GetOrigin();
-        VectorXYZ res = GetResolution();
+        
+        var pixelOrigin = affine.ModelToPixel(x, y);
         // If the user passed a low x, we want to be close to the origin.
-        double left = (x - origin.X) / res.X;
-        double right = left + res.X;
+        double left = pixelOrigin.X;
+        double right = left + 1; 
 
         // if the user passed a low y, be far away from the origin.
 
-        double top = (y - origin.Y) / res.Y;
-        double bottom = top + 1; // TODO: Why add + 1 here instead of res.Y?
+        double top = pixelOrigin.Y;
+        double bottom = top + 1; 
 
         var window = new ImagePixelWindow()
         {
@@ -1260,41 +1275,31 @@ public class GeoTiffImage
             Top = (uint)top
         };
 
-        return await ReadRastersAsync(window, null, cancellationToken);
+        return await ReadRasterAsync(window, sampleSelection, cancellationToken);
     }
     
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    public ImagePixelWindow BoundingBoxToImageWindow(BoundingBox bbox)
+    public ImagePixelWindow? BoundingBoxToPixelWindow(BoundingBox bbox)
     {
-        IEnumerable<double>? modelTransformationList =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
-        
-        if (modelTransformationList is not null)
+        var affine = this.GetOrCalculateAffineTransformation();
+
+        if (affine is null)
         {
-            throw new NotImplementedException("Model transformations not yet supported");
+            return null;
         }
 
-        //TODO: Check not out of bounds
-        VectorXYZ origin = GetOrigin();
-        VectorXYZ res = GetResolution();
-        // If the user passed a low x, we want to be close to the origin.
-        double left = (bbox.XMin - origin.X) / res.X;
-        double right = (bbox.XMax - origin.X) / res.X;
-
-        // if the user passed a low y, be far away from the origin.
-
-        double top = (bbox.YMax - origin.Y) / res.Y;
-        double bottom = (bbox.YMin - origin.Y) / res.Y;
-
+        var bottomLeft = affine.ModelToPixel(bbox.XMin, bbox.YMin);
+        var topRight = affine.ModelToPixel(bbox.XMax, bbox.YMax);
+        
         return new ImagePixelWindow()
         {
-            Left = (uint)left, 
-            Right = (uint)right, 
-            Bottom = (uint)bottom, 
-            Top = (uint)top
+            Left = (uint)bottomLeft.X, 
+            Right = (uint)topRight.X, 
+            Bottom = (uint)bottomLeft.Y, 
+            Top = (uint)topRight.Y
         };
     }
 }
