@@ -10,7 +10,7 @@ This project adds native .Net handling of geotiff files, the benefits being:
 
 It also opens up the .Net ecosystem to GIS developers, for example, desktop applications, ASP.Net apps and game engines. Here's a cool screenshot of a geotiff visualised in 3D using Unity using this library:
 
-![Screenshot of some mountains rendered in 3D in Unity using geotiff.net.](readmeAssets/Unity.png)
+![Screenshot of some mountains rendered in 3D in Unity using geotiff.net.](https://raw.githubusercontent.com/oshawa-connection/geotiff.net/refs/heads/master/readmeAssets/Unity.png)
 
 ## Examples
 
