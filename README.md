@@ -179,8 +179,7 @@ Post initial release:
 
 - Some tests with rasters that have rotation elements of their affine matrix.
 - More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`. This needs to handle resampling too.
-- BigTIFF is working well, but needs some tests to cover it. 
-- Also some tests for cases where precision is important.
+- Some tests for cases where values are close to the limits of their respective types, e.g. int32.Max, float32.Max
 - Writing, particularly to COG format with overviews
 - Offer up a synchronous API too for legacy codebases and environments where that is preferred.
 - Benchmarking
