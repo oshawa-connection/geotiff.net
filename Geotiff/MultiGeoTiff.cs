@@ -6,24 +6,24 @@ namespace Geotiff;
 /// <summary>
 /// This is taken from geotiff.js implementation, however, it can also be used for other sidecar files.
 /// </summary>
-public class MultiGeoTIFF : GeoTIFF
+public class MultiGeoTiff : GeoTiff
 {
-    private readonly GeoTIFF mainFile;
-    private readonly IEnumerable<GeoTIFF> sidecarFileSources;
+    private readonly GeoTiff mainFile;
+    private readonly IEnumerable<GeoTiff> sidecarFileSources;
     private IEnumerable<int>? imageCounts;
-    public MultiGeoTIFF(GeoTIFF mainFile, IEnumerable<GeoTIFF> sidecarFileSources,  bool isLittleEndian, bool isBigTiff, ulong firstIFDOffset) : base(mainFile.Source, isLittleEndian,isBigTiff,firstIFDOffset)
+    public MultiGeoTiff(GeoTiff mainFile, IEnumerable<GeoTiff> sidecarFileSources,  bool isLittleEndian, bool isBigTiff, ulong firstIFDOffset) : base(mainFile.Source, isLittleEndian,isBigTiff,firstIFDOffset)
     {
         this.mainFile = mainFile;
         this.sidecarFileSources = sidecarFileSources;
     }
 
-    public static async Task<MultiGeoTIFF> FromStreams(Stream mainStream, IEnumerable<Stream> otherStreams)
+    public static async Task<MultiGeoTiff> FromStreams(Stream mainStream, IEnumerable<Stream> otherStreams)
     {
-        var mainTiff = await GeoTIFF.FromStreamAsync(mainStream);
-        var x = otherStreams.Select(async d => await GeoTIFF.FromStreamAsync(d));
+        var mainTiff = await GeoTiff.FromStreamAsync(mainStream);
+        var x = otherStreams.Select(async d => await GeoTiff.FromStreamAsync(d));
         var r = await Task.WhenAll(x);
 
-        return new MultiGeoTIFF(mainTiff, r, mainTiff.IsLittleEndian, mainTiff.IsBifTIFF, mainTiff.FirstIFDOffset);
+        return new MultiGeoTiff(mainTiff, r, mainTiff.IsLittleEndian, mainTiff.IsBifTIFF, mainTiff.FirstIFDOffset);
     }
     
     private async Task ParseFileDirectoriesForAllFiles()
@@ -39,7 +39,7 @@ public class MultiGeoTIFF : GeoTIFF
         await this.ParseFileDirectoriesForAllFiles();
         var visited = 0;
         var relativeIndex = 0;
-        var imageFiles = new List<GeoTIFF>() {this.mainFile};
+        var imageFiles = new List<GeoTiff>() {this.mainFile};
         imageFiles.AddRange(this.sidecarFileSources);
         for (var i = 0; i < imageFiles.Count; i++) {
             var imageFile = imageFiles[i];

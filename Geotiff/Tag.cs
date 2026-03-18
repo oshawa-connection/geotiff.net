@@ -7,7 +7,7 @@ public class Tag
 {
     public int RawId { get; }
     public string? TagName { get; }
-    private GeotiffTagValueResult Value { get; set; }
+    private GeoTiffTagValueResult Value { get; set; }
     public string GetString() => this.Value.GetString();
     
     /// <summary>
@@ -204,7 +204,7 @@ public class Tag
 
     public bool IsArray { get; }
 
-    internal Tag(int rawId, string? tagName, GeotiffTagValueResult value, bool isArray)
+    internal Tag(int rawId, string? tagName, GeoTiffTagValueResult value, bool isArray)
     {
         this.RawId = rawId;
         this.TagName = tagName;

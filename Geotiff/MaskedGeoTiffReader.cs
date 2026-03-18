@@ -15,10 +15,10 @@ namespace Geotiff;
 /// 
 /// TODO: add static method to do this from single dataset GeoTIFF with internal mask band
 /// </summary>
-public class MaskedGeoTIFFReader
+public class MaskedGeoTiffReader
 {
-    private readonly MultiGeoTIFF multiGeoTiff;
-    private MaskedGeoTIFFReader(MultiGeoTIFF multiGeoTiff)
+    private readonly MultiGeoTiff multiGeoTiff;
+    private MaskedGeoTiffReader(MultiGeoTiff multiGeoTiff)
     {
         this.multiGeoTiff = multiGeoTiff;
     }
@@ -30,7 +30,7 @@ public class MaskedGeoTIFFReader
     /// <param name="multiGeoTiff"></param>
     /// <returns></returns>
     /// <exception cref="InvalidMaskedGeoTiffException"></exception>
-    public static async Task<MaskedGeoTIFFReader> FromMultiGeoTiff(MultiGeoTIFF multiGeoTiff)
+    public static async Task<MaskedGeoTiffReader> FromMultiGeoTiff(MultiGeoTiff multiGeoTiff)
     {
         var count = await multiGeoTiff.GetImageCountAsync();
         if (count < 2)
@@ -47,10 +47,10 @@ public class MaskedGeoTIFFReader
             throw new InvalidMaskedGeoTiffException("Mask file must have the same dimensions as the main file");
         }
         
-        return new MaskedGeoTIFFReader(multiGeoTiff);
+        return new MaskedGeoTiffReader(multiGeoTiff);
     }
 
-    public async Task<MaskBandGeoTIFFReadResult<T>> ReadMaskedRasters<T>(ImagePixelWindow? window = null, CancellationToken? cancellationToken = null) where T : struct
+    public async Task<MaskBandGeoTiffReadResult<T>> ReadMaskedRasters<T>(ImagePixelWindow? window = null, CancellationToken? cancellationToken = null) where T : struct
     {
         throw new NotImplementedException();
         // var mainImage = await multiGeoTiff.GetImageAsync();

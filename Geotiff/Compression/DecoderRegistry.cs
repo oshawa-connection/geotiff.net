@@ -8,23 +8,23 @@ namespace Geotiff.Compression;
 /// </summary>
 public class DecoderRegistry
 {
-    private static List<GeotiffDecoder> _register = new() { new DeflateGeotiffDecoder(), new RawGeotiffDecoder(), new LZWGeotiffDecoder(), new PackBitsGeotiffDecoder() };
+    private static List<GeoTiffDecoder> _register = new() { new DeflateGeoTiffDecoder(), new RawGeoTiffDecoder(), new LZWGeoTiffDecoder(), new PackBitsGeoTiffDecoder() };
 
     /// <summary>
     /// TODO: check no clash of codes
     /// </summary>
-    /// <param name="geotiffDecoder"></param>
-    public void AddDecoder(GeotiffDecoder geotiffDecoder)
+    /// <param name="geoTiffDecoder"></param>
+    public void AddDecoder(GeoTiffDecoder geoTiffDecoder)
     {
-        _register.Add(geotiffDecoder);
+        _register.Add(geoTiffDecoder);
     }
 
-    public GeotiffDecoder GetDecoder(ImageFileDirectory fileDirectory)
+    public GeoTiffDecoder GetDecoder(ImageFileDirectory fileDirectory)
     {
         int? compressionCode = fileDirectory.GetFileDirectoryValueIntOrNull("Compression");
         if (compressionCode is null)
         {
-            return new RawGeotiffDecoder();
+            return new RawGeoTiffDecoder();
         }
 
         var found = _register.FirstOrDefault(d => d.codes.Contains((int)compressionCode));
@@ -38,7 +38,7 @@ public class DecoderRegistry
 
     public async Task<ArrayBuffer> DecodeAsync(ImageFileDirectory fileDirectory, ArrayBuffer buffer, int tileWidth, int tileHeight, int predictor, int[] bitsPerSample, int planarConfiguration)
     {
-        GeotiffDecoder? decoder = GetDecoder(fileDirectory);
+        GeoTiffDecoder? decoder = GetDecoder(fileDirectory);
         return await decoder.Decode(buffer, tileWidth, tileHeight, predictor, bitsPerSample, planarConfiguration);
     }
 }

@@ -170,9 +170,9 @@ internal class DataSlice
     }
 
 
-    public GeotiffTagValueResult GetValues(ushort fieldType, int count, int offset)
+    public GeoTiffTagValueResult GetValues(ushort fieldType, int count, int offset)
     {
-        GeotiffTagValueResult finalResult;
+        GeoTiffTagValueResult finalResult;
 
         int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
         GeotiffFieldDataType fieldTypeStr = FieldTypes.FieldTypeLookup[fieldType];
@@ -184,44 +184,44 @@ internal class DataSlice
             case GeotiffFieldDataType.UNDEFINED:
                 byte[]? asciiBytes = ReadAll(ReadByte, count, offset, fieldTypeLength);
                 string? decodedString = System.Text.Encoding.ASCII.GetString(asciiBytes);
-                finalResult = GeotiffTagValueResult.FromString(decodedString);
+                finalResult = GeoTiffTagValueResult.FromString(decodedString);
                 break;
             case GeotiffFieldDataType.SBYTE:
-                finalResult = GeotiffTagValueResult.FromSBytes(ReadAll(ReadSByte, count, offset, fieldTypeLength));
+                finalResult = GeoTiffTagValueResult.FromSBytes(ReadAll(ReadSByte, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.SHORT:
-                finalResult = GeotiffTagValueResult.FromUInt16(ReadAll(ReadUInt16, count, offset, fieldTypeLength));
+                finalResult = GeoTiffTagValueResult.FromUInt16(ReadAll(ReadUInt16, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.SSHORT:
-                finalResult = GeotiffTagValueResult.FromInt16(ReadAll(ReadInt16, count, offset, fieldTypeLength));
+                finalResult = GeoTiffTagValueResult.FromInt16(ReadAll(ReadInt16, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.LONG:
             case GeotiffFieldDataType.IFD:
-                finalResult = GeotiffTagValueResult.FromUInt32(ReadAll(ReadUInt32, count, offset, fieldTypeLength));
+                finalResult = GeoTiffTagValueResult.FromUInt32(ReadAll(ReadUInt32, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.SLONG:
-                finalResult = GeotiffTagValueResult.FromInt32(ReadAll(ReadInt32, count, offset, fieldTypeLength));
+                finalResult = GeoTiffTagValueResult.FromInt32(ReadAll(ReadInt32, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.LONG8: 
             case GeotiffFieldDataType.IFD8:
-                finalResult = GeotiffTagValueResult.FromUInt64(ReadAll(ReadUInt64, count, offset, fieldTypeLength));
+                finalResult = GeoTiffTagValueResult.FromUInt64(ReadAll(ReadUInt64, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.SLONG8:
-                finalResult = GeotiffTagValueResult.FromInt64(ReadAll(ReadInt64, count, offset, fieldTypeLength));
+                finalResult = GeoTiffTagValueResult.FromInt64(ReadAll(ReadInt64, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.RATIONAL:
                 finalResult =
-                    GeotiffTagValueResult.FromRational(ReadAll(ReadRational, count, offset, fieldTypeLength));
+                    GeoTiffTagValueResult.FromRational(ReadAll(ReadRational, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.SRATIONAL:
                 finalResult =
-                    GeotiffTagValueResult.FromSRational(ReadAll(ReadInt32, count, offset, fieldTypeLength));
+                    GeoTiffTagValueResult.FromSRational(ReadAll(ReadInt32, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.FLOAT:
-                finalResult = GeotiffTagValueResult.FromFloat32(ReadAll(ReadFloat32, count, offset, fieldTypeLength));
+                finalResult = GeoTiffTagValueResult.FromFloat32(ReadAll(ReadFloat32, count, offset, fieldTypeLength));
                 break;
             case GeotiffFieldDataType.DOUBLE:
-                finalResult = GeotiffTagValueResult.FromFloat64(ReadAll(ReadFloat64, count, offset, fieldTypeLength));
+                finalResult = GeoTiffTagValueResult.FromFloat64(ReadAll(ReadFloat64, count, offset, fieldTypeLength));
                 break;
             default:
                 throw new GeoTiffException($"Invalid field type: {fieldTypeStr}");

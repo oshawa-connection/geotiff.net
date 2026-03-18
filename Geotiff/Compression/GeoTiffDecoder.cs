@@ -3,7 +3,7 @@ using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff.Compression;
 
-public abstract class GeotiffDecoder
+public abstract class GeoTiffDecoder
 {
     public abstract IEnumerable<int> codes { get; }
     protected abstract Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer);

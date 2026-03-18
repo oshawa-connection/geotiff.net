@@ -12,7 +12,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
     {
         string tinyDeflate = Path.Combine(GetDataFolderPath(), "tiny_4x4_deflate.tif");
         await using var fsSource = new FileStream(tinyDeflate, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         var result = readResult.GetSampleAt(0).Get2DIntArray();
@@ -23,7 +23,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
     {
         string tinyDeflate = Path.Combine(GetDataFolderPath(), "tiny_4x4_deflate_predictor3.tif");
         await using var fsSource = new FileStream(tinyDeflate, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         var result = readResult.GetSampleAt(0).GetFloatArray();
@@ -35,7 +35,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
     {
         string tinyDeflate = Path.Combine(GetDataFolderPath(), "tiny_4x4_deflate_int_predictor2.tif");
         await using var fsSource = new FileStream(tinyDeflate, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         var result = readResult.GetSampleAt(0).GetIntArray();
@@ -48,7 +48,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
     {
         string tinyDeflate = Path.Combine(GetDataFolderPath(), "tiny_4x4_deflate_int16_predictor2.tif");
         await using var fsSource = new FileStream(tinyDeflate, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
         var result = readResult.GetSampleAt(0).GetShortArray();

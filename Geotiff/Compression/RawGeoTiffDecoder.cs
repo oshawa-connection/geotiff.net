@@ -5,7 +5,7 @@ namespace Geotiff.Compression;
 /// <summary>
 /// This is a special case, has a code but also gets selected if code is null.
 /// </summary>
-public class RawGeotiffDecoder : GeotiffDecoder
+public class RawGeoTiffDecoder : GeoTiffDecoder
 {
     public override IEnumerable<int> codes => new[] { 1 };
 

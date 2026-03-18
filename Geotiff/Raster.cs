@@ -21,7 +21,17 @@ public class Raster
     }
     public AffineTransformation? AffineTransformation { get; set; }
     public uint Height { get; set; }
+    public uint GetHeight()
+    {
+        return this.Height;
+    }
     public uint Width { get; set; }
+
+    public uint GetWidth()
+    {
+        return this.Width;
+    }
+    
     public readonly GeoTiffImage ParentImage;
     /// <summary>
     /// A SparseList of samples. Samples are indexed by their index in the

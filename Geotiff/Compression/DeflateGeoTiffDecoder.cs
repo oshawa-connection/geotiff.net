@@ -7,7 +7,7 @@ using SharpCompress.Compressors;
 // using System.IO.Compression;
 namespace Geotiff.Compression;
 
-public class DeflateGeotiffDecoder : GeotiffDecoder
+public class DeflateGeoTiffDecoder : GeoTiffDecoder
 {
     public override IEnumerable<int> codes => new[] { 8, 32946 };
     public static string BytesToHex(byte[] data)

@@ -4,7 +4,7 @@ using SharpCompress.Compressors.Lzw;
 
 namespace Geotiff.Compression;
 
-public class LZWGeotiffDecoder: GeotiffDecoder
+public class LZWGeoTiffDecoder: GeoTiffDecoder
 {
     private const int MIN_BITS = 9;
     private const int CLEAR_CODE = 256;

@@ -125,7 +125,7 @@ internal class Program
             string? tiffPath = Path.Combine(dir, r.FileName);
             await using var fsSource = new FileStream(tiffPath, FileMode.Open, FileAccess.Read);
             Console.WriteLine($"Messages for {r.FileName}");
-            GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+            GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
             int count = await geotiff.GetImageCountAsync();
 
             try
@@ -193,7 +193,7 @@ internal class Program
         string? tiffPath = Path.Combine(dir, "tiffData", "erdas_spnad83.tif");
 
         await using var fsSource = new FileStream(tiffPath, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
     }
 

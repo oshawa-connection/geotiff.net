@@ -8,7 +8,7 @@ class Program
     {
         await using var fsSource = new FileStream(args.First(), FileMode.Open, FileAccess.Read);
 
-        var tiff = await GeoTIFF.FromStreamAsync(fsSource);
+        var tiff = await GeoTiff.FromStreamAsync(fsSource);
         Console.WriteLine(tiff.IsBifTIFF);
         
         var imageCount = await tiff.GetImageCountAsync();
@@ -50,7 +50,7 @@ class Program
         foreach (var file in listOfFiles.Where(d => d.EndsWith(".tif")))
         {
             await using var fsSource = new FileStream(file, FileMode.Open, FileAccess.Read);
-            var tiff = await GeoTIFF.FromStreamAsync(fsSource);
+            var tiff = await GeoTiff.FromStreamAsync(fsSource);
             var image = await tiff.GetImageAsync();
             var knownTags = image.GetAllKnownTags();
 

@@ -7,7 +7,7 @@ namespace Geotiff;
 /// This class should be merged with the Tag class - this is a less user friendly version of that class that doesn't
 /// store tag field name
 /// </summary>
-internal class GeotiffTagValueResult
+internal class GeoTiffTagValueResult
 {
     private string? _decodedAsciiResult;
     private short[]? _resultInt16;
@@ -151,64 +151,64 @@ internal class GeotiffTagValueResult
     public string GetString() =>
         _decodedAsciiResult ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.ASCII.ToString(), this.DataType.ToString());
     
-    public static GeotiffTagValueResult FromSBytes(sbyte[] data)
+    public static GeoTiffTagValueResult FromSBytes(sbyte[] data)
     {
-        return new GeotiffTagValueResult { _resultSByte = data };
+        return new GeoTiffTagValueResult { _resultSByte = data };
     }
     
-    public static GeotiffTagValueResult FromUInt64(ulong[] data)
+    public static GeoTiffTagValueResult FromUInt64(ulong[] data)
     {
-        return new GeotiffTagValueResult { _resultUInt64 = data };
+        return new GeoTiffTagValueResult { _resultUInt64 = data };
     }
 
-    public static GeotiffTagValueResult FromInt64(Int64[] data)
+    public static GeoTiffTagValueResult FromInt64(Int64[] data)
     {
-        return new GeotiffTagValueResult { _resultInt64 = data };
+        return new GeoTiffTagValueResult { _resultInt64 = data };
     }
 
-    public static GeotiffTagValueResult FromUInt16(ushort[] data)
+    public static GeoTiffTagValueResult FromUInt16(ushort[] data)
     {
-        return new GeotiffTagValueResult { _resultUInt16 = data };
+        return new GeoTiffTagValueResult { _resultUInt16 = data };
     }
     
-    public static GeotiffTagValueResult FromInt16(short[] data)
+    public static GeoTiffTagValueResult FromInt16(short[] data)
     {
-        return new GeotiffTagValueResult { _resultInt16 = data };
+        return new GeoTiffTagValueResult { _resultInt16 = data };
     }
     
-    public static GeotiffTagValueResult FromUInt32(uint[] data)
+    public static GeoTiffTagValueResult FromUInt32(uint[] data)
     {
-        return new GeotiffTagValueResult { _resultUInt32 = data };
+        return new GeoTiffTagValueResult { _resultUInt32 = data };
     }
 
-    public static GeotiffTagValueResult FromInt32(int[] data)
+    public static GeoTiffTagValueResult FromInt32(int[] data)
     {
-        return new GeotiffTagValueResult() { _resultInt32 = data };
+        return new GeoTiffTagValueResult() { _resultInt32 = data };
     }
 
-    public static GeotiffTagValueResult FromFloat32(float[] data)
+    public static GeoTiffTagValueResult FromFloat32(float[] data)
     {
-        return new GeotiffTagValueResult { _resultFloat32 = data };
+        return new GeoTiffTagValueResult { _resultFloat32 = data };
     }
 
-    public static GeotiffTagValueResult FromFloat64(double[] data)
+    public static GeoTiffTagValueResult FromFloat64(double[] data)
     {
-        return new GeotiffTagValueResult { _resultFloat64 = data };
+        return new GeoTiffTagValueResult { _resultFloat64 = data };
     }
 
-    public static GeotiffTagValueResult FromRational(Rational[] data)
+    public static GeoTiffTagValueResult FromRational(Rational[] data)
     {
-        return new GeotiffTagValueResult { _resultRational = data };
+        return new GeoTiffTagValueResult { _resultRational = data };
     }
 
-    public static GeotiffTagValueResult FromSRational(int[] data)
+    public static GeoTiffTagValueResult FromSRational(int[] data)
     {
-        return new GeotiffTagValueResult { _resultSRational = data };
+        return new GeoTiffTagValueResult { _resultSRational = data };
     }
 
-    public static GeotiffTagValueResult FromString(string data)
+    public static GeoTiffTagValueResult FromString(string data)
     {
-        return new GeotiffTagValueResult() { _decodedAsciiResult = data };
+        return new GeoTiffTagValueResult() { _decodedAsciiResult = data };
     }
 
     [Obsolete("Needs removing also")]
@@ -310,5 +310,5 @@ internal class GeotiffTagValueResult
     }
     
     
-    private GeotiffTagValueResult() { }
+    private GeoTiffTagValueResult() { }
 }

@@ -48,7 +48,7 @@ public class ReadingTests : GeoTiffTestBaseClass
             {
                 string quebec = Path.Combine(GetDataFolderPath(), "ca_nrc_NA83SCRS.tif");
                 await using var fsSource = new FileStream(quebec, FileMode.Open, FileAccess.Read);
-                GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+                GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         
                 GeoTiffImage? image = await geotiff.GetImageAsync();
                 var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
@@ -64,7 +64,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         string quebec = Path.Combine(GetDataFolderPath(), "ca_nrc_NA83SCRS.tif");
 
         await using var fsSource = new FileStream(quebec, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(14);
@@ -95,7 +95,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         string masked = Path.Combine(GetDataFolderPath(), "masked_image.tif");
 
         await using var fsSource = new FileStream(masked, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         //
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(1);
@@ -114,7 +114,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string usNoaaTif = Path.Combine(GetDataFolderPath(), "us_noaa_FL.tif");
         await using var fsSource = new FileStream(usNoaaTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(1);
 
@@ -135,7 +135,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string usNoaaTif = Path.Combine(GetDataFolderPath(), "us_noaa_FL.tif");
         await using var fsSource = new FileStream(usNoaaTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(1);
 
@@ -157,7 +157,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string usNoaaTif = Path.Combine(GetDataFolderPath(), "no_compression.tif");
         await using var fsSource = new FileStream(usNoaaTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(1);
 
@@ -181,7 +181,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string multiBand = Path.Combine(GetDataFolderPath(), "ten_band_2x2.tif");
         await using var fsSource = new FileStream(multiBand, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var resultAll = await image.ReadRasterAsync();
@@ -203,7 +203,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string multiBand = Path.Combine(GetDataFolderPath(), "ten_band_2x2.tif");
         await using var fsSource = new FileStream(multiBand, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var resultAll = await image.ReadRasterAsync(null, new [] {5,6});
         resultAll.GetNumberOfSamples().ShouldBe(2);
@@ -225,7 +225,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync();
         var reshaped = readResult.GetSampleAt(0).GetAs2DDoubleArray();
@@ -240,7 +240,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         var bbox = image.GetBoundingBox();
         var resolution = image.GetResolution();
@@ -277,7 +277,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         var bbox = image.GetBoundingBox();
         var resolution = image.GetResolution();
@@ -314,7 +314,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "int32_2band.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         
         for (var i = 0; i < 100; i++)
@@ -333,7 +333,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "two_band_even_odd_int32.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         GeoTiffImage? image = await geotiff.GetImageAsync();
         for (var i = 0; i < 1000; i++)
@@ -377,7 +377,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(1);
 
@@ -416,7 +416,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(1);
 
@@ -483,7 +483,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "internal_overviews.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(4); // tiff has 4 images, 3 of which are pyramids
         GeoTiffImage? image = await geotiff.GetImageAsync(0);
@@ -494,7 +494,7 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         string multiDatasetImage = Path.Combine(GetDataFolderPath(), "ca_nrc_NA83SCRS.tif");
         await using var fsSource2 = new FileStream(multiDatasetImage, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff2 = await GeoTIFF.FromStreamAsync(fsSource2);
+        GeoTiff? geotiff2 = await GeoTiff.FromStreamAsync(fsSource2);
         int count2 = await geotiff2.GetImageCountAsync();
         count2.ShouldBe(14); // tiff has 4 images, 3 of which are pyramids
         
@@ -504,7 +504,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         string singleDatasetImage = Path.Combine(GetDataFolderPath(), "spcs27.tif");
         await using var fsSource3 = new FileStream(singleDatasetImage, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff3 = await GeoTIFF.FromStreamAsync(fsSource3);
+        GeoTiff? geotiff3 = await GeoTiff.FromStreamAsync(fsSource3);
         int count3 = await geotiff3.GetImageCountAsync();
         count3.ShouldBe(1); // tiff has 4 images, 3 of which are pyramids
         
@@ -520,7 +520,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "internal_overviews.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         int count = await geotiff.GetImageCountAsync();
         count.ShouldBe(4);
         GeoTiffImage? image = await geotiff.GetImageAsync(0);
@@ -548,7 +548,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         await using var mainStream = File.OpenRead(externalOverviewTifPath);
         await using var ovrStream = File.OpenRead(ovrFilePath);
 
-        var overviewMultiTiff = await MultiGeoTIFF.FromStreams(mainStream, new[] { ovrStream });
+        var overviewMultiTiff = await MultiGeoTiff.FromStreams(mainStream, new[] { ovrStream });
 
         var imageCount = await overviewMultiTiff.GetImageCountAsync();
         imageCount.ShouldBe(3, "1 main, 2 from overview");
@@ -572,8 +572,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         await using var mainStream = File.OpenRead(externalOverviewTifPath);
         await using var ovrStream = File.OpenRead(mskFilePath);
 
-        var maskedMultiTiff = await MultiGeoTIFF.FromStreams(mainStream, new[] { ovrStream });
-        var maskedReader = await MaskedGeoTIFFReader.FromMultiGeoTiff(maskedMultiTiff);
+        var maskedMultiTiff = await MultiGeoTiff.FromStreams(mainStream, new[] { ovrStream });
+        var maskedReader = await MaskedGeoTiffReader.FromMultiGeoTiff(maskedMultiTiff);
         var maskedReadResult = await maskedReader.ReadMaskedRasters<int>();
         var sample1 = maskedReadResult.GetSampleResultAt(0);
         var maskedValue = sample1.MaskedValues.ElementAt(0);
@@ -587,7 +587,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
         await using var stream = File.OpenRead(resampleTestTif);
         
-        GeoTIFF geotiff = await GeoTIFF.FromStreamAsync(stream);
+        GeoTiff geotiff = await GeoTiff.FromStreamAsync(stream);
         var image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync();
         var firstSampleOriginal = readResult.GetSampleAt(0);
@@ -606,7 +606,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         string resampleTestTif = Path.Combine(GetDataFolderPath(), "resampleTest.tif");
         await using var stream = File.OpenRead(resampleTestTif);
         
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(stream);
         var image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync();
         ((int)readResult.Height).ShouldBe(5); // This is just verifying the test data hasn't changed
@@ -636,7 +636,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string resampleTestTif = Path.Combine(GetDataFolderPath(), "two_band_planar_separate.tif");
         await using var stream = File.OpenRead(resampleTestTif);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(stream);
         
         var image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync();
@@ -653,7 +653,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string transform = Path.Combine(GetDataFolderPath(), "image1.tif");
         await using var stream = File.OpenRead(transform);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(stream);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(stream);
         
         var image = await geotiff.GetImageAsync();
 
@@ -677,7 +677,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string noAffineTif = Path.Combine(GetDataFolderPath(), "no_affine.tif");
         await using var fsSource = new FileStream(noAffineTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
 
         // Resolution should not throw, but may return null or default
@@ -727,7 +727,7 @@ public class ReadingTests : GeoTiffTestBaseClass
     {
         string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
         await using var fsSource = new FileStream(lonLatTif, FileMode.Open, FileAccess.Read);
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         var bbox = new BoundingBox() { XMin = 0, YMin = 0, XMax = 80, YMax = 80};
         var resolution = image.GetResolution();
@@ -755,7 +755,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         string bigTiffPath = Path.Combine("/home/james/Documents/temp/geotiff/bigger_cog.tif");
         await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
         
-        GeoTIFF? geotiff = await GeoTIFF.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
 
         var height = image.GetHeight();

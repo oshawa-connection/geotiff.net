@@ -1,18 +1,18 @@
-using System.Net;
 using Geotiff.Exceptions;
+using System.Net;
 using Geotiff.Extensions;
 using Geotiff.JavaScriptCompatibility;
 using System.Text.RegularExpressions;
 
 namespace Geotiff.RemoteClients;
 
-public class GeotiffHTTPClient : IGeotiffRemoteClient
+public class GeoTiffHTTPClient : IGeoTiffRemoteClient
 {
     private string url { get; set; }
     private HttpClient client { get; set; }
     private bool allowFullFile { get; set; }
 
-    public GeotiffHTTPClient(string url, HttpClient client, bool allowFullFile = false)
+    public GeoTiffHTTPClient(string url, HttpClient client, bool allowFullFile = false)
     {
         this.url = url;
         this.client = client;

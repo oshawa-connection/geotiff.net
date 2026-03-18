@@ -1,11 +1,11 @@
 namespace Geotiff;
 
-public interface IMaskedGeoTIFFReadResult<T> where T: struct
+public interface IMaskedGeoTiffReadResult<T> where T: struct
 {
     public MaskedSampleReadResult<T> GetSampleResultAt(int sampleIndex);
 }
 
-public class MaskBandGeoTIFFReadResult<T> : IMaskedGeoTIFFReadResult<T> where T : struct
+public class MaskBandGeoTiffReadResult<T> : IMaskedGeoTiffReadResult<T> where T : struct
 {
     private byte[] mask;
     /// <summary>
@@ -16,7 +16,7 @@ public class MaskBandGeoTIFFReadResult<T> : IMaskedGeoTIFFReadResult<T> where T 
     private uint Height;
     private GeoTiffImage parentImage;
     
-    public MaskBandGeoTIFFReadResult(byte[] mask, IEnumerable<T[]> sampleData, uint Width, uint Height,
+    public MaskBandGeoTiffReadResult(byte[] mask, IEnumerable<T[]> sampleData, uint Width, uint Height,
         GeoTiffImage parentImage)
     {
         this.mask = mask;

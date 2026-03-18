@@ -7,7 +7,7 @@ namespace Geotiff;
 /// <summary>
 /// TODO: implement ReadRaster method here, selecting best image for the user. A nice to have.
 /// </summary>
-public class GeoTIFF
+public class GeoTiff
 {
     protected internal readonly BaseSource Source;
     private readonly bool _bigTiff;
@@ -19,7 +19,7 @@ public class GeoTIFF
     protected internal int? finalImageCount = null;
     public bool IsBifTIFF => _bigTiff; 
     
-    public GeoTIFF(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
+    public GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
     {
         this.Source = source;
         this.IsLittleEndian = isLittleEndian;
@@ -77,7 +77,7 @@ public class GeoTIFF
             : dv.GetUint32(4, isLittleEndian);
     }
     
-    public static async Task<GeoTIFF> FromRemoteClientAsync(IGeotiffRemoteClient client)
+    public static async Task<GeoTiff> FromRemoteClientAsync(IGeoTiffRemoteClient client)
     {
         var source = new RemoteSource(client, int.MaxValue, false);
         IEnumerable<ArrayBuffer>? slices = await source.FetchAsync(new Slice[] { new(0, 1024) });
@@ -88,7 +88,7 @@ public class GeoTIFF
         bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
 
         var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
-        return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
+        return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
     
     
@@ -97,7 +97,7 @@ public class GeoTIFF
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    public static GeoTIFF FromStream(Stream stream)
+    public static GeoTiff FromStream(Stream stream)
     {
         Stream seekableStream;
         if (stream.CanSeek)
@@ -124,7 +124,7 @@ public class GeoTIFF
         var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
         seekableStream.Position = 0;
         var source = new FileSource(seekableStream);
-        return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
+        return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
     
     
@@ -133,7 +133,7 @@ public class GeoTIFF
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    public static async Task<GeoTIFF> FromStreamAsync(Stream stream, CancellationToken? cancellationToken = null)
+    public static async Task<GeoTiff> FromStreamAsync(Stream stream, CancellationToken? cancellationToken = null)
     {
         Stream seekableStream;
         if (stream.CanSeek)
@@ -177,7 +177,7 @@ public class GeoTIFF
         var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
         seekableStream.Position = 0;
         var source = new FileSource(seekableStream);
-        return new GeoTIFF(source, isLittleEndian, isBigTiff, firstIDFOffset);
+        return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
 
     private async Task<DataSlice> GetSliceAsync(int offset, int? size = null)
@@ -291,7 +291,7 @@ public class GeoTIFF
                 ? (int)dataSlice.ReadUInt64(i + 4)
                 : (int)dataSlice.ReadUInt32(i + 4);
 
-            GeotiffTagValueResult fieldValues;
+            GeoTiffTagValueResult fieldValues;
             object value;
             bool isList = false;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);

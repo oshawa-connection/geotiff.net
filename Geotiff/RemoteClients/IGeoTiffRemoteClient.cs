@@ -5,7 +5,7 @@ namespace Geotiff.RemoteClients;
 /// <summary>
 /// Public to allow others to implement their own.
 /// </summary>
-public interface IGeotiffRemoteClient
+public interface IGeoTiffRemoteClient
 {
     Task<IEnumerable<ArrayBuffer>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null);
     Task<ArrayBuffer> FetchSliceAsync(Slice slice, CancellationToken? signal = null);

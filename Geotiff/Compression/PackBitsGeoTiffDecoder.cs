@@ -2,7 +2,7 @@ using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff.Compression;
 
-public class PackBitsGeotiffDecoder : GeotiffDecoder
+public class PackBitsGeoTiffDecoder : GeoTiffDecoder
 {
     public override IEnumerable<int> codes => new[] { 32773 };
 

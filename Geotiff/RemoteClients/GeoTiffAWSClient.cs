@@ -9,13 +9,13 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-public class GeotiffAWSClient : IGeotiffRemoteClient
+public class GeoTiffAWSClient : IGeoTiffRemoteClient
 {
     private string bucketName { get; set; }
     private string key { get; set; }
     private AmazonS3Client amazonS3Client { get; set; }
 
-    public GeotiffAWSClient(string bucketName, string key, AmazonS3Client amazonS3Client)
+    public GeoTiffAWSClient(string bucketName, string key, AmazonS3Client amazonS3Client)
     {
         this.bucketName = bucketName;
         this.key = key;

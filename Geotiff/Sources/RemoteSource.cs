@@ -12,7 +12,7 @@ public class RemoteSource : BaseSource
     private const string CRLFCRLF = "\r\n\r\n";
     public long? fileSize => _fileSize;
     private int maxRanges { get; set; }
-    private IGeotiffRemoteClient client { get; set; }
+    private IGeoTiffRemoteClient client { get; set; }
     private bool allowFullFile { get; set; }
     private long? _fileSize { get; set; }
 
@@ -22,7 +22,7 @@ public class RemoteSource : BaseSource
      * @param {numbers} maxRanges
      * @param {boolean} allowFullFile
      */
-    public RemoteSource(IGeotiffRemoteClient client, int maxRanges, bool allowFullFile)
+    public RemoteSource(IGeoTiffRemoteClient client, int maxRanges, bool allowFullFile)
     {
         this.client = client;
         this.maxRanges = maxRanges;
