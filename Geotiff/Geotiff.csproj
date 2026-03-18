@@ -5,17 +5,14 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
-
-
+        
         <PackageId>geotiff.net</PackageId>
-        <Version>1.0.0-alpha</Version>
+        <Version>1.1.0-alpha</Version>
         <Authors>oshawa-connection</Authors>
         <Description>Async GeoTiff raster file format support for C#, from files, clouds and networks</Description>
         <PackageTags>spatial;GIS;Mapping;raster;GeoTiff;library</PackageTags>
-<!--        <PackageReadmeFile>README.md</PackageReadmeFile>-->
         <RepositoryUrl>https://github.com/oshawa-connection/geotiff.net</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        
     </PropertyGroup>
 
     <ItemGroup>

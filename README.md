@@ -6,7 +6,11 @@ This project adds native .Net handling of geotiff files, the benefits being:
 - Easier cross platform compatibility (over GDAL which requires native dependencies to be compiled on the target platform)
 - Asynchronous and streamed reads + writes
 - Easier debugging
-- Extensability in C# (e.g. define your own source types, decoders, sidecar file handlers)
+- Extensibility in C# (e.g. define your own source types, decoders, sidecar file handlers)
+
+It also opens up the .Net ecosystem to GIS developers, for example, desktop applications, ASP.Net apps and game engines. Here's a cool screenshot of a geotiff visualised in 3D using Unity using this library:
+
+![Screenshot of some mountains rendered in 3D in Unity using geotiff.net.](readmeAssets/Unity.png)
 
 ## Examples
 
