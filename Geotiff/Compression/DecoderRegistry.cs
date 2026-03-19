@@ -8,7 +8,13 @@ namespace Geotiff.Compression;
 /// </summary>
 public class DecoderRegistry
 {
-    private static List<GeoTiffDecoder> _register = new() { new DeflateGeoTiffDecoder(), new RawGeoTiffDecoder(), new LZWGeoTiffDecoder(), new PackBitsGeoTiffDecoder() };
+    private static List<GeoTiffDecoder> _register = new()
+    {
+        new DeflateGeoTiffDecoder(), 
+        new RawGeoTiffDecoder(), 
+        new LZWGeoTiffDecoder(), 
+        new PackBitsGeoTiffDecoder()
+    };
 
     /// <summary>
     /// TODO: check no clash of codes
