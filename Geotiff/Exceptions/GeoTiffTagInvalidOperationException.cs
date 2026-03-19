@@ -9,7 +9,6 @@ public class GeoTiffTagInvalidOperationException: GeoTiffException
         var s = new StringBuilder();
         s.Append($"Result is not a {expected}");
         s.Append($" Actual: {actual}");
-        //whatever you want to do with your string before passing it in
         return new GeoTiffTagInvalidOperationException(s.ToString());
     }
     

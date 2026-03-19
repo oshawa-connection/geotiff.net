@@ -545,7 +545,6 @@ public class GeoTiffImage
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="GeoTiffException"></exception>
-    /// <exception cref="NotImplementedException"></exception>
     /// <exception cref="InvalidTiffException"></exception>
     public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
@@ -829,17 +828,13 @@ public class GeoTiffImage
                 switch (bitsPerSample)
                 {
                     case 16:
-                        throw new NotImplementedException();
+                        return GeotiffSampleDataType.Float16;
                     case 32:
                         return GeotiffSampleDataType.Float32;
                     case 64:
                         return GeotiffSampleDataType.Float64;
-                    default:
-                        break;
                 }
 
-                break;
-            default:
                 break;
         }
 

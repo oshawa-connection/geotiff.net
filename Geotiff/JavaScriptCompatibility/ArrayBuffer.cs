@@ -35,8 +35,7 @@ public class ArrayBuffer : IEnumerable<byte>
         {
             await stream.CopyToAsync(ms);
         }
-
-        // stream.Position = 0;
+        
         var ab = new ArrayBuffer(ms.ToArray());
         return ab;
     }

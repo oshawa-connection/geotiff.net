@@ -66,10 +66,9 @@ public class NearestNeighbourRasterResampler : RasterResamplerBaseClass
                      resampled.Add(sampleIndex, new RasterSample((uint)outWidth, (uint)outHeight, raster.ParentImage, resampledUIntArray));
                      break;
                  case GeotiffSampleDataType.UInt64:
-                     throw new NotImplementedException();
-                     // var uInt64Array = currentSample.Get();
-                     // var resampledUInt64Array = resampleNN(uInt64Array, (int)raster.Width, (int)raster.Height, outWidth, outHeight);
-                     // resampled.Add(sampleIndex, new RasterSample((uint)outWidth, (uint)outHeight, raster.ParentImage, resampledUInt64Array));
+                     var uInt64Array = currentSample.GetUIntArray();
+                     var resampledUInt64Array = resampleNN(uInt64Array, (int)raster.Width, (int)raster.Height, outWidth, outHeight);
+                     resampled.Add(sampleIndex, new RasterSample((uint)outWidth, (uint)outHeight, raster.ParentImage, resampledUInt64Array));
                      break;
                  case GeotiffSampleDataType.Int32:
                      var int32Array = currentSample.GetIntArray();

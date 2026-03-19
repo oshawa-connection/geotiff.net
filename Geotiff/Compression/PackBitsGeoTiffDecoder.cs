@@ -37,6 +37,5 @@ public class PackBitsGeoTiffDecoder : GeoTiffDecoder
         }
 
         return new ArrayBuffer(outbytes.ToArray());
-        // return new Uint8Array(out).buffer;
     }
 }

@@ -16,6 +16,8 @@ public class RasterSample
     private uint[]? UInt32Result { get; set; }
     private ushort[]? UInt16Result { get; set; }
     private short[]? Int16Result { get; set; }
+    private ulong[]? UInt64Result { get; set; }
+    private long[]? Int64Result { get; set; }
     private byte[]? UInt8Result { get; set; }
     private sbyte[]? Int8Result { get; set; }
     private readonly GeoTiffImage ParentImage;
@@ -105,7 +107,7 @@ public class RasterSample
                 this.UInt32Result = new uint[size];
                 break;
             case GeotiffSampleDataType.UInt64:
-                throw new NotImplementedException();
+                this.UInt64Result = new ulong[size];
                 break;
             case GeotiffSampleDataType.Int32:
                 this.IntResult = new int[size];
@@ -329,7 +331,10 @@ public class RasterSample
                 array = this.ConvertAllToDouble(this.UInt32Result);
                 break;
             case GeotiffSampleDataType.UInt64:
-                throw new NotImplementedException();
+                array = this.ConvertAllToDouble(this.UInt64Result);
+                break;
+            case GeotiffSampleDataType.Int64:
+                array = this.ConvertAllToDouble(this.Int64Result);
                 break;
             case GeotiffSampleDataType.Int32:
                 array = this.ConvertAllToDouble(this.IntResult);
@@ -390,7 +395,7 @@ public class RasterSample
                 array = this.ConvertAllToInt(this.UInt32Result);
                 break;
             case GeotiffSampleDataType.UInt64:
-                throw new NotImplementedException();
+                array = this.ConvertAllToInt(this.UInt64Result);
                 break;
             case GeotiffSampleDataType.Int32:
                 array = this.ConvertAllToInt(this.IntResult);
