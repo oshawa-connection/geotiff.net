@@ -20,8 +20,9 @@ public enum GeotiffSampleDataType
     UInt32,
     UInt64,
     Int32,
+    Float16,
     Float32,
-    Double
+    Float64
 }
 
 

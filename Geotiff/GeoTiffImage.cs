@@ -383,11 +383,12 @@ public class GeoTiffImage
             case 3: // floating point data
                 switch (bitsPerSample)
                 {
-                    case 16: // TODO: Use .net Half or not?
+                    case 16:
+                        return GeotiffSampleDataType.Float16;
                     case 32:
                         return GeotiffSampleDataType.Float32;
                     case 64:
-                        return GeotiffSampleDataType.Double;
+                        return GeotiffSampleDataType.Float64;
                 }
 
                 break;
@@ -555,7 +556,7 @@ public class GeoTiffImage
                     case 32:
                         return new DataView(size, GeotiffSampleDataType.Float32);
                     case 64:
-                        return new DataView(size,GeotiffSampleDataType.Double);
+                        return new DataView(size,GeotiffSampleDataType.Float64);
                 }
 
                 break;
@@ -803,8 +804,11 @@ public class GeoTiffImage
                                     case 3:
                                         switch (bitsPerSample)
                                         {
-                                            case 16: // TODO: Use dotnet Half type here?
-                                                throw new NotImplementedException();
+                                            case 16: 
+                                                var read0 = dv.GetFloat16((int)pixelOffset +
+                                                                          srcSampleOffsets[si], littleEndian);
+                                                myArray.SetFloat16(read0, (int)windowCoordinate);
+                                                break;
                                             case 32:
                                                 var read1 = dv.GetFloat32((int)pixelOffset +
                                                                           srcSampleOffsets[si], littleEndian);
@@ -898,7 +902,7 @@ public class GeoTiffImage
                     case 32:
                         return GeotiffSampleDataType.Float32;
                     case 64:
-                        return GeotiffSampleDataType.Double;
+                        return GeotiffSampleDataType.Float64;
                     default:
                         break;
                 }
@@ -911,66 +915,6 @@ public class GeoTiffImage
         throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
     
-    
-    private Func<DataView, long, bool, object> GetReaderForSample(int sampleIndex)
-    {
-        int format = FileDirectory.SampleFormat is not null
-            ? FileDirectory.SampleFormat[sampleIndex]
-            : 1;
-        int bitsPerSample = FileDirectory.BitsPerSample[sampleIndex];
-        switch (format)
-        {
-            case 1: // unsigned integer data
-                if (bitsPerSample <= 8)
-                {
-                    return (dv, offset, endianNess) => dv.GetUint8((int)offset);
-                }
-                else if (bitsPerSample <= 16)
-                {
-                    return (dv, offset, endianNess) => dv.GetUint16((int)offset, endianNess);
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return (dv, offset, endianNess) => dv.GetUint32((int)offset, endianNess);
-                }
-
-                break;
-            case 2: // twos complement signed integer data
-                if (bitsPerSample <= 8)
-                {
-                    return (dv, offset, endianNess) => dv.GetInt8((int)offset);
-                }
-                else if (bitsPerSample <= 16)
-                {
-                    return (dv, offset, endianNess) => dv.GetInt16((int)offset, endianNess);
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return (dv, offset, endianNess) => dv.GetInt32((int)offset, endianNess);
-                }
-
-                break;
-            case 3:
-                switch (bitsPerSample)
-                {
-                    case 16: // TODO: Use dotnet Half type here?
-                    case 32:
-                        return (dv, offset, endianNess) => dv.GetFloat32((int)offset, endianNess);
-                    case 64:
-                        return (dv, offset, endianNess) => dv.GetFloat64((int)offset, endianNess);
-                    default:
-                        break;
-                }
-
-                break;
-            default:
-                break;
-        }
-
-        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
-    }
-
-
     /// <summary>
     /// Returns the decoded strip or tile.
     /// </summary>

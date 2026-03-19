@@ -59,7 +59,82 @@ public class DataView
             throw new GeoTiffException($"Invalid operation, trying to {op} a {type} on an array of type {this.type}");
         }
     }
+    /// <summary>
+    /// Because we are targeting .netstandard2.1, Half datatype is not supported. Read 2 bytes then convert to float32
+    /// </summary>
+    /// <param name="offset"></param>
+    /// <param name="isLittleEndian"></param>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
+    public float GetFloat16(int offset, bool isLittleEndian = false)
+    {
+        CheckType(GeotiffSampleDataType.Float16, true);
 
+        byte[]? x = stream.Skip(offset).Take(2).ToArray();
+        if (x.Length < 2)
+        {
+            throw new GeoTiffException("Not enough bytes in stream");
+        }
+        
+        if (!isLittleEndian)
+        {
+            x = x.Reverse().ToArray();
+        }
+
+        ushort half = BitConverter.ToUInt16(x, 0);
+
+        return HalfToSingle(half);
+    }
+
+    private static float HalfToSingle(ushort half)
+    {
+        uint sign = (uint)(half >> 15) & 0x00000001;
+        uint exp  = (uint)(half >> 10) & 0x0000001F;
+        uint mant = (uint)(half & 0x03FF);
+
+        uint f;
+
+        if (exp == 0)
+        {
+            if (mant == 0)
+            {
+                // Zero
+                f = sign << 31;
+            }
+            else
+            {
+                // Subnormal → normalize
+                while ((mant & 0x0400) == 0)
+                {
+                    mant <<= 1;
+                    exp--;
+                }
+                exp++;
+                mant &= ~0x0400U;
+
+                exp = exp + (127 - 15);
+                mant <<= 13;
+
+                f = (sign << 31) | (exp << 23) | mant;
+            }
+        }
+        else if (exp == 31)
+        {
+            // Inf or NaN
+            f = (sign << 31) | 0x7F800000 | (mant << 13);
+        }
+        else
+        {
+            // Normalized number
+            exp = exp + (127 - 15);
+            mant <<= 13;
+
+            f = (sign << 31) | (exp << 23) | mant;
+        }
+
+        return BitConverter.Int32BitsToSingle((int)f);
+    }
+    
     public float GetFloat32(int offset, bool isLittleEndian = false)
     {
         CheckType(GeotiffSampleDataType.Float32, true);
@@ -102,7 +177,7 @@ public class DataView
 
     public double GetFloat64(int offset, bool isLittleEndian = false)
     {
-        CheckType(GeotiffSampleDataType.Double, true);
+        CheckType(GeotiffSampleDataType.Float64, true);
         byte[]? x = stream.Skip(offset).Take(8).ToArray();
         if (x.Count() < 8)
         {
@@ -119,7 +194,7 @@ public class DataView
 
     public void SetFloat64(int offset, double value, bool isLittleEndian = false)
     {
-        CheckType(GeotiffSampleDataType.Double, false);
+        CheckType(GeotiffSampleDataType.Float64, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {
@@ -283,7 +358,7 @@ public class DataView
             case GeotiffSampleDataType.Float32:
                 SetFloat32(offset, (float)value);
                 break;
-            case GeotiffSampleDataType.Double:
+            case GeotiffSampleDataType.Float64:
                 SetFloat64(offset, (float)value);
                 break;
         }
