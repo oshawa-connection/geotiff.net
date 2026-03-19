@@ -2,7 +2,7 @@ using Geotiff.Exceptions;
 
 namespace Geotiff.JavaScriptCompatibility;
 
-public class DataView
+internal class DataView
 {
     private readonly byte[] stream;
     public readonly GeotiffSampleDataType? type;

@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace Geotiff.JavaScriptCompatibility;
 
-public class ArrayBuffer :IEnumerable<byte>
+public class ArrayBuffer : IEnumerable<byte>
 {
     private readonly byte[] buffer;
 
