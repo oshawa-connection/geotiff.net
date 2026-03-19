@@ -765,4 +765,68 @@ public class ReadingTests : GeoTiffTestBaseClass
         var tileHeight = image.GetTileHeight();
         var readResult = await image.ReadRasterAsync();
     }
+
+
+    [TestMethod]
+    public async Task TestFloat16()
+    {
+        string bigTiffPath = Path.Combine(GetDataFolderPath(), "float16_10x10.tif");
+        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+
+        var height = image.GetHeight();
+        var width = image.GetWidth();
+        
+        var tileWidth = image.GetTileWidth();
+        var tileHeight = image.GetTileHeight();
+        var readResult = await image.ReadRasterAsync();
+        var firstSample = readResult.GetSampleAt(0);
+        firstSample.SampleType.ShouldBe(GeotiffSampleDataType.Float16);
+        firstSample.GetFloatArray().Last().ShouldBe(9.8984375f);
+    }
+    
+        
+    [TestMethod]
+    public async Task TestInt16()
+    {
+        string bigTiffPath = Path.Combine(GetDataFolderPath(), "int16_10x10.tif");
+        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+
+        var height = image.GetHeight();
+        var width = image.GetWidth();
+        
+        var tileWidth = image.GetTileWidth();
+        var tileHeight = image.GetTileHeight();
+        var readResult = await image.ReadRasterAsync();
+        var firstSample = readResult.GetSampleAt(0);
+        firstSample.SampleType.ShouldBe(GeotiffSampleDataType.Int16);
+        firstSample.GetShortArray().Last().ShouldBe((short)-8121);
+    }
+    
+    
+    [TestMethod]
+    public async Task TestUInt16()
+    {
+        string bigTiffPath = Path.Combine(GetDataFolderPath(), "uint16_10x10.tif");
+        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+
+        var height = image.GetHeight();
+        var width = image.GetWidth();
+        
+        var tileWidth = image.GetTileWidth();
+        var tileHeight = image.GetTileHeight();
+        var readResult = await image.ReadRasterAsync();
+        var firstSample = readResult.GetSampleAt(0);
+        firstSample.SampleType.ShouldBe(GeotiffSampleDataType.UInt16);
+        firstSample.GetUShortArray().Last().ShouldBe((ushort)56582);
+    }
+    
 }

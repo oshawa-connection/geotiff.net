@@ -9,12 +9,15 @@ public class RasterSample
 {
     public uint Height { get; set; }
     public uint Width { get; set; }
-    private double[]? DoubleResult { get; set; }
-    private float[]? FloatResult { get; set; }
+    private double[]? Float64Result { get; set; }
+    private float[]? Float32Result { get; set; }
+    private float[]? Float16Result { get; set; }
     private int[]? IntResult { get; set; }
     private uint[]? UInt32Result { get; set; }
     private ushort[]? UInt16Result { get; set; }
     private short[]? Int16Result { get; set; }
+    private ulong[]? UInt64Result { get; set; }
+    private long[]? Int64Result { get; set; }
     private byte[]? UInt8Result { get; set; }
     private sbyte[]? Int8Result { get; set; }
     private readonly GeoTiffImage ParentImage;
@@ -57,13 +60,6 @@ public class RasterSample
     }
     
     public RasterSample(uint width, uint height, GeoTiffImage parentImage,
-        float[] floatResult) : this(width, height, parentImage)
-    {
-        this.SampleType = GeotiffSampleDataType.Float32;
-        this.FloatResult = floatResult;
-    }
-    
-    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
         ushort[] uShortResult) : this(width, height, parentImage)
     {
         this.SampleType = GeotiffSampleDataType.UInt16;
@@ -78,10 +74,17 @@ public class RasterSample
     }
     
     public RasterSample(uint width, uint height, GeoTiffImage parentImage,
-        double[] doubleResult) : this(width, height, parentImage)
+        float[] float32Result) : this(width, height, parentImage)
     {
-        this.SampleType = GeotiffSampleDataType.Double;
-        this.DoubleResult = doubleResult;
+        this.SampleType = GeotiffSampleDataType.Float32;
+        this.Float32Result = float32Result;
+    }
+    
+    public RasterSample(uint width, uint height, GeoTiffImage parentImage,
+        double[] float64Result) : this(width, height, parentImage)
+    {
+        this.SampleType = GeotiffSampleDataType.Float64;
+        this.Float64Result = float64Result;
     }
     public RasterSample(uint width, uint height, GeoTiffImage parentImage, GeotiffSampleDataType sampleType, int size): this(width, height, parentImage)
     {
@@ -104,16 +107,19 @@ public class RasterSample
                 this.UInt32Result = new uint[size];
                 break;
             case GeotiffSampleDataType.UInt64:
-                throw new NotImplementedException();
+                this.UInt64Result = new ulong[size];
                 break;
             case GeotiffSampleDataType.Int32:
                 this.IntResult = new int[size];
                 break;
-            case GeotiffSampleDataType.Float32:
-                this.FloatResult = new float[size];
+            case GeotiffSampleDataType.Float16:
+                this.Float16Result = new float[size];
                 break;
-            case GeotiffSampleDataType.Double:
-                this.DoubleResult = new double[size];
+            case GeotiffSampleDataType.Float32:
+                this.Float32Result = new float[size];
+                break;
+            case GeotiffSampleDataType.Float64:
+                this.Float64Result = new double[size];
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(sampleType), sampleType, null);
@@ -122,7 +128,7 @@ public class RasterSample
 
     public bool IsFloatingPoint()
     {
-        return this.SampleType == GeotiffSampleDataType.Float32 || this.SampleType == GeotiffSampleDataType.Double;
+        return this.SampleType == GeotiffSampleDataType.Float32 || this.SampleType == GeotiffSampleDataType.Float64;
     }
 
     public bool IsInteger()
@@ -170,15 +176,20 @@ public class RasterSample
         CheckType(GeotiffSampleDataType.Int32);
         this.IntResult[index] = value;
     }   
+    public void SetFloat16(float value, int index)
+    {
+        CheckType(GeotiffSampleDataType.Float16);
+        this.Float16Result[index] = value;
+    }   
     public void SetFloat32(float value, int index)
     {
         CheckType(GeotiffSampleDataType.Float32);
-        this.FloatResult[index] = value;
+        this.Float32Result[index] = value;
     }   
     public void SetDouble(double value, int index)
     {
-        CheckType(GeotiffSampleDataType.Double);
-        this.DoubleResult[index] = value;
+        CheckType(GeotiffSampleDataType.Float64);
+        this.Float64Result[index] = value;
     }
     
     #endregion
@@ -259,26 +270,35 @@ public class RasterSample
     
     public float[] GetFloatArray()
     {
-        CheckType(GeotiffSampleDataType.Float32);
-        return this.FloatResult;
+        if (this.SampleType == GeotiffSampleDataType.Float32)
+        {
+            return this.Float32Result;
+        };
+
+        if (this.SampleType == GeotiffSampleDataType.Float16)
+        {
+            return this.Float16Result;
+        }
+        
+        throw new GeoTiffException($"Requested sample type 'float32' or 'float16' does not match the read result of: {this.SampleType}");
     }
     
     public float[,] Get2DFloatArray()
     {
-        CheckType(GeotiffSampleDataType.Float32);
-        return this.To2DArray<float>(this.FloatResult);
+        var oneDResult = this.GetFloatArray();
+        return this.To2DArray<float>(oneDResult);
     }
     
     public double[] GetDoubleArray()
     {
-        CheckType(GeotiffSampleDataType.Double);
-        return this.DoubleResult;
+        CheckType(GeotiffSampleDataType.Float64);
+        return this.Float64Result;
     }
     
     public double[,] Get2DDoubleArray()
     {
-        CheckType(GeotiffSampleDataType.Double);
-        return this.To2DArray<double>(this.DoubleResult);
+        CheckType(GeotiffSampleDataType.Float64);
+        return this.To2DArray<double>(this.Float64Result);
     }
     
     private double[] ConvertAllToDouble<T>(IEnumerable<T> array)
@@ -311,16 +331,19 @@ public class RasterSample
                 array = this.ConvertAllToDouble(this.UInt32Result);
                 break;
             case GeotiffSampleDataType.UInt64:
-                throw new NotImplementedException();
+                array = this.ConvertAllToDouble(this.UInt64Result);
+                break;
+            case GeotiffSampleDataType.Int64:
+                array = this.ConvertAllToDouble(this.Int64Result);
                 break;
             case GeotiffSampleDataType.Int32:
                 array = this.ConvertAllToDouble(this.IntResult);
                 break;
             case GeotiffSampleDataType.Float32:
-                array = this.ConvertAllToDouble(this.FloatResult);
+                array = this.ConvertAllToDouble(this.Float32Result);
                 break;
-            case GeotiffSampleDataType.Double:
-                array = this.DoubleResult;
+            case GeotiffSampleDataType.Float64:
+                array = this.Float64Result;
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -372,16 +395,16 @@ public class RasterSample
                 array = this.ConvertAllToInt(this.UInt32Result);
                 break;
             case GeotiffSampleDataType.UInt64:
-                throw new NotImplementedException();
+                array = this.ConvertAllToInt(this.UInt64Result);
                 break;
             case GeotiffSampleDataType.Int32:
                 array = this.ConvertAllToInt(this.IntResult);
                 break;
             case GeotiffSampleDataType.Float32:
-                array = this.ConvertAllToInt(this.FloatResult);
+                array = this.ConvertAllToInt(this.Float32Result);
                 break;
-            case GeotiffSampleDataType.Double:
-                array = this.ConvertAllToInt(this.DoubleResult);
+            case GeotiffSampleDataType.Float64:
+                array = this.ConvertAllToInt(this.Float64Result);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

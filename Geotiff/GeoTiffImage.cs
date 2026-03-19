@@ -383,11 +383,12 @@ public class GeoTiffImage
             case 3: // floating point data
                 switch (bitsPerSample)
                 {
-                    case 16: // TODO: Use .net Half or not?
+                    case 16:
+                        return GeotiffSampleDataType.Float16;
                     case 32:
                         return GeotiffSampleDataType.Float32;
                     case 64:
-                        return GeotiffSampleDataType.Double;
+                        return GeotiffSampleDataType.Float64;
                 }
 
                 break;
@@ -397,56 +398,7 @@ public class GeoTiffImage
         
         throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
-
-    private Array ArrayForType(int format, ulong bitsPerSample, ulong size1, ulong? size2 = null)
-    {
-        switch (format)
-        {
-            case 1: // unsigned integer data
-                if (bitsPerSample <= 8)
-                {
-                    return new byte[size1];
-                }
-                else if (bitsPerSample <= 16)
-                {
-                    return new short[size1];
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return new uint[size1];
-                }
-
-                break;
-            case 2: // twos complement signed integer data
-                switch (bitsPerSample)
-                {
-                    case 8:
-                        return new sbyte[size1];
-                    case 16:
-                        return new short[size1];
-                    case 32:
-                        return new int[size1];
-                }
-
-                break;
-            case 3: // floating point data
-                switch (bitsPerSample)
-                {
-                    case 16:
-                    case 32:
-                        return new float[size1];
-                    case 64:
-                        return new double[size1];
-                }
-
-                break;
-            default:
-                break;
-        }
-
-        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
-    }
-
+    
     /// <summary>
     /// TODO: this is inefficient as a copy happens, which doens't happen in JS. It only creates a typed view over the data.
     /// </summary>
@@ -464,11 +416,11 @@ public class GeoTiffImage
                 {
                     return new byte[buffer.Length];
                 }
-                else if (bitsPerSample <= 16)
+                if (bitsPerSample <= 16)
                 {
                     return new short[buffer.Length];
                 }
-                else if (bitsPerSample <= 32)
+                if (bitsPerSample <= 32)
                 {
                     return new uint[buffer.Length];
                 }
@@ -514,7 +466,7 @@ public class GeoTiffImage
     /// <param name="buffer"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    private DataView ArrayForType(int format, ulong bitsPerSample, int size)
+    private DataView DataViewForType(int format, ulong bitsPerSample, int size)
     {
         switch (format)
         {
@@ -525,28 +477,23 @@ public class GeoTiffImage
                 }
                 else if (bitsPerSample <= 16)
                 {
-                    throw new NotImplementedException();
-                    // return new short[size];
+                    return new DataView(size, GeotiffSampleDataType.UInt16);
                 }
                 else if (bitsPerSample <= 32)
                 {
                     return new DataView(size, GeotiffSampleDataType.UInt32);
                 }
-
                 break;
             case 2: // twos complement signed integer data
                 switch (bitsPerSample)
                 {
                     case 8:
-                        throw new NotImplementedException();
-                    // return new sbyte[size];
+                        return new DataView(size, GeotiffSampleDataType.Int8);
                     case 16:
-                        throw new NotImplementedException();
-                    // return new Int16[size];
+                        return new DataView(size, GeotiffSampleDataType.Int16);
                     case 32:
                         return new DataView(size, GeotiffSampleDataType.Int32);
                 }
-
                 break;
             case 3: // floating point data
                 switch (bitsPerSample)
@@ -555,30 +502,15 @@ public class GeoTiffImage
                     case 32:
                         return new DataView(size, GeotiffSampleDataType.Float32);
                     case 64:
-                        return new DataView(size,GeotiffSampleDataType.Double);
+                        return new DataView(size,GeotiffSampleDataType.Float64);
                 }
 
-                break;
-            default:
                 break;
         }
 
         throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
-
-    /// <summary>
-    /// Leave this an non-generic for now, allow app to throw invalid casts.
-    /// </summary>
-    /// <param name="sampleIndex"></param>
-    /// <param name="size">ulong type here is confirmed by geotiff spec</param>
-    /// <returns></returns>
-    private Array GetArrayForSample(int sampleIndex, ulong size)
-    {
-        int format = GetSampleFormat(sampleIndex);
-        uint bitsPerSample = GetBitsForSample(sampleIndex);
-        return ArrayForType(format, bitsPerSample, size);
-    }
-
+    
     private Array GetArrayForSample(int sampleIndex, ArrayBuffer buffer)
     {
         int format = GetSampleFormat(sampleIndex);
@@ -613,7 +545,6 @@ public class GeoTiffImage
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="GeoTiffException"></exception>
-    /// <exception cref="NotImplementedException"></exception>
     /// <exception cref="InvalidTiffException"></exception>
     public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
@@ -803,8 +734,11 @@ public class GeoTiffImage
                                     case 3:
                                         switch (bitsPerSample)
                                         {
-                                            case 16: // TODO: Use dotnet Half type here?
-                                                throw new NotImplementedException();
+                                            case 16: 
+                                                var read0 = dv.GetFloat16((int)pixelOffset +
+                                                                          srcSampleOffsets[si], littleEndian);
+                                                myArray.SetFloat16(read0, (int)windowCoordinate);
+                                                break;
                                             case 32:
                                                 var read1 = dv.GetFloat32((int)pixelOffset +
                                                                           srcSampleOffsets[si], littleEndian);
@@ -894,83 +828,19 @@ public class GeoTiffImage
                 switch (bitsPerSample)
                 {
                     case 16:
-                        throw new NotImplementedException();
+                        return GeotiffSampleDataType.Float16;
                     case 32:
                         return GeotiffSampleDataType.Float32;
                     case 64:
-                        return GeotiffSampleDataType.Double;
-                    default:
-                        break;
+                        return GeotiffSampleDataType.Float64;
                 }
 
-                break;
-            default:
                 break;
         }
 
         throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
     
-    
-    private Func<DataView, long, bool, object> GetReaderForSample(int sampleIndex)
-    {
-        int format = FileDirectory.SampleFormat is not null
-            ? FileDirectory.SampleFormat[sampleIndex]
-            : 1;
-        int bitsPerSample = FileDirectory.BitsPerSample[sampleIndex];
-        switch (format)
-        {
-            case 1: // unsigned integer data
-                if (bitsPerSample <= 8)
-                {
-                    return (dv, offset, endianNess) => dv.GetUint8((int)offset);
-                }
-                else if (bitsPerSample <= 16)
-                {
-                    return (dv, offset, endianNess) => dv.GetUint16((int)offset, endianNess);
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return (dv, offset, endianNess) => dv.GetUint32((int)offset, endianNess);
-                }
-
-                break;
-            case 2: // twos complement signed integer data
-                if (bitsPerSample <= 8)
-                {
-                    return (dv, offset, endianNess) => dv.GetInt8((int)offset);
-                }
-                else if (bitsPerSample <= 16)
-                {
-                    return (dv, offset, endianNess) => dv.GetInt16((int)offset, endianNess);
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return (dv, offset, endianNess) => dv.GetInt32((int)offset, endianNess);
-                }
-
-                break;
-            case 3:
-                switch (bitsPerSample)
-                {
-                    case 16: // TODO: Use dotnet Half type here?
-                    case 32:
-                        return (dv, offset, endianNess) => dv.GetFloat32((int)offset, endianNess);
-                    case 64:
-                        return (dv, offset, endianNess) => dv.GetFloat64((int)offset, endianNess);
-                    default:
-                        break;
-                }
-
-                break;
-            default:
-                break;
-        }
-
-        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
-    }
-
-
     /// <summary>
     /// Returns the decoded strip or tile.
     /// </summary>
@@ -1159,7 +1029,8 @@ public class GeoTiffImage
             ? 1
             : samplesPerPixel;
 
-        DataView outArray = ArrayForType(format, (ulong)bitsPerSample, outSize);
+        
+        DataView outArray = DataViewForType(format, (ulong)bitsPerSample, outSize);
         // var pixel = 0;
         int bitMask = JsParse.ParseInt(new string('1', bitsPerSample), 2);
 

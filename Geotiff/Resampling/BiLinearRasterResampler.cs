@@ -62,7 +62,7 @@ public class BiLinearRasterResampler : RasterResamplerBaseClass
             double[] arr;
             switch (currentSample.SampleType)
             {
-                case GeotiffSampleDataType.Double:
+                case GeotiffSampleDataType.Float64:
                     arr = currentSample.GetDoubleArray(); // prevent unnecessary conversion.
                     break;
                 default:

@@ -251,7 +251,7 @@ public class GeoTiff
                 }
                 else
                 {
-                    throw new NotImplementedException("Unsupported tag type");
+                    throw new GeoTiffTagTypeNotRecognisedException("Geo key tag type not recognised");
                 }
             }
 
