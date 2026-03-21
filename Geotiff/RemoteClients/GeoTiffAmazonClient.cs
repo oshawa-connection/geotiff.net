@@ -1,3 +1,4 @@
+using Geotiff.Extensions;
 using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff.RemoteClients;
@@ -21,7 +22,7 @@ public class GeoTiffAmazonClient : IGeoTiffRemoteClient
         this.amazonS3Client = amazonS3Client;
     }
 
-    private async Task<ArrayBuffer> DownloadRangeFromS3Async(long start, long end, CancellationToken? signal = null)
+    private async Task<byte[]> DownloadRangeFromS3Async(long start, long end, CancellationToken? signal = null)
     {
         var request = new GetObjectRequest
         {
@@ -30,31 +31,31 @@ public class GeoTiffAmazonClient : IGeoTiffRemoteClient
 
         using GetObjectResponse? response = await amazonS3Client.GetObjectAsync(request);
         await using Stream? stream = response.ResponseStream;
-        return await ArrayBuffer.FromStreamAsync(stream, signal);
+        return await stream.ToByteArray(signal);
     }
     
-    public async Task<IEnumerable<ArrayBuffer>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
+    public async Task<IEnumerable<byte[]>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
     {
-        IEnumerable<Task<ArrayBuffer>>? tasks = slices.Select(slice =>
+        IEnumerable<Task<byte[]>>? tasks = slices.Select(slice =>
             DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset, signal));
         return await Task.WhenAll(tasks);
     }
 
-    public async Task<ArrayBuffer> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
+    public async Task<byte[]> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
     {
         return await DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset, signal);
     }
 
-    public IEnumerable<ArrayBuffer> FetchSlices(IEnumerable<Slice> slices)
+    public IEnumerable<byte[]> FetchSlices(IEnumerable<Slice> slices)
     {
-        IEnumerable<Task<ArrayBuffer>>? tasks = slices.Select(slice =>
+        IEnumerable<Task<byte[]>>? tasks = slices.Select(slice =>
             DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset));
         var task = Task.WhenAll(tasks);
         task.Wait();
         return task.Result;
     }
 
-    public ArrayBuffer FetchSlice(Slice slice)
+    public byte[] FetchSlice(Slice slice)
     {
         var task = Task.Run(() => FetchSliceAsync(slice)); 
         task.Wait();

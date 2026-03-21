@@ -43,7 +43,7 @@ public class DecoderRegistry
         return found;
     }
 
-    public async Task<ArrayBuffer> DecodeAsync(ImageFileDirectory fileDirectory, GeoTiffImage image, ArrayBuffer buffer, int predictor)
+    public async Task<byte[]> DecodeAsync(ImageFileDirectory fileDirectory, GeoTiffImage image, byte[] buffer, int predictor)
     {
         GeoTiffDecoder? decoder = GetDecoder(fileDirectory);
         return await decoder.Decode(buffer, image, predictor);

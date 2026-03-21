@@ -19,7 +19,7 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
         this.allowFullFile = allowFullFile;
     }
 
-    public async Task<IEnumerable<ArrayBuffer>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
+    public async Task<IEnumerable<byte[]>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
     {
         // Attempt to request all slices as one request
         using HttpRequestMessage request = new(
@@ -52,13 +52,14 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
                 await response.Content.CopyToAsync(ms);
                 ms.Position = 0;
 
-                IEnumerable<ArrayBuffer>? byteRanges = ParseByteRanges(ms.ToArray(), "params.boundary");
+                IEnumerable<byte[]>? byteRanges = ParseByteRanges(ms.ToArray(), "params.boundary");
                 // this._fileSize = byteRanges.First().Length != 0 ? byteRanges.First().Length : null;
                 return byteRanges;
             }
 
-            ArrayBuffer? data = await ArrayBuffer.FromStreamAsync(await response.Content.ReadAsStreamAsync(), signal);
-
+            var stream = await response.Content.ReadAsStreamAsync();
+            var data = await stream.ToByteArray(signal);
+            
             ContentRangeHeaderParseResult? contentRangeResult = response.Headers.ParseContentRange();
             if (contentRangeResult is not null)
             {
@@ -77,7 +78,7 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
                 // return first.concat(others);
             }
 
-            return new List<ArrayBuffer>() { data };
+            return new List<byte[]>() { data };
         }
         else
         {
@@ -91,13 +92,13 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
             var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             ms.Position = 0;
-
-            var data = new ArrayBuffer(ms.ToArray().BigSkip(slices.First().Offset).Take(slices.First().Length).ToArray());
+            var data = ms.ToArray().BigSkip(slices.First().Offset).Take(slices.First().Length).ToArray();
+            
             return new[] { data };
         }
     }
 
-    public async Task<ArrayBuffer> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
+    public async Task<byte[]> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
     {
         long offset = slice.Offset;
         int length = slice.Length;
@@ -122,7 +123,8 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
         if (response.StatusCode == HttpStatusCode.PartialContent)
         {
             // TODO: Handle parseContentRange here
-            ArrayBuffer? data = await ArrayBuffer.FromStreamAsync(await response.Content.ReadAsStreamAsync(), signal);
+            var stream = await response.Content.ReadAsStreamAsync();
+            var data = await stream.ToByteArray(signal);
             return data;
             //   const data = await response.getData();
             //
@@ -154,7 +156,7 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
             ms.Position = 0;
 
             // this._fileSize = ms.Length;
-            return new ArrayBuffer(ms.ToArray());
+            return ms.ToArray();
 
             // this._fileSize = data.byteLength;
             // return {
@@ -165,12 +167,12 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
         }
     }
 
-    public IEnumerable<ArrayBuffer> FetchSlices(IEnumerable<Slice> slices)
+    public IEnumerable<byte[]> FetchSlices(IEnumerable<Slice> slices)
     {
         throw new NotImplementedException();
     }
 
-    public ArrayBuffer FetchSlice(Slice slice)
+    public byte[] FetchSlice(Slice slice)
     {
         throw new NotImplementedException();
     }
@@ -194,9 +196,9 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
     }
 
 
-    private static IEnumerable<ArrayBuffer> ParseByteRanges(byte[] responseBytes, string boundary)
+    private static IEnumerable<byte[]> ParseByteRanges(byte[] responseBytes, string boundary)
     {
-        var parts = new List<ArrayBuffer>();
+        var parts = new List<byte[]>();
         string? boundaryString = $"--{boundary}";
         string? endBoundaryString = $"{boundaryString}--";
         string? responseText = System.Text.Encoding.ASCII.GetString(responseBytes);
@@ -236,7 +238,7 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
             byte[]? bodyBytes = System.Text.Encoding.ASCII.GetBytes(bodyText);
             long length = end - start + 1;
 
-            parts.Add(new ArrayBuffer(bodyBytes));
+            parts.Add(bodyBytes);
         }
 
         return parts;

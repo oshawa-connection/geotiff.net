@@ -14,7 +14,7 @@ public class FileSource : BaseSource
         this.stream = stream;
     }
 
-    public override async Task<ArrayBuffer> FetchSliceAsync(Slice slice, CancellationToken? cancellationToken)
+    public override async Task<byte[]> FetchSliceAsync(Slice slice, CancellationToken? cancellationToken)
     {
         byte[]? x = new byte[slice.Length];
         
@@ -30,17 +30,17 @@ public class FileSource : BaseSource
             nReadBytes = await stream.ReadAsync(x, 0, slice.Length, (CancellationToken)cancellationToken);
         }
         
-        return new ArrayBuffer(x);
+        return x;
     }
 
-    public override ArrayBuffer FetchSlice(Slice slice)
+    public override byte[] FetchSlice(Slice slice)
     {
         byte[]? x = new byte[slice.Length];
 
         stream.Seek(slice.Offset, SeekOrigin.Begin);
 
-        int nReadBytes = stream.Read(x, 0, slice.Length);
+        int nReadBytes = stream.Read(x, 0, slice.Length); // ok if nReadBytes is less than requested
         
-        return new ArrayBuffer(x);
+        return x;
     }
 }

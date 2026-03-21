@@ -20,9 +20,9 @@ public class DeflateGeoTiffDecoder : GeoTiffDecoder
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    protected override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer, GeoTiffImage image)
+    protected override async Task<byte[]> DecodeBlockAsync(byte[] buffer, GeoTiffImage image)
     {
-        using var ms = new MemoryStream(buffer.GetAllBytes());
+        using var ms = new MemoryStream(buffer);
         
         using var outputFileStream = new MemoryStream();
         await using (var decompressor = new ZlibStream(ms, CompressionMode.Decompress))
@@ -31,7 +31,6 @@ public class DeflateGeoTiffDecoder : GeoTiffDecoder
         }
 
         var outArray = outputFileStream.ToArray();
-        
-        return new ArrayBuffer(outArray);
+        return outArray;
     }
 }
