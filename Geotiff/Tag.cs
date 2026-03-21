@@ -152,13 +152,15 @@ public class Tag
             return Value.GetInt16Array().Select(s => (double)s).ToArray();
         if (Value.IsUint16)
             return Value.GetUInt16Array().Select(us => (double)us).ToArray();
+        if (Value.IsByte)
+            return Value.GetByteArray().Select(sb => (double)sb).ToArray();
         if (Value.IsSByte)
             return Value.GetSByteArray().Select(sb => (double)sb).ToArray();
         if (Value.IsRational)
             return Value.GetRationalArray().Select(r => (double)r).ToArray();
         if (Value.IsSRational)
             return Value.GetSRationalArray().Select(sr => (double)sr).ToArray();
-
+        
         throw new GeoTiffException("Tag does not contain a numeric array value.");
     }
 
@@ -172,7 +174,7 @@ public class Tag
                 if (this.Value.IsInt16) return TagDataType.SHORT_ARRAY;
                 if (this.Value.IsSByte) return TagDataType.SBYTE_ARRAY;
                 if (this.Value.IsInt64) return TagDataType.LONG8_ARRAY;
-                if (this.Value.IsString) return TagDataType.ASCII; // Strings are not arrays, but for completeness
+                if (this.Value.IsByte) return TagDataType.BYTE_ARRAY;
                 if (this.Value.IsFloat64) return TagDataType.DOUBLE_ARRAY;
                 if (this.Value.IsFloat32) return TagDataType.FLOAT_ARRAY;
                 if (this.Value.IsUint16) return TagDataType.SHORT_ARRAY;
@@ -187,7 +189,7 @@ public class Tag
                 if (this.Value.IsInt16) return TagDataType.SSHORT;
                 if (this.Value.IsSByte) return TagDataType.SBYTE;
                 if (this.Value.IsInt64) return TagDataType.SLONG8;
-                if (this.Value.IsString) return TagDataType.ASCII;
+                if (this.Value.IsByte) return TagDataType.BYTE;
                 if (this.Value.IsFloat64) return TagDataType.DOUBLE;
                 if (this.Value.IsFloat32) return TagDataType.FLOAT;
                 if (this.Value.IsUint16) return TagDataType.SHORT;

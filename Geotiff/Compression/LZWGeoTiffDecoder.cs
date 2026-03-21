@@ -195,7 +195,7 @@ public class LZWGeoTiffDecoder: GeoTiffDecoder
 
     public override IEnumerable<int> codes => new[] { 5 };
 
-    protected override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer)
+    protected override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer, GeoTiffImage image)
     {
         var bytes = buffer.GetAllBytes();
         var decompressed = Decompress(bytes);

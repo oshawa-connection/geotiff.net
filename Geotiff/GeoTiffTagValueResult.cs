@@ -4,14 +4,14 @@ using Rationals;
 namespace Geotiff;
 
 /// <summary>
-/// This class should be merged with the Tag class - this is a less user friendly version of that class that doesn't
+/// TODO: This class should be merged with the Tag class - this is a less user friendly version of that class that doesn't
 /// store tag field name
 /// </summary>
 internal class GeoTiffTagValueResult
 {
-    private string? _decodedAsciiResult;
-    private short[]? _resultInt16;
+    private byte[] _resultByte;
     private sbyte[]? _resultSByte;
+    private short[]? _resultInt16;
     private Int64[]? _resultInt64;
     private double[]? _resultFloat64;
     private float[]? _resultFloat32;
@@ -22,10 +22,12 @@ internal class GeoTiffTagValueResult
     private Rational[]? _resultRational;
     private int[]? _resultSRational;
 
-    public bool IsInt16 => _resultInt16 is not null;
+    public bool IsByte => _resultByte is not null;
     public bool IsSByte => _resultSByte is not null;
+    public bool IsInt16 => _resultInt16 is not null;
+    
     public bool IsInt64 => _resultInt64 is not null;
-    public bool IsString => _decodedAsciiResult is not null;
+    
     public bool IsFloat64 => _resultFloat64 is not null;
     public bool IsFloat32 => _resultFloat32 is not null;
     public bool IsUint16 => _resultUInt16 is not null;
@@ -58,6 +60,9 @@ internal class GeoTiffTagValueResult
         return _resultInt16.First();
     }
 
+    public byte[] GetByteArray() =>
+        _resultByte ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Byte", this.DataType.ToString());
+    
     public sbyte[] GetSByteArray() =>
         _resultSByte ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("SByte", this.DataType.ToString());
 
@@ -148,8 +153,17 @@ internal class GeoTiffTagValueResult
         return _resultSRational.First();
     }
 
-    public string GetString() =>
-        _decodedAsciiResult ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.ASCII.ToString(), this.DataType.ToString());
+    public string GetString()
+    {
+        if (this.IsByte)
+        {
+            return System.Text.Encoding.ASCII.GetString(_resultByte);
+
+        }
+        
+        throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.BYTE.ToString(), this.DataType.ToString());
+    }
+        
     
     public static GeoTiffTagValueResult FromSBytes(sbyte[] data)
     {
@@ -206,12 +220,12 @@ internal class GeoTiffTagValueResult
         return new GeoTiffTagValueResult { _resultSRational = data };
     }
 
-    public static GeoTiffTagValueResult FromString(string data)
+    public static GeoTiffTagValueResult FromByte(byte[] data)
     {
-        return new GeoTiffTagValueResult() { _decodedAsciiResult = data };
+        return new GeoTiffTagValueResult() { _resultByte = data };
     }
-
-    [Obsolete("Needs removing also")]
+    
+    [Obsolete]
     private Array GetList()
     {
         if (IsFloat64 is true)
@@ -239,9 +253,9 @@ internal class GeoTiffTagValueResult
             return _resultUInt16;
         }
 
-        if (IsString)
+        if (IsByte)
         {
-            return new string[] { _decodedAsciiResult };
+            return _resultByte;
         }
 
         if (IsRational)
@@ -288,6 +302,10 @@ internal class GeoTiffTagValueResult
         return objs;
     }
     
+    /// <summary>
+    /// Note that strings are byte arrays.
+    /// </summary>
+    /// <exception cref="GeoTiffException"></exception>
     public TagDataType DataType
     {
         get
@@ -295,7 +313,7 @@ internal class GeoTiffTagValueResult
             if (this.IsInt16) return TagDataType.SSHORT;
             if (this.IsSByte) return TagDataType.SBYTE;
             if (this.IsInt64) return TagDataType.SLONG8;
-            if (this.IsString) return TagDataType.ASCII;
+            if (this.IsByte) return TagDataType.BYTE; 
             if (this.IsFloat64) return TagDataType.DOUBLE;
             if (this.IsFloat32) return TagDataType.FLOAT;
             if (this.IsUint16) return TagDataType.SHORT;

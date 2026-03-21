@@ -522,7 +522,7 @@ public class ImageFileDirectory
 
             return bitsPerSampleCached;
         }
-    } 
+    }
     private int[]? sampleFormatCached = null;
     public int[]? SampleFormat
     {
@@ -534,6 +534,21 @@ public class ImageFileDirectory
             }
 
             return sampleFormatCached;
+        }
+    }
+
+    private byte[]? jpegTablesCached = null;
+
+    public byte[]? JpegTables
+    {
+        get
+        {
+            if (jpegTablesCached is null)
+            {
+                jpegTablesCached = GetFileDirectoryArrayValue<byte>("JPEGTables");
+            }
+
+            return jpegTablesCached;
         }
     }
 

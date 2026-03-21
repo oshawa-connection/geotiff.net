@@ -6,14 +6,18 @@ namespace Geotiff.Compression;
 public abstract class GeoTiffDecoder
 {
     public abstract IEnumerable<int> codes { get; }
-    protected abstract Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer);
+    protected abstract Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer, GeoTiffImage image);
 
-    public async Task<ArrayBuffer> Decode(ArrayBuffer buffer,int tileWidth, int tileHeight, int predictor, int[] bitsPerSample, int planarConfiguration)
+    public async Task<ArrayBuffer> Decode(ArrayBuffer buffer, GeoTiffImage image, int predictor)
     {
-        var decoded = await this.DecodeBlockAsync(buffer);
+        var decoded = await this.DecodeBlockAsync(buffer, image);
         
         if (predictor != 1) {
-            return ApplyPredictor(decoded, tileWidth, tileHeight, predictor, bitsPerSample, planarConfiguration);
+            var tileWidth = image.GetTileWidth();
+            var tileHeight = image.GetTileHeight();
+            var bitsPerSample = image.GetBitsPerSample();
+            var planarConfiguration = image.GetPlanarConfiguration();
+            return ApplyPredictor(decoded, (int)tileWidth, (int)tileHeight, predictor, bitsPerSample, planarConfiguration);
         }
         return decoded;
     }

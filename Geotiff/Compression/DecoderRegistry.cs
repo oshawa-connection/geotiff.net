@@ -13,7 +13,8 @@ public class DecoderRegistry
         new DeflateGeoTiffDecoder(), 
         new RawGeoTiffDecoder(), 
         new LZWGeoTiffDecoder(), 
-        new PackBitsGeoTiffDecoder()
+        new PackBitsGeoTiffDecoder(),
+        new JpegGeoTiffDecoder()
     };
 
     /// <summary>
@@ -42,9 +43,9 @@ public class DecoderRegistry
         return found;
     }
 
-    public async Task<ArrayBuffer> DecodeAsync(ImageFileDirectory fileDirectory, ArrayBuffer buffer, int tileWidth, int tileHeight, int predictor, int[] bitsPerSample, int planarConfiguration)
+    public async Task<ArrayBuffer> DecodeAsync(ImageFileDirectory fileDirectory, GeoTiffImage image, ArrayBuffer buffer, int predictor)
     {
         GeoTiffDecoder? decoder = GetDecoder(fileDirectory);
-        return await decoder.Decode(buffer, tileWidth, tileHeight, predictor, bitsPerSample, planarConfiguration);
+        return await decoder.Decode(buffer, image, predictor);
     }
 }

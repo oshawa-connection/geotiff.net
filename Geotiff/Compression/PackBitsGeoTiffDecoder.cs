@@ -6,7 +6,7 @@ public class PackBitsGeoTiffDecoder : GeoTiffDecoder
 {
     public override IEnumerable<int> codes => new[] { 32773 };
 
-    protected override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer)
+    protected override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer, GeoTiffImage image)
     {
         var dataView = new DataView(buffer);
         var outbytes = new List<byte>();

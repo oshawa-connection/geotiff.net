@@ -173,7 +173,15 @@ New contributors are very welcome. If you’d like to get involved, please open 
 
 Before release, the bare minimum:
 
-
+- Find and resolve all [Obsolete] attributes
+- Normalisation needs testing
+- Better tag reading API
+- Merge ArrayBuffer + DataView into a new type called "GeoTiffStream"
+- Ideally, remove all JavaScriptCompatibility namespace extensions and classes
+- Test to cover packbits decoder
+- Merge GeoTiffTagValueResult with Tag class
+- Don't cast tag numeric values to double during parsing
+- Change signature of decoding
 
 Post initial release:
 
