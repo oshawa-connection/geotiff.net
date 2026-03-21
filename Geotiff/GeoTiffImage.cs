@@ -42,6 +42,7 @@ public class GeoTiffImage
         }
 
         this.source = source;
+        this.FileDirectory.GetFileDirectoryListValue<byte>("JPEGTables"); // Populate this to cache it before decoding starts
     }
 
     public bool HasValidTiePoints()
@@ -262,6 +263,10 @@ public class GeoTiffImage
         return bitsPerSample;
     }
 
+    public int GetPlanarConfiguration()
+    {
+        return this.planarConfiguration;
+    }
 
     /// <summary>
     /// Returns the number of bytes per pixel.
@@ -631,8 +636,6 @@ public class GeoTiffImage
         }
         
         var promises = new List<Task>();
-        // Populate this to cache it before decoding starts
-        this.FileDirectory.GetFileDirectoryListValue<byte>("JPEGTables");
         
         for (int yTile = minYTile; yTile < maxYTile; ++yTile)
         {
@@ -930,14 +933,13 @@ public class GeoTiffImage
         ArrayBuffer finalData;
         if (tiles == null || tiles.ContainsKey(index) is false)
         {
+            var predictor = this.GetPredictor();
             // resolve each request by potentially applying array normalization
             request = async () =>
             {
-                var z = x + y + sampleToUse;
                 int sampleFormat = GetSampleFormat();
                 uint bitsForCurrentSample = GetBitsForSample(); // TODO: pass sample index here; works right now because most tiffs only contain one sample type. 
-                var bitsPerSample = GetBitsPerSample();
-                ArrayBuffer data = await poolOrDecoder.DecodeAsync(FileDirectory, this, slice, (int)GetTileWidth(), (int)GetTileHeight(), GetPredictor(), bitsPerSample, planarConfiguration);
+                ArrayBuffer data = await poolOrDecoder.DecodeAsync(FileDirectory, this, slice, predictor);
                 
                 if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
                 {

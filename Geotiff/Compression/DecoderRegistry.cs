@@ -43,9 +43,9 @@ public class DecoderRegistry
         return found;
     }
 
-    public async Task<ArrayBuffer> DecodeAsync(ImageFileDirectory fileDirectory, GeoTiffImage image, ArrayBuffer buffer, int tileWidth, int tileHeight, int predictor, int[] bitsPerSample, int planarConfiguration)
+    public async Task<ArrayBuffer> DecodeAsync(ImageFileDirectory fileDirectory, GeoTiffImage image, ArrayBuffer buffer, int predictor)
     {
         GeoTiffDecoder? decoder = GetDecoder(fileDirectory);
-        return await decoder.Decode(buffer, image, tileWidth, tileHeight, predictor, bitsPerSample, planarConfiguration);
+        return await decoder.Decode(buffer, image, predictor);
     }
 }
