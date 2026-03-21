@@ -9,6 +9,13 @@ namespace Geotiff.Extensions;
 /// </summary>
 public static class LinqExtensions
 {
+    /// <summary>
+    /// Skipping more than int32 bytes when tile/ strip offsets are larger than Int32.MaxValue
+    /// </summary>
+    /// <param name="items"></param>
+    /// <param name="howMany"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
     public static IEnumerable<T> BigSkip<T>(this IEnumerable<T> items, long howMany)
         => BigSkip(items, Int32.MaxValue, howMany);
 

@@ -6,10 +6,10 @@ public class PackBitsGeoTiffDecoder : GeoTiffDecoder
 {
     public override IEnumerable<int> codes => new[] { 32773 };
 
-    protected override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer, GeoTiffImage image)
+    protected override async Task<byte[]> DecodeBlockAsync(byte[] buffer, GeoTiffImage image)
     {
         var dataView = new DataView(buffer);
-        var outbytes = new List<byte>();
+        var outbytes = new List<byte>(); // TODO: possible to pre-allocate size here?
 
         for (int i = 0; i < buffer.Length; ++i)
         {
@@ -36,6 +36,6 @@ public class PackBitsGeoTiffDecoder : GeoTiffDecoder
             }
         }
 
-        return new ArrayBuffer(outbytes.ToArray());
+        return outbytes.ToArray();
     }
 }

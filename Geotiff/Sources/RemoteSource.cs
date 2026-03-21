@@ -34,7 +34,7 @@ public class RemoteSource : BaseSource
      *
      * @param {Slice[]} slices
      */
-    public override async Task<IEnumerable<ArrayBuffer>> FetchAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
+    public override async Task<IEnumerable<byte[]>> FetchAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
     {
         // if we allow multi-ranges, split the incoming request into that many sub-requests
         // and join them afterwards
@@ -56,21 +56,21 @@ public class RemoteSource : BaseSource
         }
 
         // otherwise make a single request for each slice
-        IEnumerable<Task<ArrayBuffer>>? myTasks = slices.Select(slice => FetchSliceAsync(slice, signal));
+        IEnumerable<Task<byte[]>>? myTasks = slices.Select(slice => FetchSliceAsync(slice, signal));
         return await Task.WhenAll(myTasks);
     }
 
-    protected async Task<IEnumerable<ArrayBuffer>> FetchSlices(IEnumerable<Slice> slices, CancellationToken? signal = null)
+    protected async Task<IEnumerable<byte[]>> FetchSlices(IEnumerable<Slice> slices, CancellationToken? signal = null)
     {
         return await client.FetchSlicesAsync(slices, signal);
     }
 
-    public override async Task<ArrayBuffer> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
+    public override async Task<byte[]> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
     {
         return await client.FetchSliceAsync(slice, signal);
     }
 
-    public override ArrayBuffer FetchSlice(Slice slice)
+    public override byte[] FetchSlice(Slice slice)
     {
         throw new NotImplementedException();
     }

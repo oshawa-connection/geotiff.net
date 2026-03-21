@@ -6,9 +6,9 @@ namespace Geotiff.Compression;
 public abstract class GeoTiffDecoder
 {
     public abstract IEnumerable<int> codes { get; }
-    protected abstract Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer, GeoTiffImage image);
+    protected abstract Task<byte[]> DecodeBlockAsync(byte[] buffer, GeoTiffImage image);
 
-    public async Task<ArrayBuffer> Decode(ArrayBuffer buffer, GeoTiffImage image, int predictor)
+    public async Task<byte[]> Decode(byte[] buffer, GeoTiffImage image, int predictor)
     {
         var decoded = await this.DecodeBlockAsync(buffer, image);
         
@@ -132,7 +132,14 @@ public abstract class GeoTiffDecoder
         }
     }
     
-   private ArrayBuffer ApplyPredictor(ArrayBuffer block,int tileWidth, int tileHeight, int predictor, int[] bitsPerSample, int planarConfiguration)
+    private Span<byte> SpanSlice(byte[] buffer, int start, int length)
+    {
+        Span<byte> bytes = buffer;
+        return bytes.Slice(start: start, length: length);
+    }
+    
+    
+   private byte[] ApplyPredictor(byte[] block,int tileWidth, int tileHeight, int predictor, int[] bitsPerSample, int planarConfiguration)
    {
        var width = tileWidth;
        
@@ -159,7 +166,7 @@ public abstract class GeoTiffDecoder
         }
         
         if (predictor == 2) { // horizontal prediction
-            var rowbytes = block.SpanSlice(i * stride * width * bytesPerSample, stride * width * bytesPerSample);
+            var rowbytes = SpanSlice(block, i * stride * width * bytesPerSample, stride * width * bytesPerSample);
           switch (bitsPerSample[0]) {
             case 8:
                 decodeRowAccByte(rowbytes,stride);
@@ -174,7 +181,7 @@ public abstract class GeoTiffDecoder
               throw new GeoTiffDecodingException($"Predictor 2 not allowed with ${bitsPerSample[0]} bits per sample.");
           }
         } else if (predictor == 3) { // horizontal floating point
-            var row = block.SpanSlice(i * stride * width * bytesPerSample, stride * width * bytesPerSample);
+            var row = SpanSlice(block, i * stride * width * bytesPerSample, stride * width * bytesPerSample);
             // Todo check sample datatype; if its not a float then throw
             decodeRowFloatingPoint(row, stride, bytesPerSample);
         }

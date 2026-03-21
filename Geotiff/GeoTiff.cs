@@ -80,7 +80,7 @@ public class GeoTiff
     public static async Task<GeoTiff> FromRemoteClientAsync(IGeoTiffRemoteClient client)
     {
         var source = new RemoteSource(client, int.MaxValue, false);
-        IEnumerable<ArrayBuffer>? slices = await source.FetchAsync(new Slice[] { new(0, 1024) });
+        IEnumerable<byte[]>? slices = await source.FetchAsync(new Slice[] { new(0, 1024) });
 
         var dv = new DataView(slices.First());
         bool isLittleEndian = GetBomMarker(dv);
@@ -186,10 +186,10 @@ public class GeoTiff
         int sizeToUse = size is null ? fallbackSize : (int)size;
         var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
-        IEnumerable<ArrayBuffer>? results = await Source.FetchAsync(slices);
+        IEnumerable<byte[]>? results = await Source.FetchAsync(slices);
 
         return new DataSlice(
-            results.Single().GetAllBytes(), // TODO: Double check this.  
+            results.Single(), // TODO: Double check this.  
             offset,
             IsLittleEndian,
             _bigTiff

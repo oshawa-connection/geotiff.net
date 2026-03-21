@@ -15,10 +15,9 @@ public class JpegGeoTiffDecoder: GeoTiffDecoder
     /// <param name="image"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    protected override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer, GeoTiffImage image)
+    protected override async Task<byte[]> DecodeBlockAsync(byte[] imageData, GeoTiffImage image)
     {
         using var inputStreamManipulated = new MemoryStream();
-        byte[] imageData = buffer.GetAllBytes();
         int imageStart = 0;
         
         var jpegTables = image.FileDirectory.JpegTables;
@@ -55,7 +54,7 @@ public class JpegGeoTiffDecoder: GeoTiffDecoder
             var row = jpgImage.GetRow(i);
             await outStream.WriteAsync(row.ToBytes());
         }
-        
-        return new ArrayBuffer(outStream.ToArray());
+
+        return outStream.ToArray();
     }
 }

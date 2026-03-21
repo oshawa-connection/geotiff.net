@@ -7,10 +7,10 @@ namespace Geotiff.RemoteClients;
 /// </summary>
 public interface IGeoTiffRemoteClient
 {
-    Task<IEnumerable<ArrayBuffer>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null);
-    Task<ArrayBuffer> FetchSliceAsync(Slice slice, CancellationToken? signal = null);
+    Task<IEnumerable<byte[]>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null);
+    Task<byte[]> FetchSliceAsync(Slice slice, CancellationToken? signal = null);
     
     
-    IEnumerable<ArrayBuffer> FetchSlices(IEnumerable<Slice> slices);
-    ArrayBuffer FetchSlice(Slice slice);
+    IEnumerable<byte[]> FetchSlices(IEnumerable<Slice> slices);
+    byte[] FetchSlice(Slice slice);
 }

@@ -176,12 +176,9 @@ Before release, the bare minimum:
 - Find and resolve all [Obsolete] attributes
 - Normalisation needs testing
 - Better tag reading API
-- Merge ArrayBuffer + DataView into a new type called "GeoTiffStream"
-- Ideally, remove all JavaScriptCompatibility namespace extensions and classes
 - Test to cover packbits decoder
 - Merge GeoTiffTagValueResult with Tag class
 - Don't cast tag numeric values to double during parsing
-- Change signature of decoding
 
 Post initial release:
 
@@ -192,7 +189,6 @@ Post initial release:
 - Offer up a synchronous API too for legacy codebases and environments where that is preferred.
 - Benchmarking
 - GeotiffAzureClient
-- JPEG compression and decompression
 - More spatial operation support
 - Support multi-threading/ parallel?
 - Way to stream over all the tiles or strips if the file is tiled/ stripped. This one needs some thought; different planar configurations require different handling.

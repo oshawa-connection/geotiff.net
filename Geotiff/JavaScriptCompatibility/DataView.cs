@@ -20,23 +20,18 @@ internal class DataView
     /// TODO: Check if the ctor is necessary, and if so, if a datatype can be defined.
     /// </summary>
     /// <param name="buffer"></param>
-    public DataView(ArrayBuffer buffer)
+    public DataView(byte[] buffer)
     {
-        stream = buffer.GetAllBytes(); // TODO: Watch memory usage here. Might create a copy?
+        stream = buffer;
     }
     
 
-    public ArrayBuffer ToArrayBuffer()
+    public byte[] ToArrayBuffer()
     {
-        return new ArrayBuffer(stream);
+        return stream;
     }
     
     public int Length => stream.Length;
-
-    public DataView Copy()
-    {
-        return new DataView((byte[])this.stream.Clone(), this.type);
-    }
     
     private void SetByteRange(int offset, byte[] bytes)
     {

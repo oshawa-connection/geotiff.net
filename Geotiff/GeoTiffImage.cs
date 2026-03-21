@@ -10,7 +10,7 @@ public class GeoTiffImage
     public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
-    private readonly Dictionary<int, ArrayBuffer>? tiles;
+    private readonly Dictionary<int, byte[]>? tiles;
     private readonly bool isTiled;
     private readonly ushort planarConfiguration;
     private long[]? StripOffsets;
@@ -22,7 +22,7 @@ public class GeoTiffImage
     {
         this.FileDirectory = fileDirectory;
         this.littleEndian = littleEndian;
-        tiles = cache ? new Dictionary<int, ArrayBuffer>() : null;
+        tiles = cache ? new Dictionary<int, byte[]>() : null;
 
         isTiled = fileDirectory.TagDictionary.ContainsKey("StripOffsets") is false;
         ushort? planarConfiguration = fileDirectory.GetFileDirectoryValueUShortOrNull(FieldTypes.PlanarConfiguration);
@@ -412,7 +412,7 @@ public class GeoTiffImage
     /// <param name="buffer"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    private Array ArrayForType(int format, ulong bitsPerSample, ArrayBuffer buffer)
+    private Array ArrayForType(int format, ulong bitsPerSample, byte[] buffer)
     {
         switch (format)
         {
@@ -516,7 +516,7 @@ public class GeoTiffImage
         throw new InvalidTiffException("Unsupported data format/bitsPerSample");
     }
     
-    private Array GetArrayForSample(int sampleIndex, ArrayBuffer buffer)
+    private Array GetArrayForSample(int sampleIndex, byte[] buffer)
     {
         int format = GetSampleFormat(sampleIndex);
         uint bitsPerSample = GetBitsForSample(sampleIndex);
@@ -657,7 +657,7 @@ public class GeoTiffImage
 
                     Task<bool> promise = getPromise.Then<TileOrStripResult, bool>(sample,(tile, si) =>
                     {
-                        ArrayBuffer buffer = tile.data;
+                        byte[] buffer = tile.data;
                         
                         var dataView = new DataView(buffer);
                         long blockHeight = GetBlockHeight(tile.y);
@@ -907,7 +907,8 @@ public class GeoTiffImage
             int bytesPerPixel = planarConfiguration == 2
                 ? GetSampleByteSize(sampleToUse)
                 : GetBytesPerPixel();
-            var data = new ArrayBuffer(nPixels * bytesPerPixel);
+            
+            var data = new byte[nPixels * bytesPerPixel];
             Array view = GetArrayForSample(sampleToUse, data);
 
             int valueToFill = 0;
@@ -926,11 +927,11 @@ public class GeoTiffImage
             return new TileOrStripResult { x = x, y = y, data = data};
         }
 
-        ArrayBuffer slice =
+        byte[] slice =
             (await source.FetchAsync(new List<Slice>() { new(offset, byteCount) }, signal)).First();
 
-        Func<Task<ArrayBuffer>> request;
-        ArrayBuffer finalData;
+        Func<Task<byte[]>> request;
+        byte[] finalData;
         if (tiles == null || tiles.ContainsKey(index) is false)
         {
             var predictor = this.GetPredictor();
@@ -939,7 +940,7 @@ public class GeoTiffImage
             {
                 int sampleFormat = GetSampleFormat();
                 uint bitsForCurrentSample = GetBitsForSample(); // TODO: pass sample index here; works right now because most tiffs only contain one sample type. 
-                ArrayBuffer data = await poolOrDecoder.DecodeAsync(FileDirectory, this, slice, predictor);
+                byte[] data = await poolOrDecoder.DecodeAsync(FileDirectory, this, slice, predictor);
                 
                 if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
                 {
@@ -979,7 +980,7 @@ public class GeoTiffImage
         {
             return false;
         }
-        else if (format == 3 && (bitsPerSample == 16 || bitsPerSample == 32 || bitsPerSample == 64))
+        if (format == 3 && (bitsPerSample == 16 || bitsPerSample == 32 || bitsPerSample == 64))
         {
             return false;
         }
@@ -1021,7 +1022,7 @@ public class GeoTiffImage
     }
 
 
-    private ArrayBuffer NormalizeArray(ArrayBuffer inBuffer, int format, int planarConfiguration, int samplesPerPixel,
+    private byte[] NormalizeArray(byte[] inBuffer, int format, int planarConfiguration, int samplesPerPixel,
         int bitsPerSample, int tileWidth, int tileHeight)
     {
         var view = new DataView(inBuffer); //JSENH Check this
