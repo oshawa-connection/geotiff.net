@@ -181,6 +181,7 @@ Before release, the bare minimum:
 - Test to cover packbits decoder
 - Merge GeoTiffTagValueResult with Tag class
 - Don't cast tag numeric values to double during parsing
+- Change signature of decoding
 
 Post initial release:
 
