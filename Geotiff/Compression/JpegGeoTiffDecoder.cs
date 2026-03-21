@@ -46,13 +46,10 @@ public class JpegGeoTiffDecoder: GeoTiffDecoder
         inputStreamManipulated.Position = 0;
         
         using var jpgImage = new JpegImage(inputStreamManipulated);
-        
-        if (jpgImage.ComponentsPerSample != 3)
-        {
-            throw new NotImplementedException("JPG encoded Tiffs are only supported if they are in RGB colorspace");
-        }
 
         using var outStream = new MemoryStream();
+        
+        // Assume planarconfiguration == 1
         for (var i = 0; i < jpgImage.Height; i++)
         {
             var row = jpgImage.GetRow(i);

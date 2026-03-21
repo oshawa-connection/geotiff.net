@@ -175,7 +175,6 @@ Before release, the bare minimum:
 
 - Find and resolve all [Obsolete] attributes
 - Normalisation needs testing
-- JPG support
 - Better tag reading API
 - Merge ArrayBuffer + DataView into a new type called "GeoTiffStream"
 - Ideally, remove all JavaScriptCompatibility namespace extensions and classes

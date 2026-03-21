@@ -631,6 +631,8 @@ public class GeoTiffImage
         }
         
         var promises = new List<Task>();
+        // Populate this to cache it before decoding starts
+        this.FileDirectory.GetFileDirectoryListValue<byte>("JPEGTables");
         
         for (int yTile = minYTile; yTile < maxYTile; ++yTile)
         {

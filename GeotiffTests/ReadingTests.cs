@@ -837,7 +837,6 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
-        var jpgtable = image.FileDirectory.GetFileDirectoryListValue<byte>("JPEGTables");
 
         var readResult = await image.ReadRasterAsync();
         readResult.GetNumberOfSamples().ShouldBe(3);
@@ -849,6 +848,51 @@ public class ReadingTests : GeoTiffTestBaseClass
         gSample.GetByteArray().ShouldAllBe(d => d == 0);
         bSample.GetByteArray().ShouldAllBe(d => d == 0);
         
+        Console.WriteLine("HELLO");
+    }
+    
+    
+    [TestMethod]
+    public async Task TestGrayscaleJPG()
+    {
+        string jpgTiffPath = Path.Combine(GetDataFolderPath(), "test_10x10_grayscale_jpeg.tif");
+        await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+
+        var readResult = await image.ReadRasterAsync();
+        readResult.GetNumberOfSamples().ShouldBe(1);
+        var rSample = readResult.GetSampleAt(0);
+        
+        
+        rSample.GetByteArray().ShouldAllBe(d => d == 128);
+        
+        
+        Console.WriteLine("HELLO");
+    }
+    
+    
+    [TestMethod]
+    public async Task TestCMYKJPG()
+    {
+        string jpgTiffPath = Path.Combine(GetDataFolderPath(), "test_10x10_cmyk_jpeg.tif");
+        await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        
+        var readResult = await image.ReadRasterAsync();
+        readResult.GetNumberOfSamples().ShouldBe(4);
+        var cyanSample = readResult.GetSampleAt(0);
+        var magentaSample = readResult.GetSampleAt(1);
+        var yellowSample = readResult.GetSampleAt(2);
+        var blackSample = readResult.GetSampleAt(3);
+        
+        cyanSample.GetByteArray().ShouldAllBe(d => d == 255);
+        magentaSample.GetByteArray().ShouldAllBe(d => d == 0);
+        yellowSample.GetByteArray().ShouldAllBe(d => d == 0);
+        blackSample.GetByteArray().ShouldAllBe(d => d == 0);
         Console.WriteLine("HELLO");
     }
 }
