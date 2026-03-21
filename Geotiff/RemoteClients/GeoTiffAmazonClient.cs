@@ -5,17 +5,16 @@ namespace Geotiff.RemoteClients;
 // No filepath: user should decide where to place this code
 using Amazon.S3;
 using Amazon.S3.Model;
-using System;
 using System.IO;
 using System.Threading.Tasks;
 
-public class GeoTiffAWSClient : IGeoTiffRemoteClient
+public class GeoTiffAmazonClient : IGeoTiffRemoteClient
 {
     private string bucketName { get; set; }
     private string key { get; set; }
     private AmazonS3Client amazonS3Client { get; set; }
 
-    public GeoTiffAWSClient(string bucketName, string key, AmazonS3Client amazonS3Client)
+    public GeoTiffAmazonClient(string bucketName, string key, AmazonS3Client amazonS3Client)
     {
         this.bucketName = bucketName;
         this.key = key;

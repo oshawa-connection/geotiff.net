@@ -828,5 +828,27 @@ public class ReadingTests : GeoTiffTestBaseClass
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.UInt16);
         firstSample.GetUShortArray().Last().ShouldBe((ushort)56582);
     }
-    
+
+    [TestMethod]
+    public async Task TestRGBJPG()
+    {
+        string jpgTiffPath = Path.Combine(GetDataFolderPath(), "test_10x10_rgb_jpeg.tif");
+        await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var jpgtable = image.FileDirectory.GetFileDirectoryListValue<byte>("JPEGTables");
+
+        var readResult = await image.ReadRasterAsync();
+        readResult.GetNumberOfSamples().ShouldBe(3);
+        var rSample = readResult.GetSampleAt(0);
+        var gSample = readResult.GetSampleAt(1);
+        var bSample = readResult.GetSampleAt(2);
+        
+        rSample.GetByteArray().ShouldAllBe(d => d == 254);
+        gSample.GetByteArray().ShouldAllBe(d => d == 0);
+        bSample.GetByteArray().ShouldAllBe(d => d == 0);
+        
+        Console.WriteLine("HELLO");
+    }
 }

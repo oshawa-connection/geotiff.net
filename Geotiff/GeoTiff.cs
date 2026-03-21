@@ -236,7 +236,7 @@ public class GeoTiff
                     throw new GeoTiffException($"Could not get value of geoKey '{key}'");
                 }
                 
-                if (value.DataType == TagDataType.ASCII)
+                if (value.DataType == TagDataType.BYTE) // TODO: Once Tag class is fixed, change this to BYTE_ARRAY
                 {
                     valueToSet = value.GetString().JSSubString(offset, offset + count - 1);
                 }

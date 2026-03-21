@@ -179,12 +179,11 @@ internal class DataSlice
 
         switch (fieldTypeStr)
         {
-            case GeotiffFieldDataType.ASCII:
             case GeotiffFieldDataType.BYTE:
+            case GeotiffFieldDataType.ASCII:
             case GeotiffFieldDataType.UNDEFINED:
-                byte[]? asciiBytes = ReadAll(ReadByte, count, offset, fieldTypeLength);
-                string? decodedString = System.Text.Encoding.ASCII.GetString(asciiBytes);
-                finalResult = GeoTiffTagValueResult.FromString(decodedString);
+                byte[]? bytes = ReadAll(ReadByte, count, offset, fieldTypeLength);
+                finalResult = GeoTiffTagValueResult.FromByte(bytes);
                 break;
             case GeotiffFieldDataType.SBYTE:
                 finalResult = GeoTiffTagValueResult.FromSBytes(ReadAll(ReadSByte, count, offset, fieldTypeLength));

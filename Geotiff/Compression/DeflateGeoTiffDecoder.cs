@@ -20,7 +20,7 @@ public class DeflateGeoTiffDecoder : GeoTiffDecoder
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    protected override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer)
+    protected override async Task<ArrayBuffer> DecodeBlockAsync(ArrayBuffer buffer, GeoTiffImage image)
     {
         using var ms = new MemoryStream(buffer.GetAllBytes());
         

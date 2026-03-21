@@ -935,7 +935,7 @@ public class GeoTiffImage
                 int sampleFormat = GetSampleFormat();
                 uint bitsForCurrentSample = GetBitsForSample(); // TODO: pass sample index here; works right now because most tiffs only contain one sample type. 
                 var bitsPerSample = GetBitsPerSample();
-                ArrayBuffer data = await poolOrDecoder.DecodeAsync(FileDirectory, slice, (int)GetTileWidth(), (int)GetTileHeight(), GetPredictor(), bitsPerSample, planarConfiguration);
+                ArrayBuffer data = await poolOrDecoder.DecodeAsync(FileDirectory, this, slice, (int)GetTileWidth(), (int)GetTileHeight(), GetPredictor(), bitsPerSample, planarConfiguration);
                 
                 if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
                 {
@@ -1020,7 +1020,6 @@ public class GeoTiffImage
     private ArrayBuffer NormalizeArray(ArrayBuffer inBuffer, int format, int planarConfiguration, int samplesPerPixel,
         int bitsPerSample, int tileWidth, int tileHeight)
     {
-        // var inByteArray = new Uint8Array(inBuffer);
         var view = new DataView(inBuffer); //JSENH Check this
         int outSize = planarConfiguration == 2
             ? tileHeight * tileWidth
