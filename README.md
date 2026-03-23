@@ -174,7 +174,6 @@ New contributors are very welcome. If you’d like to get involved, please open 
 Before release, the bare minimum:
 
 - Find and resolve all [Obsolete] attributes
-- Normalisation needs testing
 - Better tag reading API
 - Test to cover packbits decoder
 - Merge GeoTiffTagValueResult with Tag class
