@@ -191,13 +191,13 @@ public class Tag
             }
             else
             {
-                if (this.Value.IsInt16) return TagDataType.SSHORT;
+                if (this.Value.IsInt16) return TagDataType.SHORT;
                 if (this.Value.IsSByte) return TagDataType.SBYTE;
                 if (this.Value.IsInt64) return TagDataType.SLONG8;
                 if (this.Value.IsByte) return TagDataType.BYTE;
                 if (this.Value.IsFloat64) return TagDataType.DOUBLE;
                 if (this.Value.IsFloat32) return TagDataType.FLOAT;
-                if (this.Value.IsUint16) return TagDataType.SHORT;
+                if (this.Value.IsUint16) return TagDataType.USHORT;
                 if (this.Value.IsUInt64) return TagDataType.LONG8;
                 if (this.Value.IsUInt32) return TagDataType.LONG;
                 if (this.Value.IsInt32) return TagDataType.SLONG;

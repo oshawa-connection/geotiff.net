@@ -1,11 +1,14 @@
 using Geotiff.Exceptions;
 using Rationals;
+using System.Text;
 
 namespace Geotiff;
 
 /// <summary>
-/// TODO: This class should be merged with the Tag class - this is a less user friendly version of that class that doesn't
-/// store tag field name
+/// This represents a Tag value that has been read but has no association with its parent Tag Id or mapped name.
+/// The reading of the value and the tag id itself is done as two steps.
+/// This could be merged with the Tag class, however, be sure to merge the logic for tag id mapping and
+/// value reading into the same method where both are available at the same time.
 /// </summary>
 internal class GeoTiffTagValueResult
 {
@@ -306,20 +309,20 @@ internal class GeoTiffTagValueResult
     /// Note that strings are byte arrays.
     /// </summary>
     /// <exception cref="GeoTiffException"></exception>
-    public TagDataType DataType
+    private TagDataType DataType
     {
         get
         {
-            if (this.IsInt16) return TagDataType.SSHORT;
+            if (this.IsInt16) return TagDataType.SHORT;
             if (this.IsSByte) return TagDataType.SBYTE;
             if (this.IsInt64) return TagDataType.SLONG8;
             if (this.IsByte) return TagDataType.BYTE; 
             if (this.IsFloat64) return TagDataType.DOUBLE;
             if (this.IsFloat32) return TagDataType.FLOAT;
-            if (this.IsUint16) return TagDataType.SHORT;
-            if (this.IsUInt64) return TagDataType.LONG8;
-            if (this.IsUInt32) return TagDataType.LONG;
-            if (this.IsInt32) return TagDataType.SLONG;
+            if (this.IsUint16) return TagDataType.USHORT;
+            if (this.IsUInt64) return TagDataType.ULONG;
+            if (this.IsUInt32) return TagDataType.UINT;
+            if (this.IsInt32) return TagDataType.INT;
             if (this.IsRational) return TagDataType.RATIONAL;
             if (this.IsSRational) return TagDataType.SRATIONAL;
             
@@ -332,6 +335,20 @@ internal class GeoTiffTagValueResult
 
     public override string ToString()
     {
-        return $"{this.}"
+        var sb = new StringBuilder();
+        sb.Append(this.DataType);
+        var list = this.GetList();
+        if (list.Length > 1)
+        {
+            sb.Append("[]");
+            return sb.ToString();
+        }
+
+        sb.Append(" ");
+        
+        var firstElement = this.GetFirstElement();
+        sb.Append(firstElement);
+
+        return sb.ToString();
     }
 }

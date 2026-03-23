@@ -176,8 +176,14 @@ Before release, the bare minimum:
 - Find and resolve all [Obsolete] attributes
 - Better tag reading API
 - Test to cover packbits decoder
-- Merge GeoTiffTagValueResult with Tag class
 - Don't cast tag numeric values to double during parsing
+- Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing
+- Make GetBitsForSample and GetBitsPerSample the same type
+- When tag read types mismatch, make sure the message is consistent. E.g. Int16 -> USHORT
+- More friendly reading of tag strings
+- Reading unknown tag values as 
+- More fixed tag types with predefined types.
+- All known tags to enum?
 
 Post initial release:
 

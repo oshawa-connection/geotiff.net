@@ -292,7 +292,7 @@ public class GeoTiff
                 : (int)dataSlice.ReadUInt32(i + 4);
 
             GeoTiffTagValueResult fieldValues;
-            object value;
+            object value; // TODO: avoid using object here
             bool isList = false;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
             GeotiffFieldDataType fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
@@ -322,7 +322,7 @@ public class GeoTiff
             if ((typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTagId)
                                 && !(fieldTypeName == GeotiffFieldDataType.SRATIONAL)) || fieldTypeName == GeotiffFieldDataType.ASCII)
             {
-                value = fieldValues.GetFirstElement();
+                value = fieldValues.GetFirstElement(); // TODO: remove
                 // value = (fieldValues as Array)?[0] ?? fieldValues;
             }
             else
@@ -332,7 +332,7 @@ public class GeoTiff
                     throw new NotImplementedException($"SRationals not supported: {fieldTypeName}"); // TODO: Is this true anymore?
                 }
 
-                value = fieldValues.GetArrayOfElements();
+                value = fieldValues.GetArrayOfElements(); // TODO: remove
                 isList = true;
             }
 

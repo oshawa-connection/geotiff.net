@@ -143,19 +143,41 @@ public class ReadingTests : GeoTiffTestBaseClass
         VectorXYZ? origin = image.GetOrigin();
         BoundingBox? bbox = image.GetBoundingBox();
         
+        image.GetWidth().ShouldBe((uint)33);
+        image.GetHeight().ShouldBe((uint)33);
+        image.GetBitsPerSample().ShouldAllBe(d => d == 32);
+        image.GetTag("Compression").GetUShort().ShouldBe((ushort)8);
+        image.GetTag("PhotometricInterpretation").GetUShort().ShouldBe((ushort)1);
+        image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL\0");
+        image.GetTag("StripOffsets").GetUIntArray().ShouldBe(new uint[] {1094u, 4726u});
+        image.GetTag("SamplesPerPixel").GetUShort().ShouldBe((ushort)2);
+        image.GetTag("RowsPerStrip").GetUShort().ShouldBe((ushort)33);
+        image.GetTag("StripByteCounts").GetUShortArray().ShouldBe(new ushort[] {3632, 3648});
+        image.GetPlanarConfiguration().ShouldBe(2);
+        image.GetTag("DateTime").GetString().ShouldBe("2019:12:28 00:00:00\0");
+        image.GetPredictor().ShouldBe(3);
+        image.GetTag("ExtraSamples").GetUShort().ShouldBe((ushort)0);
+        image.GetTag("SampleFormat").GetUShortArray().ShouldBe(new ushort[] {3,3});
+        image.GetTag("ModelPixelScale").GetDoubleArray().ShouldBe(new double[] {0.25, 0.25, 0});
+        image.GetTag("ModelTiepoint").GetDoubleArray().ShouldBe(new double[] {0,0,0,-88,32,0});
+        image.GetTag("GeoKeyDirectory").GetUShortArray().ShouldBe(new ushort[] {1,1,1,3,1024,0,1,2,1025,0,1,2,2048,0,1,4269});
+        image.GetTag("GDAL_METADATA").GetString().ShouldBe("<GDALMetadata>\n  <Item name=\"area_of_use\">USA - Florida</Item>\n  <Item name=\"target_crs_epsg_code\">4152</Item>\n  <Item name=\"TYPE\">HORIZONTAL_OFFSET</Item>\n  <Item name=\"UNITTYPE\" sample=\"0\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"0\" role=\"description\">latitude_offset</Item>\n  <Item name=\"positive_value\" sample=\"1\">east</Item>\n  <Item name=\"UNITTYPE\" sample=\"1\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"1\" role=\"description\">longitude_offset</Item>\n</GDALMetadata>\n\0");
+        
         origin.X.ShouldBe(-88);
         origin.Y.ShouldBe(32);
         bbox.XMin.ShouldBe(-88, 0.001);
         bbox.YMin.ShouldBe(23.75, 0.001);
         bbox.XMax.ShouldBe(-79.75, 0.001);
         bbox.YMax.ShouldBe(32, 0.001);
-        uint nPixels = image.GetHeight() * image.GetWidth();
         
         
         var allTags = image.GetAllKnownTags();
-        var compression = image.GetTag("Compression");
-        compression.GetUShort().ShouldBe((ushort)8);
+        
+        
         Console.WriteLine(allTags);
+        
+        
+        
     }
     
 
