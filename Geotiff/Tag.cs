@@ -9,6 +9,11 @@ public class Tag
     public string? TagName { get; }
     private GeoTiffTagValueResult Value { get; set; }
     public string GetString() => this.Value.GetString();
+
+    public override string ToString()
+    {
+        return $"{this.TagName}: {this.Value}";
+    }
     
     /// <summary>
     /// Useful in the case where the type of object isn't important, e.g. Console.WriteLine

@@ -109,6 +109,12 @@ public class GeoTiffImage
         return this.FileDirectory.TagDictionary.Values;
     }
 
+    public Tag? GetTag(string name)
+    {
+        var found = this.FileDirectory.TagDictionary.TryGetValue(name, out Tag? tag);
+        return found ? tag : null;
+    }
+
     /// <summary>
     /// uint return type here is confirmed by geotiff spec
     /// </summary>

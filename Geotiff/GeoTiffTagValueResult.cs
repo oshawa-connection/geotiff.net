@@ -329,4 +329,9 @@ internal class GeoTiffTagValueResult
     
     
     private GeoTiffTagValueResult() { }
+
+    public override string ToString()
+    {
+        return $"{this.}"
+    }
 }

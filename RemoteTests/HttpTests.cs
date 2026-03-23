@@ -28,7 +28,6 @@ public class HttpTests
 
         var sample1 = readResult.GetSampleAt(0);
         var ushorts = sample1.GetByteArray();
-        Console.WriteLine("HELLO");
     }
 
     [TestMethod]
@@ -39,7 +38,6 @@ public class HttpTests
         var httpClient = new GeoTiffHTTPClient(baseURL, client, true);
         GeoTiff? cog = await GeoTiff.FromRemoteClientAsync(httpClient);
         GeoTiffImage? image = await cog.GetImageAsync();
-        Console.WriteLine("HELLO WORLD");
     }
 
     [TestMethod]

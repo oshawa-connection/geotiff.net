@@ -142,6 +142,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiffImage? image = await geotiff.GetImageAsync();
         VectorXYZ? origin = image.GetOrigin();
         BoundingBox? bbox = image.GetBoundingBox();
+        
         origin.X.ShouldBe(-88);
         origin.Y.ShouldBe(32);
         bbox.XMin.ShouldBe(-88, 0.001);
@@ -149,6 +150,12 @@ public class ReadingTests : GeoTiffTestBaseClass
         bbox.XMax.ShouldBe(-79.75, 0.001);
         bbox.YMax.ShouldBe(32, 0.001);
         uint nPixels = image.GetHeight() * image.GetWidth();
+        
+        
+        var allTags = image.GetAllKnownTags();
+        var compression = image.GetTag("Compression");
+        compression.GetUShort().ShouldBe((ushort)8);
+        Console.WriteLine(allTags);
     }
     
 
@@ -644,8 +651,7 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         var firstSample = readResult.GetSampleAt(0).Get2DUShortArray();
         var secondSample = readResult.GetSampleAt(1).Get2DUShortArray();
-
-        Console.WriteLine("hELLo");
+        
     }
 
     [TestMethod]
@@ -847,8 +853,6 @@ public class ReadingTests : GeoTiffTestBaseClass
         rSample.GetByteArray().ShouldAllBe(d => d == 254);
         gSample.GetByteArray().ShouldAllBe(d => d == 0);
         bSample.GetByteArray().ShouldAllBe(d => d == 0);
-        
-        Console.WriteLine("HELLO");
     }
     
     
@@ -867,9 +871,6 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         
         rSample.GetByteArray().ShouldAllBe(d => d == 128);
-        
-        
-        Console.WriteLine("HELLO");
     }
     
     
@@ -893,6 +894,5 @@ public class ReadingTests : GeoTiffTestBaseClass
         magentaSample.GetByteArray().ShouldAllBe(d => d == 0);
         yellowSample.GetByteArray().ShouldAllBe(d => d == 0);
         blackSample.GetByteArray().ShouldAllBe(d => d == 0);
-        Console.WriteLine("HELLO");
     }
 }
