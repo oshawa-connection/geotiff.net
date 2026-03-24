@@ -6,9 +6,9 @@ namespace Geotiff;
 using System.Collections.Generic;
 
 /// <summary>
-
+/// This class needs to be kept public to allow users to override methods when creating child classes. 
 /// </summary>
-public class ImageFileDirectory
+public class ImageFileDirectory 
 {
     /// <summary>
     /// Mapping of tag names to values.
@@ -66,13 +66,11 @@ public class ImageFileDirectory
                 var str = tag.GetString();
                 return new[] { (T)(object)str };
             }
-            else
-            {
-                //TODO: Do this the long form way where we check for every numeric type to prevent double conversion
-                var arr = tag.GetAsDoubleArray();
-                Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-                return arr.Select(d => (T)Convert.ChangeType(d, targetType));
-            }
+            
+            var arr = tag.GetAsDoubleArray();// TODO: Do this the long form way where we check for every numeric type to prevent double conversion
+            Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            return arr.Select(d => (T)Convert.ChangeType(d, targetType));
+            
         }
         return null;
     }

@@ -233,8 +233,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         knownTags.Count().ShouldBe(18);
         rawTags.Count().ShouldBe(19, "Should contain one more tag because there is an unrecognized tag that we're still able to parse");
-
-
+        
         image.GetTag(65000).GetString().ShouldBe("hello world");
     }
     

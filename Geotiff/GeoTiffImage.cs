@@ -6,7 +6,7 @@ namespace Geotiff;
 
 public class GeoTiffImage
 {
-    public readonly ImageFileDirectory FileDirectory;// todo: make this private
+    protected internal readonly ImageFileDirectory FileDirectory;
     public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
@@ -273,15 +273,15 @@ public class GeoTiffImage
     }
 
 
-    public uint GetBitsForSample(int sampleIndex = 0)
+    public ushort GetBitsForSample(int sampleIndex = 0)
     {
-        ushort[] bitsPerSample = FileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
+        ushort[] bitsPerSample = this.GetTag(FieldTypes.BitsPerSample).GetUShortArray();
         return bitsPerSample[sampleIndex];
     }
     
-    public int[] GetBitsPerSample()
+    public ushort[] GetBitsPerSample()
     {
-        int[] bitsPerSample = FileDirectory.GetFileDirectoryListValue<int>(FieldTypes.BitsPerSample).ToArray();
+        ushort[] bitsPerSample = this.GetTag(FieldTypes.BitsPerSample).GetUShortArray();
         return bitsPerSample;
     }
 

@@ -139,7 +139,7 @@ public abstract class GeoTiffDecoder
     }
     
     
-   private byte[] ApplyPredictor(byte[] block,int tileWidth, int tileHeight, int predictor, int[] bitsPerSample, int planarConfiguration)
+   private byte[] ApplyPredictor(byte[] block,int tileWidth, int tileHeight, int predictor, ushort[] bitsPerSample, int planarConfiguration)
    {
        var width = tileWidth;
        
