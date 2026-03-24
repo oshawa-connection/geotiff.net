@@ -29,7 +29,7 @@ public class Tag
     public ulong[] GetULongArray() => this.Value.GetUInt64Array();
     public ulong GetULong()
     {
-        if (this.Value.IsUint16)
+        if (this.Value.IsUInt16)
         {
             return this.Value.GetUInt16();
         }
@@ -74,12 +74,12 @@ public class Tag
     public float[] GetFloatArray()=> this.Value.GetFloat32Array();
     public float GetFloat()=> this.Value.GetFloat32();
     public ushort[] GetUShortArray()=> this.Value.GetUInt16Array();
-    public ushort GetUShort()=> this.Value.GetUInt16();
+    public ushort GetUShort() => this.Value.GetUInt16();
     public uint[] GetUIntArray()=> this.Value.GetUInt32Array();
 
     public uint GetUInt()
     {
-        if (this.Value.IsUint16)
+        if (this.Value.IsUInt16)
         {
             return this.Value.GetUInt16();
         }
@@ -89,7 +89,7 @@ public class Tag
 
     public int GetInt()
     {
-        if (this.Value.IsUint16)
+        if (this.Value.IsUInt16)
         {
             return this.Value.GetUInt16();
         }
@@ -126,7 +126,7 @@ public class Tag
             return (double)Value.GetUInt32();
         if (Value.IsInt16)
             return (double)Value.GetInt16();
-        if (Value.IsUint16)
+        if (Value.IsUInt16)
             return (double)Value.GetUInt16();
         if (Value.IsSByte)
             return (double)Value.GetSByte();
@@ -155,7 +155,7 @@ public class Tag
             return Value.GetUInt32Array().Select(ui => (double)ui).ToArray();
         if (Value.IsInt16)
             return Value.GetInt16Array().Select(s => (double)s).ToArray();
-        if (Value.IsUint16)
+        if (Value.IsUInt16)
             return Value.GetUInt16Array().Select(us => (double)us).ToArray();
         if (Value.IsByte)
             return Value.GetByteArray().Select(sb => (double)sb).ToArray();
@@ -182,7 +182,7 @@ public class Tag
                 if (this.Value.IsByte) return TagDataType.BYTE_ARRAY;
                 if (this.Value.IsFloat64) return TagDataType.DOUBLE_ARRAY;
                 if (this.Value.IsFloat32) return TagDataType.FLOAT_ARRAY;
-                if (this.Value.IsUint16) return TagDataType.SHORT_ARRAY;
+                if (this.Value.IsUInt16) return TagDataType.SHORT_ARRAY;
                 if (this.Value.IsUInt64) return TagDataType.LONG8_ARRAY;
                 if (this.Value.IsUInt32) return TagDataType.LONG_ARRAY;
                 if (this.Value.IsInt32) return TagDataType.SLONG_ARRAY;
@@ -197,7 +197,7 @@ public class Tag
                 if (this.Value.IsByte) return TagDataType.BYTE;
                 if (this.Value.IsFloat64) return TagDataType.DOUBLE;
                 if (this.Value.IsFloat32) return TagDataType.FLOAT;
-                if (this.Value.IsUint16) return TagDataType.USHORT;
+                if (this.Value.IsUInt16) return TagDataType.USHORT;
                 if (this.Value.IsUInt64) return TagDataType.LONG8;
                 if (this.Value.IsUInt32) return TagDataType.LONG;
                 if (this.Value.IsInt32) return TagDataType.SLONG;

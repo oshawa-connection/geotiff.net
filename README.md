@@ -178,11 +178,10 @@ Before release, the bare minimum:
 - Test to cover packbits decoder
 - Don't cast tag numeric values to double during parsing
 - Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing
-- Make GetBitsForSample and GetBitsPerSample the same type
-- When tag read types mismatch, make sure the message is consistent. E.g. Int16 -> USHORT
+- Make GetBitsForSample and GetBitsPerSample the same type (uint vs int)
 - More friendly reading of tag strings
-- Reading unknown tag values as 
-- More fixed tag types with predefined types.
+- Reading unknown tag values as Int and double + explanation. 
+- More fixed tag type reading methods with predefined types.
 - All known tags to enum?
 
 Post initial release:
