@@ -239,6 +239,26 @@ public class ReadingTests : GeoTiffTestBaseClass
         image.GetTag(65000).GetString().ShouldBe("hello world\0");
     }
     
+    
+    [TestMethod]
+    public async Task TestPackBitsDecompression()
+    {
+        string packbits = Path.Combine(GetDataFolderPath(), "packbits.tif");
+        await using var fsSource = new FileStream(packbits, FileMode.Open, FileAccess.Read);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        int count = await geotiff.GetImageCountAsync();
+        count.ShouldBe(1);
+
+        GeoTiffImage? image = await geotiff.GetImageAsync();
+        VectorXYZ? origin = image.GetOrigin();
+        BoundingBox? bbox = image.GetBoundingBox();
+        
+        var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
+        var sample0 = readResult.GetSampleAt(0);
+        sample0.GetByteArray()[0].ShouldBe((byte)0);
+        sample0.GetByteArray().Last().ShouldBe((byte)99);
+    }
+    
 
     [TestMethod]
     public async Task TestRawTiffNoCompression()
@@ -256,8 +276,6 @@ public class ReadingTests : GeoTiffTestBaseClass
         uint nPixels = image.GetHeight() * image.GetWidth();
 
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
-        // Console.WriteLine(readResult.SampleData.Count());
-        // var result = await image.ReadValueAtCoordinate(-83.464, 28.542);
     }
 
     /// <summary>
