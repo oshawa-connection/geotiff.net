@@ -292,8 +292,6 @@ public class GeoTiff
                 : (int)dataSlice.ReadUInt32(i + 4);
 
             GeoTiffTagValueResult fieldValues;
-            object value; // TODO: avoid using object here
-            bool isList = false;
             int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
             GeotiffFieldDataType fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
             long valueOffset = i + (_bigTiff ? 12 : 8);
@@ -317,25 +315,10 @@ public class GeoTiff
                     fieldValues = fieldDataSlice.GetValues(fieldType, typeCount, (int)actualOffset);
                 }
             }
-
-            // Unpack single values from the array
-            if ((typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTagId)
-                                && !(fieldTypeName == GeotiffFieldDataType.SRATIONAL)) || fieldTypeName == GeotiffFieldDataType.ASCII)
-            {
-                value = fieldValues.GetFirstElement(); // TODO: remove
-                // value = (fieldValues as Array)?[0] ?? fieldValues;
-            }
-            else
-            {
-                if (fieldTypeName == GeotiffFieldDataType.SRATIONAL)
-                {
-                    throw new NotImplementedException($"SRationals not supported: {fieldTypeName}"); // TODO: Is this true anymore?
-                }
-
-                value = fieldValues.GetArrayOfElements(); // TODO: remove
-                isList = true;
-            }
-
+            bool isList = !((typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTagId)
+                                            && !(fieldTypeName == GeotiffFieldDataType.SRATIONAL)) ||
+                            fieldTypeName == GeotiffFieldDataType.ASCII);
+            
             // Write the tag's value to the file directory
             if (FieldTypes.FieldTags.TryGetByKey(fieldTagId, out string tagName))
             {

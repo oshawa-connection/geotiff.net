@@ -149,20 +149,20 @@ public class ReadingTests : GeoTiffTestBaseClass
         image.GetBitsPerSample().ShouldAllBe(d => d == 32);
         image.GetTag("Compression").GetUShort().ShouldBe((ushort)8);
         image.GetTag("PhotometricInterpretation").GetUShort().ShouldBe((ushort)1);
-        image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL\0");
+        image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL");
         image.GetTag("StripOffsets").GetUIntArray().ShouldBe(new uint[] {1094u, 4726u});
         image.GetTag("SamplesPerPixel").GetUShort().ShouldBe((ushort)2);
         image.GetTag("RowsPerStrip").GetUShort().ShouldBe((ushort)33);
         image.GetTag("StripByteCounts").GetUShortArray().ShouldBe(new ushort[] {3632, 3648});
         image.GetPlanarConfiguration().ShouldBe(2);
-        image.GetTag("DateTime").GetString().ShouldBe("2019:12:28 00:00:00\0");
+        image.GetTag("DateTime").GetString().ShouldBe("2019:12:28 00:00:00");
         image.GetPredictor().ShouldBe(3);
         image.GetTag("ExtraSamples").GetUShort().ShouldBe((ushort)0);
         image.GetTag("SampleFormat").GetUShortArray().ShouldBe(new ushort[] {3,3});
         image.GetTag("ModelPixelScale").GetDoubleArray().ShouldBe(new double[] {0.25, 0.25, 0});
         image.GetTag("ModelTiepoint").GetDoubleArray().ShouldBe(new double[] {0,0,0,-88,32,0});
         image.GetTag("GeoKeyDirectory").GetUShortArray().ShouldBe(new ushort[] {1,1,1,3,1024,0,1,2,1025,0,1,2,2048,0,1,4269});
-        image.GetTag("GDAL_METADATA").GetString().ShouldBe("<GDALMetadata>\n  <Item name=\"area_of_use\">USA - Florida</Item>\n  <Item name=\"target_crs_epsg_code\">4152</Item>\n  <Item name=\"TYPE\">HORIZONTAL_OFFSET</Item>\n  <Item name=\"UNITTYPE\" sample=\"0\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"0\" role=\"description\">latitude_offset</Item>\n  <Item name=\"positive_value\" sample=\"1\">east</Item>\n  <Item name=\"UNITTYPE\" sample=\"1\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"1\" role=\"description\">longitude_offset</Item>\n</GDALMetadata>\n\0");
+        image.GetTag("GDAL_METADATA").GetString().ShouldBe("<GDALMetadata>\n  <Item name=\"area_of_use\">USA - Florida</Item>\n  <Item name=\"target_crs_epsg_code\">4152</Item>\n  <Item name=\"TYPE\">HORIZONTAL_OFFSET</Item>\n  <Item name=\"UNITTYPE\" sample=\"0\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"0\" role=\"description\">latitude_offset</Item>\n  <Item name=\"positive_value\" sample=\"1\">east</Item>\n  <Item name=\"UNITTYPE\" sample=\"1\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"1\" role=\"description\">longitude_offset</Item>\n</GDALMetadata>\n");
         
         origin.X.ShouldBe(-88);
         origin.Y.ShouldBe(32);
@@ -174,7 +174,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         // Now test that users are able to cast these values if they don't mind what type it is too much 
         image.GetTag("Compression").GetAsInt().ShouldBe(8);
         image.GetTag("PhotometricInterpretation").GetAsInt().ShouldBe(1);
-        image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL\0");
+        image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL");
         image.GetTag("StripOffsets").GetAsIntArray().ShouldBe(new int[] {1094, 4726});
         image.GetTag("SamplesPerPixel").GetAsInt().ShouldBe(2);
         image.GetTag("RowsPerStrip").GetAsInt().ShouldBe(33);
@@ -188,12 +188,11 @@ public class ReadingTests : GeoTiffTestBaseClass
         image.GetTag("ModelTiepoint").GetAsDoubleArray().ShouldBe(new double[] {0,0,0,-88,32,0});
         image.GetTag("GeoKeyDirectory").GetAsIntArray().ShouldBe(new int[] {1,1,1,3,1024,0,1,2,1025,0,1,2,2048,0,1,4269});
         
-        image.GetTag("GDAL_METADATA").GetString().ShouldBe("<GDALMetadata>\n  <Item name=\"area_of_use\">USA - Florida</Item>\n  <Item name=\"target_crs_epsg_code\">4152</Item>\n  <Item name=\"TYPE\">HORIZONTAL_OFFSET</Item>\n  <Item name=\"UNITTYPE\" sample=\"0\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"0\" role=\"description\">latitude_offset</Item>\n  <Item name=\"positive_value\" sample=\"1\">east</Item>\n  <Item name=\"UNITTYPE\" sample=\"1\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"1\" role=\"description\">longitude_offset</Item>\n</GDALMetadata>\n\0");
-        image.GetTag("DateTime").GetString().ShouldBe("2019:12:28 00:00:00\0");
-        image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL\0");
+        image.GetTag("GDAL_METADATA").GetString().ShouldBe("<GDALMetadata>\n  <Item name=\"area_of_use\">USA - Florida</Item>\n  <Item name=\"target_crs_epsg_code\">4152</Item>\n  <Item name=\"TYPE\">HORIZONTAL_OFFSET</Item>\n  <Item name=\"UNITTYPE\" sample=\"0\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"0\" role=\"description\">latitude_offset</Item>\n  <Item name=\"positive_value\" sample=\"1\">east</Item>\n  <Item name=\"UNITTYPE\" sample=\"1\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"1\" role=\"description\">longitude_offset</Item>\n</GDALMetadata>\n");
+        image.GetTag("DateTime").GetString().ShouldBe("2019:12:28 00:00:00");
+        image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL");
         var allTags = image.GetAllKnownTags();
         allTags.Count().ShouldBe(20);
-        
         
         var rawTags = image.GetAllRawTags();
         rawTags.Count().ShouldBe(20);
@@ -236,7 +235,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         rawTags.Count().ShouldBe(19, "Should contain one more tag because there is an unrecognized tag that we're still able to parse");
 
 
-        image.GetTag(65000).GetString().ShouldBe("hello world\0");
+        image.GetTag(65000).GetString().ShouldBe("hello world");
     }
     
     
