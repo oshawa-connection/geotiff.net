@@ -178,14 +178,14 @@ public class Tag
             {
                 if (this.Value.IsInt16) return TagDataType.SHORT_ARRAY;
                 if (this.Value.IsSByte) return TagDataType.SBYTE_ARRAY;
-                if (this.Value.IsInt64) return TagDataType.LONG8_ARRAY;
+                if (this.Value.IsInt64) return TagDataType.LONG_ARRAY;
                 if (this.Value.IsByte) return TagDataType.BYTE_ARRAY;
                 if (this.Value.IsFloat64) return TagDataType.DOUBLE_ARRAY;
                 if (this.Value.IsFloat32) return TagDataType.FLOAT_ARRAY;
                 if (this.Value.IsUInt16) return TagDataType.SHORT_ARRAY;
-                if (this.Value.IsUInt64) return TagDataType.LONG8_ARRAY;
-                if (this.Value.IsUInt32) return TagDataType.LONG_ARRAY;
-                if (this.Value.IsInt32) return TagDataType.SLONG_ARRAY;
+                if (this.Value.IsUInt64) return TagDataType.ULONG_ARRAY;
+                if (this.Value.IsUInt32) return TagDataType.UINT_ARRAY;
+                if (this.Value.IsInt32) return TagDataType.INT_ARRAY;
                 if (this.Value.IsRational) return TagDataType.RATIONAL_ARRAY;
                 if (this.Value.IsSRational) return TagDataType.SRATIONAL_ARRAY;
             }
@@ -193,14 +193,14 @@ public class Tag
             {
                 if (this.Value.IsInt16) return TagDataType.SHORT;
                 if (this.Value.IsSByte) return TagDataType.SBYTE;
-                if (this.Value.IsInt64) return TagDataType.SLONG8;
+                if (this.Value.IsInt64) return TagDataType.LONG;
                 if (this.Value.IsByte) return TagDataType.BYTE;
                 if (this.Value.IsFloat64) return TagDataType.DOUBLE;
                 if (this.Value.IsFloat32) return TagDataType.FLOAT;
                 if (this.Value.IsUInt16) return TagDataType.USHORT;
-                if (this.Value.IsUInt64) return TagDataType.LONG8;
-                if (this.Value.IsUInt32) return TagDataType.LONG;
-                if (this.Value.IsInt32) return TagDataType.SLONG;
+                if (this.Value.IsUInt64) return TagDataType.ULONG;
+                if (this.Value.IsUInt32) return TagDataType.UINT;
+                if (this.Value.IsInt32) return TagDataType.INT;
                 if (this.Value.IsRational) return TagDataType.RATIONAL;
                 if (this.Value.IsSRational) return TagDataType.SRATIONAL;
             }

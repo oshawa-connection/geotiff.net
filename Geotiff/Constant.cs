@@ -55,71 +55,54 @@ public enum TagDataType
 {
     [Description("Undefined")]
     UNDEFINED,
-    [Description("byte")]
-    BYTE,
-    [Description("sbyte")]
-    SBYTE,
-    [Description("string")]
-    ASCII,
-    [Description("ushort")]
-    USHORT,
-    [Description("int")]
-    INT,
-    [Description("long")]
-    LONG,
-    [Description("long")]
-    SLONG,
-    [Description("uint")]
-    UINT,
-    [Description("ulong")]
-    ULONG,
-    [Description("SRational")]
-    SRATIONAL,
-    [Description("Rational")]
-    RATIONAL,
     [Description("short")]
     SHORT,
-    
-    [Description("float")]
-    FLOAT,
+    [Description("sbyte")]
+    SBYTE,
+    [Description("byte")]
+    BYTE,
     [Description("double")]
     DOUBLE,
-    [Description("ImageFileDirectory")]
-    IFD,
-    [Description("ImageFileDirectory8")]
-    IFD8,
-    [Description("long8")]
-    LONG8,
-    [Description("sLong8")]
-    SLONG8,
-    [Description("byte[]")]
-    BYTE_ARRAY,
+    [Description("float")]
+    FLOAT,
+    [Description("ushort")]
+    USHORT,
+    [Description("long")]
+    LONG,
+    [Description("ulong")]
+    ULONG,
+    [Description("uint")]
+    UINT,
+    [Description("int")]
+    INT,
+    [Description("Rational")]
+    RATIONAL,
+    [Description("SRational")]
+    SRATIONAL,
     [Description("short[]")]
     SHORT_ARRAY,
-    [Description("long[]")]
-    LONG_ARRAY,
-    [Description("Rational[]")]
-    RATIONAL_ARRAY,
     [Description("sbyte[]")]
     SBYTE_ARRAY,
-    [Description("short[]")]
-    SSHORT_ARRAY,
-    [Description("slong[]")]
-    SLONG_ARRAY,
-    [Description("sRational[]")]
-    SRATIONAL_ARRAY,
-    [Description("float[]")]
-    FLOAT_ARRAY,
+    [Description("byte[]")]
+    BYTE_ARRAY,
     [Description("double[]")]
     DOUBLE_ARRAY,
-    [Description("ImageFileDirectory[]")]
-    IFD_ARRAY,
-    [Description("long8[]")]
-    LONG8_ARRAY,
-    [Description("slong8[]")]
-    SLONG8_ARRAY,
-    [Description("ImageFileDirectory8[]")]
-    IFD8_ARRAY
+    [Description("float[]")]
+    FLOAT_ARRAY,
+    [Description("ushort[]")]
+    USHORT_ARRAY,
+    [Description("long[]")]
+    LONG_ARRAY,
+    [Description("ulong[]")]
+    ULONG_ARRAY,
+    [Description("uint[]")]
+    UINT_ARRAY,
+    [Description("int[]")]
+    INT_ARRAY,
+    [Description("Rational[]")]
+    RATIONAL_ARRAY,
+    [Description("SRational[]")]
+    SRATIONAL_ARRAY
 }
 
 

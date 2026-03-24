@@ -315,11 +315,12 @@ internal class GeoTiffTagValueResult
         {
             if (this.IsInt16) return TagDataType.SHORT;
             if (this.IsSByte) return TagDataType.SBYTE;
-            if (this.IsInt64) return TagDataType.SLONG8;
+            if (this.IsInt64) return TagDataType.LONG;
             if (this.IsByte) return TagDataType.BYTE; 
             if (this.IsFloat64) return TagDataType.DOUBLE;
             if (this.IsFloat32) return TagDataType.FLOAT;
             if (this.IsUInt16) return TagDataType.USHORT;
+            if (this.IsInt32) return TagDataType.LONG;
             if (this.IsUInt64) return TagDataType.ULONG;
             if (this.IsUInt32) return TagDataType.UINT;
             if (this.IsInt32) return TagDataType.INT;
