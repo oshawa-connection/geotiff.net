@@ -3,6 +3,7 @@ using Shouldly;
 using Geotiff;
 using Geotiff.Exceptions;
 using Geotiff.Resampling;
+using System.Xml.Linq;
 
 namespace GeotiffTests;
 
@@ -170,14 +171,72 @@ public class ReadingTests : GeoTiffTestBaseClass
         bbox.XMax.ShouldBe(-79.75, 0.001);
         bbox.YMax.ShouldBe(32, 0.001);
         
+        // Now test that users are able to cast these values if they don't mind what type it is too much 
+        image.GetTag("Compression").GetAsInt().ShouldBe(8);
+        image.GetTag("PhotometricInterpretation").GetAsInt().ShouldBe(1);
+        image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL\0");
+        image.GetTag("StripOffsets").GetAsIntArray().ShouldBe(new int[] {1094, 4726});
+        image.GetTag("SamplesPerPixel").GetAsInt().ShouldBe(2);
+        image.GetTag("RowsPerStrip").GetAsInt().ShouldBe(33);
+        image.GetTag("StripByteCounts").GetAsIntArray().ShouldBe(new int[] {3632, 3648});
+        image.GetPlanarConfiguration().ShouldBe(2);
         
+        image.GetPredictor().ShouldBe(3);
+        image.GetTag("ExtraSamples").GetAsInt().ShouldBe(0);
+        image.GetTag("SampleFormat").GetAsIntArray().ShouldBe(new int[] {3,3});
+        image.GetTag("ModelPixelScale").GetAsDoubleArray().ShouldBe(new double[] {0.25, 0.25, 0});
+        image.GetTag("ModelTiepoint").GetAsDoubleArray().ShouldBe(new double[] {0,0,0,-88,32,0});
+        image.GetTag("GeoKeyDirectory").GetAsIntArray().ShouldBe(new int[] {1,1,1,3,1024,0,1,2,1025,0,1,2,2048,0,1,4269});
+        
+        image.GetTag("GDAL_METADATA").GetString().ShouldBe("<GDALMetadata>\n  <Item name=\"area_of_use\">USA - Florida</Item>\n  <Item name=\"target_crs_epsg_code\">4152</Item>\n  <Item name=\"TYPE\">HORIZONTAL_OFFSET</Item>\n  <Item name=\"UNITTYPE\" sample=\"0\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"0\" role=\"description\">latitude_offset</Item>\n  <Item name=\"positive_value\" sample=\"1\">east</Item>\n  <Item name=\"UNITTYPE\" sample=\"1\" role=\"unittype\">arc-second</Item>\n  <Item name=\"DESCRIPTION\" sample=\"1\" role=\"description\">longitude_offset</Item>\n</GDALMetadata>\n\0");
+        image.GetTag("DateTime").GetString().ShouldBe("2019:12:28 00:00:00\0");
+        image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL\0");
         var allTags = image.GetAllKnownTags();
+        allTags.Count().ShouldBe(20);
         
         
-        Console.WriteLine(allTags);
+        var rawTags = image.GetAllRawTags();
+        rawTags.Count().ShouldBe(20);
+    }
+
+    [TestMethod]
+    public async Task GDALMetadata()
+    {
+        string customGDALMetadataTag = Path.Combine(GetDataFolderPath(), "custom_gdal_metadata_writing.tif");
+        await using var fsSource = new FileStream(customGDALMetadataTag, FileMode.Open, FileAccess.Read);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
         
+        var s = image.GetTag("GDAL_METADATA").GetString();
+        s = s.Replace("\0","");
         
+        XDocument doc = XDocument.Parse(s);
         
+        doc.Descendants("Item").Count().ShouldBe(2);
+        doc.Descendants("Item").First().FirstAttribute.Value.ShouldBe("DESCRIPTION");
+        doc.Descendants("Item").First().Value.ShouldBe("HELLO WORLD");
+        
+        doc.Descendants("Item").Skip(1).First().FirstAttribute.Value.ShouldBe("string_tag");
+        doc.Descendants("Item").Skip(1).First().Value.ShouldBe("This is a custom tag value");
+    }
+    
+    
+    [TestMethod]
+    public async Task CustomTagReading()
+    {
+        string customTagsTiff = Path.Combine(GetDataFolderPath(), "custom_tag.tif");
+        await using var fsSource = new FileStream(customTagsTiff, FileMode.Open, FileAccess.Read);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        
+        var knownTags = image.GetAllKnownTags();
+        var rawTags = image.GetAllRawTags();
+        
+        knownTags.Count().ShouldBe(18);
+        rawTags.Count().ShouldBe(19, "Should contain one more tag because there is an unrecognized tag that we're still able to parse");
+
+
+        image.GetTag(65000).GetString().ShouldBe("hello world\0");
     }
     
 

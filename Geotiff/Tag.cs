@@ -8,7 +8,14 @@ public class Tag
     public int RawId { get; }
     public string? TagName { get; }
     private GeoTiffTagValueResult Value { get; set; }
-    public string GetString() => this.Value.GetString();
+    public string GetString() {
+        var s = Value.GetString();
+        if (s.EndsWith("\0"))
+        {
+            s = s.Substring(0, s.Length - 1);
+        }
+        return s;
+    }
 
     public override string ToString()
     {
@@ -138,7 +145,11 @@ public class Tag
         throw new GeoTiffException("Tag does not contain a numeric value.");
     }
     
-    
+    /// <summary>
+    /// Converts all elements to double so long as value is a numeric type
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
     public double[] GetAsDoubleArray()
     {
         if (Value.IsFloat64)
@@ -165,6 +176,74 @@ public class Tag
             return Value.GetRationalArray().Select(r => (double)r).ToArray();
         if (Value.IsSRational)
             return Value.GetSRationalArray().Select(sr => (double)sr).ToArray();
+        
+        throw new GeoTiffException("Tag does not contain a numeric array value.");
+    }
+    
+    /// <summary>
+    /// Converts element to int so long as value is a numeric type
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
+    public double GetAsInt()
+    {
+        if (Value.IsFloat64)
+            return Value.GetFloat64();
+        if (Value.IsFloat32)
+            return (double)Value.GetFloat32();
+        if (Value.IsInt64)
+            return (double)Value.GetInt64();
+        if (Value.IsUInt64)
+            return (double)Value.GetUInt64();
+        if (Value.IsInt32)
+            return (double)Value.GetInt32();
+        if (Value.IsUInt32)
+            return (double)Value.GetUInt32();
+        if (Value.IsInt16)
+            return (double)Value.GetInt16();
+        if (Value.IsUInt16)
+            return (double)Value.GetUInt16();
+        if (Value.IsSByte)
+            return (double)Value.GetSByte();
+        if (Value.IsRational)
+            return (double)Value.GetRational();
+        if (Value.IsSRational)
+            return (double)Value.GetSRational();
+
+        throw new GeoTiffException("Tag does not contain a numeric value.");
+    }
+    
+    /// <summary>
+    /// Converts all elements to int so long as value is a numeric type
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
+    public int[] GetAsIntArray()
+    {
+        if (Value.IsFloat64)
+            return Value.GetFloat64Array().Select(f => (int)f).ToArray();
+        if (Value.IsFloat32)
+            return Value.GetFloat32Array().Select(f => (int)f).ToArray();
+        if (Value.IsInt64)
+            return Value.GetInt64Array().Select(l => (int)l).ToArray();
+        if (Value.IsUInt64)
+            return Value.GetUInt64Array().Select(ul => (int)ul).ToArray();
+        if (Value.IsInt32)
+            return Value.GetInt32Array().Select(i => (int)i).ToArray();
+        if (Value.IsUInt32)
+            return Value.GetUInt32Array().Select(ui => (int)ui).ToArray();
+        if (Value.IsInt16)
+            return Value.GetInt16Array().Select(s => (int)s).ToArray();
+        if (Value.IsUInt16)
+            return Value.GetUInt16Array().Select(us => (int)us).ToArray();
+        if (Value.IsByte)
+            return Value.GetByteArray().Select(sb => (int)sb).ToArray();
+        if (Value.IsSByte)
+            return Value.GetSByteArray().Select(sb => (int)sb).ToArray();
+        if (Value.IsRational)
+            return Value.GetRationalArray().Select(r => (int)r).ToArray();
+        if (Value.IsSRational)
+            return Value.GetSRationalArray().Select(sr => (int)sr).ToArray();
         
         throw new GeoTiffException("Tag does not contain a numeric array value.");
     }

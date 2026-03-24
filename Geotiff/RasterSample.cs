@@ -126,14 +126,20 @@ public class RasterSample
         }
     }
 
-    public bool IsFloatingPoint()
+    public bool IsFloatingPoint
     {
-        return this.SampleType == GeotiffSampleDataType.Float32 || this.SampleType == GeotiffSampleDataType.Float64;
+        get
+        {
+            return this.SampleType == GeotiffSampleDataType.Float32 || this.SampleType == GeotiffSampleDataType.Float64;    
+        }
     }
 
-    public bool IsInteger()
+    public bool IsInteger
     {
-        return !IsFloatingPoint();
+        get
+        {
+            return !IsFloatingPoint;    
+        }
     }
     
     public void CheckType(GeotiffSampleDataType sampleDataType)

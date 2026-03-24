@@ -107,7 +107,7 @@ var result = sample0.GetAsDoubleArray(); // Get As -> Converts your datatype, us
 var result = sample0.GetAsIntArray();
 
 
-if (result.IsInteger()) // any signed or unsigned integer type.
+if (result.IsInteger) // any signed or unsigned integer type.
 {
     var result = sample0.GetAsIntArray();
 }
@@ -117,10 +117,11 @@ if (result.IsFloatingPoint) // either a double of float
         var result = sample0.GetAsDoubleArray();
 }
 
-// Lastly, if precision is important or your data values are close to the upper/ lower limits of the storage type, you can do:
+// If precision or performance are important, or if your data values are close to the upper/ lower limits of the storage type, you can do:
 switch (sample0.SampleType)
 {
     case GeotiffSampleDataType.UInt8:
+	// Your logic for byte sample data here
         break;
     case GeotiffSampleDataType.Int8:
         break;
@@ -144,7 +145,7 @@ switch (sample0.SampleType)
 
 ```
 
-Lastly, if you want to reshape the data into a 2D array organised so that the first element is at the top left (as per geotiff convention, at its origin):
+If you want to reshape the data into a 2D array organised so that the first element is at the top left (as per geotiff convention, at its origin):
 
 ```csharp
 string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
@@ -157,6 +158,51 @@ var reshaped = readResult.GetSampleAt(0).GetAs2DDoubleArray();
 Console.WriteLine(reshaped[0,0]); // value at the geotiff origin
 ```
 
+For reading of tags that are standard (either in the Tiff standard, GeoTiff Standard, or custom tags defined by GDAL), there are two different methods:
+
+
+For some important tags, there are high level methods that tell you the type of value (as defined by the specifications) without you having to guess or otherwise know ahead of time, for example:
+
+```csharp
+GeotiffImage yourImage = ...;
+
+int planarConfig = image.GetPlanarConfiguration();
+int nBytesPerPixel = image.GetNumberOfBytesPerPixel();
+int predictor = image.GetPredictor();
+```
+
+Note that the values here are cast to `int` even if they are stored as other types, because they are used internally by this library to index arrays or other operations.
+
+You can also read tags using this method:
+
+```csharp
+Tag predictorTag = image.GetTag("Predictor");
+// Then, you can extract the value from tags using two different methods.
+// If you know the type and want to be precise:
+ushort predictorValueUShort = predictorTag.GetUShort()
+
+// if you don't know the type and don't mind converting:
+int predictorValueConverted = predictorTag.GetAsInt();
+double predictorValueDoubleConverted = predictorTag.GetAsDouble();
+
+// or:
+if (predictorTag.IsInteger) 
+{
+    int predictorValueConverted = predictorTag.GetAsInt();	
+}
+else if (predictorTag.IsFloatingPoint)
+{
+    double predictorValueConverted = predictorTag.GetAsDouble();	
+} 
+// else its probably a string 
+predictorTag.GetString();
+```
+
+Finally, if you know the tag id and its not available from this library (perhaps it is a custom tag) you can access it from its numeric ID:
+
+```csharp
+image.GetTag(65000).GetString().ShouldBe("hello world\0");
+```
 
 ## Alternatives libraries
 
@@ -174,15 +220,15 @@ New contributors are very welcome. If you’d like to get involved, please open 
 Before release, the bare minimum:
 
 - Find and resolve all [Obsolete] attributes
-- Better tag reading API
 - Test to cover packbits decoder
 - Don't cast tag numeric values to double during parsing
-- Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing
+- Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing + allow user to read them explicitly.
 - Make GetBitsForSample and GetBitsPerSample the same type (uint vs int)
 - More friendly reading of tag strings
-- Reading unknown tag values as Int and double + explanation. 
 - More fixed tag type reading methods with predefined types.
 - All known tags to enum?
+- Custom tags look to be discarded instead of stored.
+- Document how file stream reading works.
 
 Post initial release:
 

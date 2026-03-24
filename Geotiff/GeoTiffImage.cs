@@ -6,7 +6,7 @@ namespace Geotiff;
 
 public class GeoTiffImage
 {
-    public readonly ImageFileDirectory FileDirectory;
+    public readonly ImageFileDirectory FileDirectory;// todo: make this private
     public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
@@ -109,6 +109,22 @@ public class GeoTiffImage
         return this.FileDirectory.TagDictionary.Values;
     }
 
+    /// <summary>
+    /// Returns null if the tag is not found in the ImageFileDirectory.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public Tag? GetTag(int id)
+    {
+        var found = this.FileDirectory.RawFileDirectory.TryGetValue(id, out Tag? tag);
+        return found ? tag : null;
+    }
+    
+    /// <summary>
+    /// Returns null if the tag is not found in the ImageFileDirectory.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
     public Tag? GetTag(string name)
     {
         var found = this.FileDirectory.TagDictionary.TryGetValue(name, out Tag? tag);
@@ -277,7 +293,7 @@ public class GeoTiffImage
     /// <summary>
     /// Returns the number of bytes per pixel.
     /// </summary>
-    public int GetBytesPerPixel()
+    public int GetNumberOfBytesPerPixel()
     {
         ushort[] bitsPerSample = FileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
         int bytes = 0;
@@ -615,7 +631,7 @@ public class GeoTiffImage
         );
         uint windowWidth = imageWindow[2] - imageWindow[0];
 
-        int bytesPerPixel = GetBytesPerPixel();
+        int bytesPerPixel = GetNumberOfBytesPerPixel();
 
         SparseList<int> srcSampleOffsets = new();
         for (int i = 0; i < samples.Count(); ++i)
@@ -912,7 +928,7 @@ public class GeoTiffImage
             long nPixels = GetBlockHeight(y) * GetTileWidth();
             int bytesPerPixel = planarConfiguration == 2
                 ? GetSampleByteSize(sampleToUse)
-                : GetBytesPerPixel();
+                : GetNumberOfBytesPerPixel();
             
             var data = new byte[nPixels * bytesPerPixel];
             Array view = GetArrayForSample(sampleToUse, data);

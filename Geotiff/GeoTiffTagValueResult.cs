@@ -12,7 +12,7 @@ namespace Geotiff;
 /// </summary>
 internal class GeoTiffTagValueResult
 {
-    private byte[] _resultByte;
+    private byte[]? _resultByte;
     private sbyte[]? _resultSByte;
     private short[]? _resultInt16;
     private Int64[]? _resultInt64;
@@ -39,6 +39,32 @@ internal class GeoTiffTagValueResult
     public bool IsInt32 => _resultInt32 != null; 
     public bool IsRational => _resultRational != null;
     public bool IsSRational => _resultSRational != null;
+    
+    public bool IsInteger {
+        get
+        {
+            return _resultSByte is not null
+                || _resultInt16 is not null  
+                || _resultInt32 is not null 
+                || _resultInt64 is not null 
+                || _resultByte is not null
+                || _resultUInt16 is not null
+                || _resultUInt32 is not null
+                || _resultUInt64 is not null;
+        }
+    }
+
+    public bool IsFloatingPoint
+    {
+        get
+        {
+            return _resultFloat64 is not null 
+                   || _resultFloat32 is not null 
+                   || _resultRational is not null 
+                   || _resultSRational is not null;
+        }
+    }
+    
     
     public ulong[] GetUInt64Array() =>
         _resultUInt64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt64", this.DataType);
