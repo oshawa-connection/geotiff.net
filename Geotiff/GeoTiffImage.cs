@@ -116,8 +116,7 @@ public class GeoTiffImage
     /// <returns></returns>
     public Tag? GetTag(int id)
     {
-        var found = this.FileDirectory.RawFileDirectory.TryGetValue(id, out Tag? tag);
-        return found ? tag : null;
+        return this.FileDirectory.GetTag(id);
     }
     
     /// <summary>
@@ -127,8 +126,7 @@ public class GeoTiffImage
     /// <returns></returns>
     public Tag? GetTag(string name)
     {
-        var found = this.FileDirectory.TagDictionary.TryGetValue(name, out Tag? tag);
-        return found ? tag : null;
+        return this.FileDirectory.GetTag(name);
     }
 
     /// <summary>
@@ -281,8 +279,7 @@ public class GeoTiffImage
     
     public ushort[] GetBitsPerSample()
     {
-        ushort[] bitsPerSample = this.GetTag(FieldTypes.BitsPerSample).GetUShortArray();
-        return bitsPerSample;
+        return GetTag(FieldTypes.BitsPerSample).GetUShortArray();
     }
 
     public int GetPlanarConfiguration()
@@ -348,7 +345,7 @@ public class GeoTiffImage
             return Math.Min(rowsPerStrip.Value, GetHeight());
         }
 
-        return GetHeight();
+        return GetHeight();// file has only one tile/ strip.
     }
 
 

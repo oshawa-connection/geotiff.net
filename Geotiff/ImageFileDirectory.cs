@@ -53,10 +53,10 @@ public class ImageFileDirectory
     /// <summary>
     ///
     /// </summary>
-    ///
     /// <param name="key"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete]
     public IEnumerable<T>? GetFileDirectoryListValue<T>(string key)
     {
         if (TagDictionary.TryGetValue(key, out var tag))
@@ -75,6 +75,7 @@ public class ImageFileDirectory
         return null;
     }
 
+    [Obsolete]
     public T[]? GetFileDirectoryArrayValue<T>(string key)
     {
         IEnumerable<T>? found = GetFileDirectoryListValue<T>(key);
@@ -281,7 +282,7 @@ public class ImageFileDirectory
         return null;
     }
     
-        public ulong[] GetFileDirectoryValueULongArray(string key)
+    public ulong[] GetFileDirectoryValueULongArray(string key)
     {
         if (TagDictionary.TryGetValue(key, out var v))
         {
@@ -289,6 +290,7 @@ public class ImageFileDirectory
         }
         throw new GeoTiffTagKeyNotFoundException($"Tag '{key}' was not found.");
     }
+    
     public ulong GetFileDirectoryValueULong(string key)
     {
         if (TagDictionary.TryGetValue(key, out var v))
@@ -504,7 +506,7 @@ public class ImageFileDirectory
     
     public bool HasTag(string tagName)
     {
-        return this.TagDictionary.ContainsKey(tagName);
+        return TagDictionary.ContainsKey(tagName);
     }
 
     public int[] bitsPerSampleCached;
@@ -543,7 +545,13 @@ public class ImageFileDirectory
         {
             if (jpegTablesCached is null)
             {
-                jpegTablesCached = GetFileDirectoryArrayValue<byte>("JPEGTables");
+                var tag = GetTag("JPEGTables");
+                if (tag is null)
+                {
+                    return null;
+                }
+                
+                jpegTablesCached = tag.GetByteArray();
             }
 
             return jpegTablesCached;
@@ -551,4 +559,28 @@ public class ImageFileDirectory
     }
 
     public string? GDAL_NODATA => GetFileDirectoryValueString("GDAL_NODATA");
+    
+    
+    /// <summary>
+    /// Returns null if the tag is not found in the ImageFileDirectory.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public Tag? GetTag(string name)
+    {
+        var found = TagDictionary.TryGetValue(name, out Tag? tag);
+        return found ? tag : null;
+    }
+    
+    
+    /// <summary>
+    /// Returns null if the tag is not found in the ImageFileDirectory.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public Tag? GetTag(int id)
+    {
+        var found = RawFileDirectory.TryGetValue(id, out Tag? tag);
+        return found ? tag : null;
+    }
 }

@@ -55,6 +55,9 @@ public class Tag
     public sbyte GetSByte()=> this.Value.GetSByte();
     public long[] GetLongArray()=> this.Value.GetInt64Array();
 
+    public byte[] GetByteArray()=> this.Value.GetByteArray();
+    public byte GetByte()=> this.Value.GetByte();
+    
     public long GetLong()
     {
         if (this.Value.IsInt16)

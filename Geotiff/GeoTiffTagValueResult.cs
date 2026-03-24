@@ -89,6 +89,13 @@ internal class GeoTiffTagValueResult
         return _resultInt16.Single();
     }
 
+    public byte GetByte()
+    {
+        if (_resultByte is null)
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("byte", this.DataType);
+        return _resultByte.Single();
+    }
+    
     public byte[] GetByteArray() =>
         _resultByte ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("byte", this.DataType);
     
@@ -254,7 +261,6 @@ internal class GeoTiffTagValueResult
         return new GeoTiffTagValueResult() { _resultByte = data };
     }
     
-    [Obsolete]
     private Array GetList()
     {
         if (IsFloat64 is true)
