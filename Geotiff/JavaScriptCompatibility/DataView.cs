@@ -146,12 +146,7 @@ internal class DataView
 
         return BitConverter.ToSingle(x);
     }
-
-    public float GetFloat32ElementOffset(int elementOffset, bool isLittleEndian = false)
-    {
-        return GetFloat32(elementOffset * 4, isLittleEndian);
-    }
-
+    
     public void SetFloat32(int byteOffset, float value, bool isLittleEndian = false)
     {
         CheckType(GeotiffSampleDataType.Float32, false);
@@ -163,13 +158,7 @@ internal class DataView
 
         SetByteRange(byteOffset, x);
     }
-
-
-    public void SetFloat32ElementOffset(int elementOffset, float value, bool isLittleEndian = false)
-    {
-        this.SetFloat32(elementOffset * 4, value, isLittleEndian);
-    }
-
+    
     public double GetFloat64(int offset, bool isLittleEndian = false)
     {
         CheckType(GeotiffSampleDataType.Float64, true);
@@ -331,31 +320,5 @@ internal class DataView
         }
 
         SetByteRange(offset, x);
-    }
-
-    [Obsolete("Use typed versions of this method")]
-    public void SetValue(int offset, object value)
-    {
-        if (IsTyped is false)
-        {
-            throw new InvalidOperationException($"Cannot setValue on an typed array");
-        }
-
-        // TODO: add support for other data types
-        switch (type)
-        {
-            case GeotiffSampleDataType.UInt8:
-                SetUint8(offset, (byte)value);
-                break;
-            case GeotiffSampleDataType.Int8:
-                Setint8(offset, (byte)value);
-                break;
-            case GeotiffSampleDataType.Float32:
-                SetFloat32(offset, (float)value);
-                break;
-            case GeotiffSampleDataType.Float64:
-                SetFloat64(offset, (float)value);
-                break;
-        }
     }
 }

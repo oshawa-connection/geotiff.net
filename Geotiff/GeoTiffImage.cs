@@ -1037,15 +1037,7 @@ public class GeoTiffImage
                 
                 if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
                 {
-                    data = NormalizeArray(
-                        data,
-                        sampleFormat,
-                        planarConfiguration,
-                        (int)GetSamplesPerPixel(),
-                        (int)bitsForCurrentSample,
-                        (int)GetTileWidth(), // TODO: Why not block width?
-                        (int)GetBlockHeight(y)
-                    );
+                    throw new NotSupportedException("Data types that require normalization are not supported by this library.");
                 }
 
                 return data;
@@ -1113,126 +1105,7 @@ public class GeoTiffImage
         string? str = FileDirectory.GDAL_NODATA;
         return int.Parse(str.Substring(0, str.Length - 1));
     }
-
-
-    private byte[] NormalizeArray(byte[] inBuffer, int format, int planarConfiguration, int samplesPerPixel,
-        int bitsPerSample, int tileWidth, int tileHeight)
-    {
-        var view = new DataView(inBuffer); //JSENH Check this
-        int outSize = planarConfiguration == 2
-            ? tileHeight * tileWidth
-            : tileHeight * tileWidth * samplesPerPixel;
-        int samplesToTransfer = planarConfiguration == 2
-            ? 1
-            : samplesPerPixel;
-
-        
-        DataView outArray = DataViewForType(format, (ulong)bitsPerSample, outSize);
-        // var pixel = 0;
-        int bitMask = JsParse.ParseInt(new string('1', bitsPerSample), 2);
-
-        if (format == 1)
-        {
-            // unsigned integer
-            // translation of https://github.com/OSGeo/gdal/blob/master/gdal/frmts/gtiff/geotiff.cpp#L7337
-            int pixelBitSkip;
-            // var sampleBitOffset = 0;
-            if (planarConfiguration == 1)
-            {
-                pixelBitSkip = samplesPerPixel * bitsPerSample;
-                // sampleBitOffset = (samplesPerPixel - 1) * bitsPerSample;
-            }
-            else
-            {
-                pixelBitSkip = bitsPerSample;
-            }
-
-            // Bits per line rounds up to next byte boundary.
-            int bitsPerLine = tileWidth * pixelBitSkip;
-            if ((bitsPerLine & 7) != 0)
-            {
-                bitsPerLine = (bitsPerLine + 7) & ~7;
-            }
-
-            for (int y = 0; y < tileHeight; ++y)
-            {
-                int lineBitOffset = y * bitsPerLine;
-                for (int x = 0; x < tileWidth; ++x)
-                {
-                    int pixelBitOffset = lineBitOffset + (x * samplesToTransfer * bitsPerSample);
-                    for (int i = 0; i < samplesToTransfer; ++i)
-                    {
-                        int bitOffset = pixelBitOffset + (i * bitsPerSample);
-                        int outIndex = (((y * tileWidth) + x) * samplesToTransfer) + i;
-
-                        int byteOffset = (int)Math.Floor(bitOffset / 8.0);
-                        int innerBitOffset = bitOffset % 8;
-                        if (innerBitOffset + bitsPerSample <= 8)
-                        {
-                            int result = (view.GetUint8(byteOffset) >> (8 - bitsPerSample - innerBitOffset)) & bitMask;
-                            outArray.SetValue(result,
-                                outIndex); // TODO: not sure why they don't care about endianness here.
-                        }
-                        else if (innerBitOffset + bitsPerSample <= 16)
-                        {
-                            int result = (view.GetUint16(byteOffset) >> (16 - bitsPerSample - innerBitOffset)) &
-                                         bitMask;
-                            outArray.SetValue(result,
-                                outIndex); // TODO: not sure why they don't care about endianness here.
-                        }
-                        else if (innerBitOffset + bitsPerSample <= 24)
-                        {
-                            int raw = (view.GetUint16(byteOffset) << 8) | view.GetUint8(byteOffset + 2);
-                            int result = (raw >> (24 - bitsPerSample - innerBitOffset)) & bitMask;
-                            outArray.SetValue(result,
-                                outIndex); // TODO: not sure why they don't care about endianness here.
-                        }
-                        else
-                        {
-                            long result = (view.GetUint32(byteOffset) >> (32 - bitsPerSample - innerBitOffset)) &
-                                          bitMask;
-                            outArray.SetValue((int)result,
-                                outIndex); // TODO: fix narrowing conversion // TODO: not sure why they don't care about endianness here.
-                        }
-// THIS IS COMMENTED OUT IN GEOTIFF.JS
-                        // var outWord = 0;
-                        // for (var bit = 0; bit < bitsPerSample; ++bit) {
-                        //   if (inByteArray[bitOffset >> 3]
-                        //     & (0x80 >> (bitOffset & 7))) {
-                        //     outWord |= (1 << (bitsPerSample - 1 - bit));
-                        //   }
-                        //   ++bitOffset;
-                        // }
-
-                        // outArray[outIndex] = outWord;
-                        // outArray[pixel] = outWord;
-                        // pixel += 1;
-                    }
-                    // bitOffset = bitOffset + pixelBitSkip - bitsPerSample;
-// THIS IS COMMENTED OUT IN GEOTIFF.JS
-                }
-            }
-        }
-        else if (format == 3)
-        {
-// THIS IS COMMENTED OUT IN GEOTIFF.JS
-            // floating point
-            // Float16 is handled elsewhere
-            // normalize 16/24 bit floats to 32 bit floats in the array
-            // console.time();
-            // if (bitsPerSample == 16) {
-            //   for (var byte = 0, outIndex = 0; byte < inBuffer.byteLength; byte += 2, ++outIndex) {
-            //     outArray[outIndex] = getFloat16(view, byte);
-            //   }
-            // }
-            // console.timeEnd()
-// THIS IS COMMENTED OUT IN GEOTIFF.JS      
-        }
-
-        return outArray.ToArrayBuffer();
-    }
-
-
+    
     /// <summary>
     /// Not part of GeoTiff.js
     /// </summary>

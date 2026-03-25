@@ -218,7 +218,6 @@ Other than GDAL, there are several packages for reading (and possibly writing) g
 New contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Some ideas of good items to work on:
 
 Before release, the bare minimum:
-* Don't cast tag numeric values to double during parsing
 - Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing + allow user to read them explicitly.
 - More friendly reading of tag strings -> don't say that they're byte[]s.
 - Document how file stream reading works
