@@ -205,9 +205,11 @@ public class ReadingTests : GeoTiffTestBaseClass
         await using var fsSource = new FileStream(customGDALMetadataTag, FileMode.Open, FileAccess.Read);
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
+
+        var gdalMetadataTag = image.GetTag("GDAL_METADATA");
         
-        var s = image.GetTag("GDAL_METADATA").GetString();
-        s = s.Replace("\0","");
+        gdalMetadataTag.DataType.ShouldBe(TagDataType.ASCII);
+        var s = gdalMetadataTag.GetString();
         
         XDocument doc = XDocument.Parse(s);
         

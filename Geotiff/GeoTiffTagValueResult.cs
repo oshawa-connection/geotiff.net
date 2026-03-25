@@ -12,6 +12,7 @@ namespace Geotiff;
 /// </summary>
 internal class GeoTiffTagValueResult
 {
+    private byte[]? _resultAscii;
     private byte[]? _resultByte;
     private sbyte[]? _resultSByte;
     private short[]? _resultInt16;
@@ -25,47 +26,40 @@ internal class GeoTiffTagValueResult
     private Rational[]? _resultRational;
     private int[]? _resultSRational;
 
+    /// <summary>
+    /// Remember that this refers to the dotnet type.
+    /// </summary>
+    public bool IsString => _resultAscii is not null;
     public bool IsByte => _resultByte is not null;
     public bool IsSByte => _resultSByte is not null;
-    public bool IsInt16 => _resultInt16 is not null;
-    
-    public bool IsInt64 => _resultInt64 is not null;
-    
-    public bool IsFloat64 => _resultFloat64 is not null;
-    public bool IsFloat32 => _resultFloat32 is not null;
-    public bool IsUInt16 => _resultUInt16 is not null;
-    public bool IsUInt64 => _resultUInt64 != null;
-    public bool IsUInt32 => _resultUInt32 != null;
-    public bool IsInt32 => _resultInt32 != null; 
+    public bool IsShort => _resultInt16 is not null;
+    public bool IsLong => _resultInt64 is not null;
+    public bool IsDouble => _resultFloat64 is not null;
+    public bool IsFloat => _resultFloat32 is not null;
+    public bool IsUShort => _resultUInt16 is not null;
+    public bool IsULong => _resultUInt64 != null;
+    public bool IsUInt => _resultUInt32 != null;
+    public bool IsInt => _resultInt32 != null; 
     public bool IsRational => _resultRational != null;
     public bool IsSRational => _resultSRational != null;
     
-    public bool IsInteger {
-        get
-        {
-            return _resultSByte is not null
-                || _resultInt16 is not null  
-                || _resultInt32 is not null 
-                || _resultInt64 is not null 
-                || _resultByte is not null
-                || _resultUInt16 is not null
-                || _resultUInt32 is not null
-                || _resultUInt64 is not null;
-        }
-    }
+    public bool IsInteger =>
+        _resultSByte is not null
+        || _resultInt16 is not null  
+        || _resultInt32 is not null 
+        || _resultInt64 is not null 
+        || _resultByte is not null
+        || _resultUInt16 is not null
+        || _resultUInt32 is not null
+        || _resultUInt64 is not null;
 
-    public bool IsFloatingPoint
-    {
-        get
-        {
-            return _resultFloat64 is not null 
-                   || _resultFloat32 is not null 
-                   || _resultRational is not null 
-                   || _resultSRational is not null;
-        }
-    }
-    
-    
+    public bool IsFloatingPoint =>
+        _resultFloat64 is not null 
+        || _resultFloat32 is not null 
+        || _resultRational is not null 
+        || _resultSRational is not null;
+
+
     public ulong[] GetUInt64Array() =>
         _resultUInt64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt64", this.DataType);
     
@@ -191,13 +185,13 @@ internal class GeoTiffTagValueResult
 
     public string GetString()
     {
-        if (this.IsByte)
+        if (this.IsString)
         {
-            return System.Text.Encoding.ASCII.GetString(_resultByte);
+            return System.Text.Encoding.ASCII.GetString(_resultAscii);
 
         }
         
-        throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.BYTE.ToString(), this.DataType);
+        throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.ASCII.ToString(), this.DataType);
     }
         
     
@@ -260,30 +254,35 @@ internal class GeoTiffTagValueResult
     {
         return new GeoTiffTagValueResult() { _resultByte = data };
     }
+
+    public static GeoTiffTagValueResult FromAscii(byte[] data)
+    {
+        return new GeoTiffTagValueResult() { _resultAscii = data };
+    }
     
     private Array GetList()
     {
-        if (IsFloat64 is true)
+        if (IsDouble is true)
         {
             return _resultFloat64;
         }
 
-        if (IsFloat32)
+        if (IsFloat)
         {
             return _resultFloat32;
         }
 
-        if (IsUInt64)
+        if (IsULong)
         {
             return _resultUInt64;
         }
 
-        if (IsUInt32)
+        if (IsUInt)
         {
             return _resultUInt32;
         }
 
-        if (IsUInt16)
+        if (IsUShort)
         {
             return _resultUInt16;
         }
@@ -308,12 +307,12 @@ internal class GeoTiffTagValueResult
             return _resultSRational;
         }
 
-        if (IsInt64)
+        if (IsLong)
         {
             return _resultInt64;
         }
 
-        if (IsInt16)
+        if (IsShort)
         {
             return _resultInt16;
         }
@@ -345,17 +344,18 @@ internal class GeoTiffTagValueResult
     {
         get
         {
-            if (this.IsInt16) return TagDataType.SHORT;
+            if (this.IsString) return TagDataType.ASCII;
+            if (this.IsShort) return TagDataType.SHORT;
             if (this.IsSByte) return TagDataType.SBYTE;
-            if (this.IsInt64) return TagDataType.LONG;
+            if (this.IsLong) return TagDataType.LONG;
             if (this.IsByte) return TagDataType.BYTE; 
-            if (this.IsFloat64) return TagDataType.DOUBLE;
-            if (this.IsFloat32) return TagDataType.FLOAT;
-            if (this.IsUInt16) return TagDataType.USHORT;
-            if (this.IsInt32) return TagDataType.LONG;
-            if (this.IsUInt64) return TagDataType.ULONG;
-            if (this.IsUInt32) return TagDataType.UINT;
-            if (this.IsInt32) return TagDataType.INT;
+            if (this.IsDouble) return TagDataType.DOUBLE;
+            if (this.IsFloat) return TagDataType.FLOAT;
+            if (this.IsUShort) return TagDataType.USHORT;
+            if (this.IsInt) return TagDataType.LONG;
+            if (this.IsULong) return TagDataType.ULONG;
+            if (this.IsUInt) return TagDataType.UINT;
+            if (this.IsInt) return TagDataType.INT;
             if (this.IsRational) return TagDataType.RATIONAL;
             if (this.IsSRational) return TagDataType.SRATIONAL;
             

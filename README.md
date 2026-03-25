@@ -219,7 +219,6 @@ New contributors are very welcome. If you’d like to get involved, please open 
 
 Before release, the bare minimum:
 - Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing + allow user to read them explicitly.
-- More friendly reading of tag strings -> don't say that they're byte[]s.
 - Document how file stream reading works
 - Move away from using strings for tag names everywhere
 - Document or write friendly reading of ModelPixelScale,ModelTiepoint,ModelTransformation, origin, resolution, height, width, boundingbox

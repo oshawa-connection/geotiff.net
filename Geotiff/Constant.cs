@@ -102,7 +102,9 @@ public enum TagDataType
     [Description("Rational[]")]
     RATIONAL_ARRAY,
     [Description("SRational[]")]
-    SRATIONAL_ARRAY
+    SRATIONAL_ARRAY,
+    [Description("string")]
+    ASCII
 }
 
 
