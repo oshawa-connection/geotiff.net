@@ -49,45 +49,7 @@ public class ImageFileDirectory
         GeoKeyDirectory = geoKeyDirectory;
         NextIFDByteOffset = nextIFDByteOffset;
     }
-
-    /// <summary>
-    ///
-    /// </summary>
-    /// <param name="key"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    [Obsolete]
-    public IEnumerable<T>? GetFileDirectoryListValue<T>(string key)
-    {
-        if (TagDictionary.TryGetValue(key, out var tag))
-        {
-            if (typeof(T) == typeof(string))
-            {
-                var str = tag.GetString();
-                return new[] { (T)(object)str };
-            }
-            
-            var arr = tag.GetAsDoubleArray();// TODO: Do this the long form way where we check for every numeric type to prevent double conversion
-            Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-            return arr.Select(d => (T)Convert.ChangeType(d, targetType));
-            
-        }
-        return null;
-    }
-
-    [Obsolete]
-    public T[]? GetFileDirectoryArrayValue<T>(string key)
-    {
-        IEnumerable<T>? found = GetFileDirectoryListValue<T>(key);
-
-        if (found is null)
-        {
-            return null;
-        }
-
-        return found.ToArray();
-    }
-
+    
     public T GetGeoDirectoryValue<T>(string key)
     {
         if (GeoKeyDirectory.TryGetValue(key, out object obj))
@@ -509,28 +471,34 @@ public class ImageFileDirectory
         return TagDictionary.ContainsKey(tagName);
     }
 
-    public int[] bitsPerSampleCached;
+    public ushort[]? bitsPerSampleCached;
 
-    public int[] BitsPerSample
+    public ushort[] BitsPerSample
     {
         get
         {
             if (bitsPerSampleCached is null)
             {
-                bitsPerSampleCached = GetFileDirectoryArrayValue<int>("BitsPerSample");
+                var tag = GetTag(FieldTypes.BitsPerSample);
+                var bitsPerSampleArray = tag.GetUShortArray();
+                bitsPerSampleCached = bitsPerSampleArray;
             }
 
             return bitsPerSampleCached;
         }
     }
-    private int[]? sampleFormatCached = null;
-    public int[]? SampleFormat
+    private ushort[]? sampleFormatCached = null;
+    public ushort[]? SampleFormat
     {
         get
         {
             if (sampleFormatCached is null)
             {
-                sampleFormatCached = GetFileDirectoryArrayValue<int>("SampleFormat");
+                var sampleFormatTag = GetTag(FieldTypes.SampleFormat);
+                if (sampleFormatTag is not null)
+                {
+                    sampleFormatCached = sampleFormatTag.GetUShortArray();    
+                }
             }
 
             return sampleFormatCached;

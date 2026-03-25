@@ -275,8 +275,7 @@ public class GeoTiffImage
         ulong samplesPerPixel = FileDirectory.GetFileDirectoryValueULong(FieldTypes.SamplesPerPixel);
         return samplesPerPixel != 0 ? samplesPerPixel : 1;
     }
-
-
+    
     public ushort GetBitsForSample(int sampleIndex = 0)
     {
         ushort[] bitsPerSample = GetTag(FieldTypes.BitsPerSample).GetUShortArray();
@@ -437,7 +436,7 @@ public class GeoTiffImage
     private GeotiffSampleDataType SampleDataTypeForSample(int sampleIndex)
     {
         int format = GetSampleFormat(sampleIndex);
-        uint bitsPerSample = GetBitsForSample(sampleIndex);
+        ushort bitsPerSample = GetBitsForSample(sampleIndex);
         
         switch (format)
         {
@@ -770,10 +769,10 @@ public class GeoTiffImage
                                     (y + firstLine - imageWindow[1]) * windowWidth
                                 ) + x + firstCol - imageWindow[0];
 
-                                int format = FileDirectory.SampleFormat is not null
+                                ushort format = FileDirectory.SampleFormat is not null
                                     ? FileDirectory.SampleFormat[si]
-                                    : 1;
-                                int bitsPerSample = FileDirectory.BitsPerSample[si];
+                                    : (ushort)1;
+                                ushort bitsPerSample = FileDirectory.BitsPerSample[si];
 
                                 var myArray = valueArrays[si];
                                 var dv = dataView;
@@ -862,7 +861,7 @@ public class GeoTiffImage
         return new Raster(valueArrays, this.GetOrCalculateAffineTransformation(), imageWindowWidth, imageWindowHeight, this);
     }
     
-    private int sum(IEnumerable<int> array, int start, int end) {
+    private int sum(IEnumerable<ushort> array, int start, int end) {
         var s = 0;
         for (var i = start; i < end; ++i) {
             s += array.ElementAt(i);
@@ -881,7 +880,7 @@ public class GeoTiffImage
         int format = FileDirectory.SampleFormat is not null
             ? FileDirectory.SampleFormat[sampleIndex]
             : 1;
-        int bitsPerSample = FileDirectory.BitsPerSample[sampleIndex];
+        ushort bitsPerSample = FileDirectory.BitsPerSample[sampleIndex];
         switch (format)
         {
             case 1: // unsigned integer data
