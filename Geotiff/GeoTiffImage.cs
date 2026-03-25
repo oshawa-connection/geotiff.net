@@ -764,9 +764,21 @@ public class GeoTiffImage
                         ulong xmax = JSMath.Min((ulong)tileWidth, (ulong)(tileWidth - (lastCol - imageWindow[2])),
                             (ulong)(imageWidth - firstCol));
 
-                        for (ulong y = Math.Max(0, imageWindow[1] - firstLine); y < ymax; ++y)
+                        ulong startY = 0;
+                        if (imageWindow[1] > firstLine)
                         {
-                            for (ulong x = Math.Max(0, imageWindow[0] - firstCol); (ulong)x < xmax; ++x)
+                            startY = imageWindow[1] - firstLine;
+                        }
+
+                        ulong startX = 0;
+                        if (imageWindow[0] > firstCol)
+                        {
+                            startX = imageWindow[0] - firstCol;
+                        }
+                        
+                        for (ulong y = startY; y < ymax; ++y)
+                        {
+                            for (ulong x = startX; x < xmax; ++x)
                             {
                                 ulong bytesPerPixelToUse = bytesPerPixel;
                                 if (planarConfiguration == 2)
