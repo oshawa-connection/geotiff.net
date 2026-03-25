@@ -128,7 +128,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         bbox.YMin.ShouldBe(23.75, 0.001);
         bbox.XMax.ShouldBe(-79.75, 0.001);
         bbox.YMax.ShouldBe(32, 0.001);
-        uint nPixels = image.GetHeight() * image.GetWidth();
+        var nPixels = image.GetHeight() * image.GetWidth();
     }
     
     [TestMethod]
@@ -156,7 +156,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         image.GetTag("StripByteCounts").GetUShortArray().ShouldBe(new ushort[] {3632, 3648});
         image.GetPlanarConfiguration().ShouldBe(2);
         image.GetTag("DateTime").GetString().ShouldBe("2019:12:28 00:00:00");
-        image.GetPredictor().ShouldBe(3);
+        image.GetPredictor().ShouldBe((ushort)3);
         image.GetTag("ExtraSamples").GetUShort().ShouldBe((ushort)0);
         image.GetTag("SampleFormat").GetUShortArray().ShouldBe(new ushort[] {3,3});
         image.GetTag("ModelPixelScale").GetDoubleArray().ShouldBe(new double[] {0.25, 0.25, 0});
@@ -181,7 +181,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         image.GetTag("StripByteCounts").GetAsIntArray().ShouldBe(new int[] {3632, 3648});
         image.GetPlanarConfiguration().ShouldBe(2);
         
-        image.GetPredictor().ShouldBe(3);
+        image.GetPredictor().ShouldBe((ushort)3);
         image.GetTag("ExtraSamples").GetAsInt().ShouldBe(0);
         image.GetTag("SampleFormat").GetAsIntArray().ShouldBe(new int[] {3,3});
         image.GetTag("ModelPixelScale").GetAsDoubleArray().ShouldBe(new double[] {0.25, 0.25, 0});
@@ -271,7 +271,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         VectorXYZ? origin = image.GetOrigin();
         BoundingBox? bbox = image.GetBoundingBox();
 
-        uint nPixels = image.GetHeight() * image.GetWidth();
+        var nPixels = image.GetHeight() * image.GetWidth();
 
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
     }
@@ -367,7 +367,7 @@ public class ReadingTests : GeoTiffTestBaseClass
             {
                 var x = xSample[lon, lat];
                 var y = (double)ySample[lon, lat];
-                var shouldBeLat = height - lat - 1 + resolution.Y;
+                var shouldBeLat = height - (ulong)lat - 1 + resolution.Y;
                 var shouldBeLon = lon + 1;
                 
                 x.ShouldBe(shouldBeLon);
@@ -404,7 +404,7 @@ public class ReadingTests : GeoTiffTestBaseClass
             {
                 var x = xSample[lon, lat];
                 var y = (double)ySample[lon, lat];
-                var shouldBeLat = height - lat - 1 + resolution.Y;
+                var shouldBeLat = height - (ulong)lat - 1 + resolution.Y;
                 var shouldBeLon = lon + 1;
                 
                 x.ShouldBe(shouldBeLon);

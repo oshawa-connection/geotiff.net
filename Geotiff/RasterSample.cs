@@ -7,8 +7,8 @@ namespace Geotiff;
 /// </summary>
 public class RasterSample
 {
-    public uint Height { get; set; }
-    public uint Width { get; set; }
+    public ulong Height { get; set; }
+    public ulong Width { get; set; }
     private double[]? Float64Result { get; set; }
     private float[]? Float32Result { get; set; }
     private float[]? Float16Result { get; set; }
@@ -24,7 +24,7 @@ public class RasterSample
     public readonly GeotiffSampleDataType SampleType;
 
 
-    private RasterSample(uint width, uint height, GeoTiffImage parentImage)
+    private RasterSample(ulong width, ulong height, GeoTiffImage parentImage)
     {
         this.Width = width;
         this.Height = height;
@@ -86,7 +86,7 @@ public class RasterSample
         this.SampleType = GeotiffSampleDataType.Float64;
         this.Float64Result = float64Result;
     }
-    public RasterSample(uint width, uint height, GeoTiffImage parentImage, GeotiffSampleDataType sampleType, int size): this(width, height, parentImage)
+    public RasterSample(ulong width, ulong height, GeoTiffImage parentImage, GeotiffSampleDataType sampleType, int size): this(width, height, parentImage)
     {
         this.SampleType = sampleType;
         switch (sampleType)
@@ -426,7 +426,7 @@ public class RasterSample
     /// <exception cref="InvalidOperationException"></exception>
     private T[,] To2DArrayReversed<T>(T[] array)
     {
-        if (array.Length != Height * Width)
+        if ((ulong)array.Length != Height * Width)
         {
             throw new InvalidOperationException("RawArrayData length does not match Height * Width.");    
         }
@@ -450,7 +450,7 @@ public class RasterSample
     /// <exception cref="InvalidOperationException"></exception>
     private T[,] To2DArray<T>(T[] array)
     {
-        if (array.Length != Height * Width)
+        if ((ulong)array.Length != Height * Width)
         {
             throw new InvalidOperationException("RawArrayData length does not match Height * Width.");
         }

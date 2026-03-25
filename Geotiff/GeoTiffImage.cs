@@ -10,7 +10,7 @@ public class GeoTiffImage
     public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
-    private readonly Dictionary<int, byte[]>? tiles;
+    private readonly Dictionary<ulong, byte[]>? tiles;
     private readonly bool isTiled;
     private readonly ushort planarConfiguration;
     private ulong[]? StripOffsetsCached;
@@ -22,10 +22,10 @@ public class GeoTiffImage
     {
         this.FileDirectory = fileDirectory;
         this.littleEndian = littleEndian;
-        tiles = cache ? new Dictionary<int, byte[]>() : null;
+        tiles = cache ? new Dictionary<ulong, byte[]>() : null;
 
         isTiled = fileDirectory.TagDictionary.ContainsKey("StripOffsets") is false;
-        ushort? planarConfiguration = fileDirectory.GetFileDirectoryValueUShortOrNull(FieldTypes.PlanarConfiguration);
+        ushort? planarConfiguration = fileDirectory.GetFileDirectoryValueUShortOrNull(TagFields.PlanarConfiguration);
 
         if (planarConfiguration is null)
         {
@@ -47,7 +47,7 @@ public class GeoTiffImage
 
     public bool HasValidTiePoints()
     {
-        var tiePoint = FileDirectory.GetTag(FieldTypes.ModelTiepoint);
+        var tiePoint = FileDirectory.GetTag(TagFields.ModelTiepoint);
         if (tiePoint is null)
         {
             return false;
@@ -59,7 +59,7 @@ public class GeoTiffImage
 
     public bool HasValidModelTransformation()
     {
-        var modelTag = this.GetTag(FieldTypes.ModelTransformation);
+        var modelTag = this.GetTag(TagFields.ModelTransformation);
         if (modelTag is null)
         {
             return false;
@@ -85,8 +85,8 @@ public class GeoTiffImage
     /// <exception cref="GeoTiffException">Thrown if the affine transformation is invalid</exception>
     public VectorXYZ? GetOrigin()
     {
-        var tiepointtag = GetTag(FieldTypes.ModelTiepoint);
-        var modelTransformationTag = this.GetTag(FieldTypes.ModelTransformation);
+        var tiepointtag = GetTag(TagFields.ModelTiepoint);
+        var modelTransformationTag = this.GetTag(TagFields.ModelTransformation);
         
         if (HasValidTiePoints())
         {
@@ -142,18 +142,20 @@ public class GeoTiffImage
     /// uint return type here is confirmed by geotiff spec
     /// </summary>
     /// <returns></returns>
-    public uint GetWidth()
+    public ulong GetWidth()
     {
-        return (uint)FileDirectory.GetFileDirectoryValueUInt(FieldTypes.ImageWidth);
+        var imageWidthTag = this.GetTag(TagFields.ImageWidth);
+        return imageWidthTag.GetAsULong();
     }
 
     /// <summary>
     /// uint return type here is confirmed by geotiff spec
     /// </summary>
     /// <returns></returns>
-    public uint GetHeight()
+    public ulong GetHeight()
     {
-        return FileDirectory.GetFileDirectoryValueUInt(FieldTypes.ImageLength);
+        var imageLengthTag = this.GetTag(TagFields.ImageLength);
+        return imageLengthTag.GetAsULong();
     }
 
 
@@ -163,7 +165,7 @@ public class GeoTiffImage
     /// <returns></returns>
     public VectorXYZ? GetResolution()
     {
-        var modelPixelScaleTag = GetTag(FieldTypes.ModelPixelScale);
+        var modelPixelScaleTag = GetTag(TagFields.ModelPixelScale);
         
         if (modelPixelScaleTag is not null)
         {
@@ -172,7 +174,7 @@ public class GeoTiffImage
             return affine.GetResolution();
         }
 
-        var modelTransformationR = GetTag(FieldTypes.ModelTransformation);
+        var modelTransformationR = GetTag(TagFields.ModelTransformation);
         
         if (modelTransformationR is not null)
         {
@@ -193,10 +195,10 @@ public class GeoTiffImage
     /// <returns>The bounding box</returns>
     public BoundingBox? GetBoundingBox(bool tilegrid = false)
     {
-        uint height = GetHeight();
-        uint width = GetWidth();
+        var height = GetHeight();
+        var width = GetWidth();
 
-        var modelTransformationList = GetTag(FieldTypes.ModelTransformation);
+        var modelTransformationList = GetTag(TagFields.ModelTransformation);
         
         if (modelTransformationList is not null && !tilegrid)
         {
@@ -248,9 +250,9 @@ public class GeoTiffImage
     /// <returns></returns>
     public AffineTransformation? GetOrCalculateAffineTransformation()
     {
-        var modelTransformationTag = GetTag(FieldTypes.ModelTransformation);
-        var modelPixelScaleR = GetTag(FieldTypes.ModelPixelScale);
-        var tiePointTag = GetTag(FieldTypes.ModelTiepoint);
+        var modelTransformationTag = GetTag(TagFields.ModelTransformation);
+        var modelPixelScaleR = GetTag(TagFields.ModelPixelScale);
+        var tiePointTag = GetTag(TagFields.ModelTiepoint);
         
         
         
@@ -272,19 +274,19 @@ public class GeoTiffImage
     /// <returns></returns>
     public ulong GetSamplesPerPixel()
     {
-        ulong samplesPerPixel = FileDirectory.GetFileDirectoryValueULong(FieldTypes.SamplesPerPixel);
+        ulong samplesPerPixel = FileDirectory.GetFileDirectoryValueULong(TagFields.SamplesPerPixel);
         return samplesPerPixel != 0 ? samplesPerPixel : 1;
     }
     
     public ushort GetBitsForSample(int sampleIndex = 0)
     {
-        ushort[] bitsPerSample = GetTag(FieldTypes.BitsPerSample).GetUShortArray();
+        ushort[] bitsPerSample = GetTag(TagFields.BitsPerSample).GetUShortArray();
         return bitsPerSample[sampleIndex];
     }
     
     public ushort[] GetBitsPerSample()
     {
-        return GetTag(FieldTypes.BitsPerSample).GetUShortArray();
+        return GetTag(TagFields.BitsPerSample).GetUShortArray();
     }
 
     public int GetPlanarConfiguration()
@@ -295,10 +297,10 @@ public class GeoTiffImage
     /// <summary>
     /// Returns the number of bytes per pixel.
     /// </summary>
-    public int GetNumberOfBytesPerPixel()
+    public ulong GetNumberOfBytesPerPixel()
     {
         var bitsPerSample = GetBitsPerSample();
-        int bytes = 0;
+        ulong bytes = 0;
         for (int i = 0; i < bitsPerSample.Length; ++i)
         {
             bytes += GetSampleByteSize(i);
@@ -310,15 +312,15 @@ public class GeoTiffImage
     /// <summary>
     /// Returns the byte size of a sample at the given index.
     /// </summary>
-    public int GetSampleByteSize(int i)
+    public ulong GetSampleByteSize(int i)
     {
-        ushort[] bitsPerSample = FileDirectory.GetFileDirectoryValueUShortArray(FieldTypes.BitsPerSample).ToArray();
+        var bitsPerSample = GetTag(TagFields.BitsPerSample).GetAsULongArray();
         if (i >= bitsPerSample.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(i), $"Sample index {i} is out of range.");
         }
 
-        return (int)Math.Ceiling(bitsPerSample[i] / 8.0);
+        return (ulong)Math.Ceiling(bitsPerSample[i] / 8.0);
     }
 
     
@@ -326,31 +328,39 @@ public class GeoTiffImage
     /// Returns the width of each tile.
     /// </summary>
     /// <returns>The width of each tile</returns>
-    public uint GetTileWidth()
+    public ulong GetTileWidth()
     {
-        return isTiled
-            ? (uint)FileDirectory.GetFileDirectoryValueUInt(FieldTypes.TileWidth)
-            : GetWidth();
+        var tileWidthTag = GetTag(TagFields.TileWidth);
+        if (tileWidthTag is not null)
+        {
+            return tileWidthTag.GetAsULong();
+        }
+
+        return GetWidth();
     }
 
     /// <summary>
-    /// Returns the height of each tile.
+    /// Returns the height of each tile or strip
     /// </summary>
     /// <returns>The height of each tile</returns>
-    public uint GetTileHeight()
+    public ulong GetTileHeight()
     {
         if (isTiled)
         {
-            return (uint)FileDirectory.GetFileDirectoryValueUInt(FieldTypes.TileLength);
+            var tileLengthTag = GetTag(TagFields.TileLength);
+            return tileLengthTag.GetAsULong();
         }
+        
+        var rowsPerStripTag = GetTag(TagFields.TileLength);
 
-        uint? rowsPerStrip = FileDirectory.GetFileDirectoryValueUInt(FieldTypes.RowsPerStrip);
-        if (rowsPerStrip.HasValue)
+        var imageHeight = GetHeight();
+        
+        if (rowsPerStripTag is not null)
         {
-            return Math.Min(rowsPerStrip.Value, GetHeight());
+            return Math.Min(rowsPerStripTag.GetAsULong(), imageHeight);
         }
 
-        return GetHeight();// file has only one tile/ strip.
+        return imageHeight;// file has only one tile/ strip.
     }
 
 
@@ -360,7 +370,7 @@ public class GeoTiffImage
     /// <returns></returns>
     private int GetSampleFormat(int sampleIndex = 0)
     {
-        var sampleFormatTag = GetTag(FieldTypes.SampleFormat);
+        var sampleFormatTag = GetTag(TagFields.SampleFormat);
         if (sampleFormatTag is null)
         {
             return 1;
@@ -368,14 +378,15 @@ public class GeoTiffImage
         return sampleFormatTag.GetUShortArray()[sampleIndex];
     }
 
-    public int GetPredictor()
+    public ushort GetPredictor()
     {
-        if (this.FileDirectory.HasTag("Predictor"))
+        var predictor = this.GetTag(TagFields.Predictor);
+        if (predictor is null)
         {
-            return this.FileDirectory.GetFileDirectoryValueInt("Predictor");
+            return 1;    
         }
 
-        return 1;
+        return predictor.GetUShort();
     }
     
     
@@ -386,7 +397,7 @@ public class GeoTiffImage
             return TileOffsetsCached;
         }
         
-        var stripOffsetsTag = GetTag(FieldTypes.TileOffsets);
+        var stripOffsetsTag = GetTag(TagFields.TileOffsets);
         TileOffsetsCached = stripOffsetsTag.GetAsULongArray();
         return TileOffsetsCached;
     }
@@ -398,7 +409,7 @@ public class GeoTiffImage
             return TileByteCountsCached;
         }
         
-        var tileByteCountsTag = GetTag(FieldTypes.TileByteCounts);
+        var tileByteCountsTag = GetTag(TagFields.TileByteCounts);
         TileByteCountsCached = tileByteCountsTag.GetAsULongArray();
         return TileByteCountsCached;
     }
@@ -415,7 +426,7 @@ public class GeoTiffImage
             return StripOffsetsCached;
         }
         
-        var stripOffsetsTag = GetTag(FieldTypes.StripOffsets);
+        var stripOffsetsTag = GetTag(TagFields.StripOffsets);
         StripOffsetsCached = stripOffsetsTag.GetAsULongArray();
         return StripOffsetsCached;
     }
@@ -427,7 +438,7 @@ public class GeoTiffImage
             return StripByteCountsCached;
         }
         
-        var stripByteCountsTag = GetTag(FieldTypes.StripByteCounts);
+        var stripByteCountsTag = GetTag(TagFields.StripByteCounts);
         StripByteCountsCached = stripByteCountsTag.GetAsULongArray();
         return StripByteCountsCached;
     }
@@ -636,7 +647,7 @@ public class GeoTiffImage
     public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
         // TODO: Replace with ImagePixelWindow
-        uint[] imageWindow = new uint[] { 0, 0, GetWidth(), GetHeight() };
+        ulong[] imageWindow = new ulong[] { 0, 0, GetWidth(), GetHeight() };
 
         if (window is not null)
         {
@@ -651,8 +662,8 @@ public class GeoTiffImage
             throw new GeoTiffException("Invalid image window");
         }
 
-        uint imageWindowWidth = imageWindow[2] - imageWindow[0];
-        uint imageWindowHeight = imageWindow[3] - imageWindow[1];
+        ulong imageWindowWidth = imageWindow[2] - imageWindow[0];
+        ulong imageWindowHeight = imageWindow[3] - imageWindow[1];
 
         ulong numPixels =
             (ulong)imageWindowWidth * (ulong)imageWindowHeight; // ignore resharper telling you that cast is redundant.
@@ -675,23 +686,23 @@ public class GeoTiffImage
             var sampleDataType = SampleDataTypeForSample(samples.ElementAt(i));
             valueArrays[samples.ElementAt(i)] = new RasterSample(imageWindowWidth, imageWindowHeight, this, sampleDataType, (int)numPixels);
         }
-        uint tileWidth = GetTileWidth();
-        uint tileHeight = GetTileHeight();
-        uint imageWidth = GetWidth();
-        uint imageHeight = GetHeight();
-        int minXTile = (int)Math.Max(Math.Floor((double)imageWindow[0] / (double)tileWidth), 0);
-        double maxXTile = Math.Min(
+        var tileWidth = GetTileWidth();
+        var tileHeight = GetTileHeight();
+        var imageWidth = GetWidth();
+        var imageHeight = GetHeight();
+        ulong minXTile = (ulong)Math.Max(Math.Floor((double)imageWindow[0] / (double)tileWidth), 0);
+        ulong maxXTile = (ulong)Math.Min(
             Math.Ceiling((double)imageWindow[2] / (double)tileWidth),
             Math.Ceiling((double)imageWidth / tileWidth)
         );
-        int minYTile = (int)Math.Max(Math.Floor((double)imageWindow[1] / (double)tileHeight), 0);
-        int maxYTile = (int)Math.Min(
+        ulong minYTile = (ulong)Math.Max(Math.Floor((double)imageWindow[1] / (double)tileHeight), 0);
+        ulong maxYTile = (ulong)Math.Min(
             Math.Ceiling((double)imageWindow[3] / (double)tileHeight),
             Math.Ceiling((double)imageHeight / (double)tileHeight)
         );
-        uint windowWidth = imageWindow[2] - imageWindow[0];
+        var windowWidth = imageWindow[2] - imageWindow[0];
 
-        int bytesPerPixel = GetNumberOfBytesPerPixel();
+        ulong bytesPerPixel = GetNumberOfBytesPerPixel();
 
         SparseList<int> srcSampleOffsets = new();
         for (int i = 0; i < samples.Count(); ++i)
@@ -721,9 +732,9 @@ public class GeoTiffImage
         
         var promises = new List<Task>();
         
-        for (int yTile = minYTile; yTile < maxYTile; ++yTile)
+        for (ulong yTile = minYTile; yTile < maxYTile; ++yTile)
         {
-            for (int xTile = minXTile; xTile < maxXTile; ++xTile)
+            for (ulong xTile = minXTile; xTile < maxXTile; ++xTile)
             {
                 Task<TileOrStripResult> getPromise = null;
                 if (planarConfiguration == 1)
@@ -744,28 +755,28 @@ public class GeoTiffImage
                         byte[] buffer = tile.data;
                         
                         var dataView = new DataView(buffer);
-                        long blockHeight = GetBlockHeight(tile.y);
-                        long firstLine = tile.y * tileHeight;
-                        long firstCol = tile.x * tileWidth;
-                        long lastLine = firstLine + blockHeight;
-                        long lastCol = (tile.x + 1) * tileWidth;
+                        ulong blockHeight = GetBlockHeight(tile.y);
+                        ulong firstLine = tile.y * tileHeight;
+                        ulong firstCol = tile.x * tileWidth;
+                        ulong lastLine = firstLine + blockHeight;
+                        ulong lastCol = (tile.x + 1) * tileWidth;
 
-                        long ymax = JSMath.Min(blockHeight, blockHeight - (lastLine - imageWindow[3]),
+                        ulong ymax = JSMath.Min(blockHeight, blockHeight - (lastLine - imageWindow[3]),
                             imageHeight - firstLine);
                         ulong xmax = JSMath.Min((ulong)tileWidth, (ulong)(tileWidth - (lastCol - imageWindow[2])),
                             (ulong)(imageWidth - firstCol));
 
-                        for (long y = Math.Max(0, imageWindow[1] - firstLine); y < ymax; ++y)
+                        for (ulong y = Math.Max(0, imageWindow[1] - firstLine); y < ymax; ++y)
                         {
-                            for (long x = Math.Max(0, imageWindow[0] - firstCol); (ulong)x < xmax; ++x)
+                            for (ulong x = Math.Max(0, imageWindow[0] - firstCol); (ulong)x < xmax; ++x)
                             {
-                                var bytesPerPixelToUse = bytesPerPixel;
+                                ulong bytesPerPixelToUse = bytesPerPixel;
                                 if (planarConfiguration == 2)
                                 {
                                     bytesPerPixelToUse = GetSampleByteSize(si);
                                 }
-                                long pixelOffset = ((y * tileWidth) + x) * bytesPerPixelToUse;
-                                long windowCoordinate = (
+                                ulong pixelOffset = ((y * tileWidth) + x) * bytesPerPixelToUse;
+                                ulong windowCoordinate = (
                                     (y + firstLine - imageWindow[1]) * windowWidth
                                 ) + x + firstCol - imageWindow[0];
 
@@ -939,12 +950,12 @@ public class GeoTiffImage
     /// <param name="poolOrDecoder"></param>
     /// <param name="signal"></param>
     /// <returns></returns>
-    private async Task<TileOrStripResult> GetTileOrStripAsync(int x, int y, int sample, DecoderRegistry poolOrDecoder,
+    private async Task<TileOrStripResult> GetTileOrStripAsync(ulong x, ulong y, int sample, DecoderRegistry poolOrDecoder,
         CancellationToken? signal)
     {
-        int numTilesPerRow = (int)Math.Ceiling((int)GetWidth() / (double)GetTileWidth());
-        int numTilesPerCol = (int)Math.Ceiling((double)GetHeight() / (double)GetTileHeight());
-        int index = 0;
+        ulong numTilesPerRow = (ulong)Math.Ceiling((double)GetWidth() / (double)GetTileWidth());
+        ulong numTilesPerCol = (ulong)Math.Ceiling((double)GetHeight() / (double)GetTileHeight());
+        ulong index = 0;
         var sampleToUse = 0;
         if (planarConfiguration == 1)
         {
@@ -953,26 +964,26 @@ public class GeoTiffImage
         else if (planarConfiguration == 2)
         {
             sampleToUse = sample;
-            index = (sampleToUse * numTilesPerRow * numTilesPerCol) + (y * numTilesPerRow) + x;
+            index = ((ulong)sampleToUse * numTilesPerRow * numTilesPerCol) + (y * numTilesPerRow) + x;
         }
 
         ulong offset;
         ulong byteCount;
         if (isTiled)
         {
-            offset = GetTileOffsets().ElementAt(index);
-            byteCount = GetTileByteCounts().ElementAt(index);
+            offset = GetTileOffsets().ElementAt((int)index);
+            byteCount = GetTileByteCounts().ElementAt((int)index);
         }
         else
         {
-            offset = GetStripOffsets().ElementAt(index);
-            byteCount = GetStripByteCounts().ElementAt(index);
+            offset = GetStripOffsets().ElementAt((int)index);
+            byteCount = GetStripByteCounts().ElementAt((int)index);
         }
 
         if (byteCount == 0)
         {
-            long nPixels = GetBlockHeight(y) * GetTileWidth();
-            int bytesPerPixel = planarConfiguration == 2
+            ulong nPixels = GetBlockHeight(y) * GetTileWidth();
+            ulong bytesPerPixel = planarConfiguration == 2
                 ? GetSampleByteSize(sampleToUse)
                 : GetNumberOfBytesPerPixel();
             
@@ -1056,12 +1067,12 @@ public class GeoTiffImage
         return true;
     }
 
-    public long GetBlockWidth()
+    public ulong GetBlockWidth()
     {
         return GetTileWidth();
     }
 
-    public long GetBlockHeight(int y)
+    public ulong GetBlockHeight(ulong y)
     {
         if (isTiled || (y + 1) * GetTileHeight() <= GetHeight())
         {

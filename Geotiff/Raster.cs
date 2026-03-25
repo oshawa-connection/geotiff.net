@@ -11,7 +11,7 @@ namespace Geotiff;
 /// <param name="parentImage"></param>
 public class Raster
 {
-    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, uint width, uint height, GeoTiffImage parentImage)
+    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, ulong width, ulong height, GeoTiffImage parentImage)
     {
         this.SampleData = sampleData;
         this.AffineTransformation = affine;
@@ -20,14 +20,14 @@ public class Raster
         this.ParentImage = parentImage;
     }
     public AffineTransformation? AffineTransformation { get; set; }
-    public uint Height { get; set; }
-    public uint GetHeight()
+    public ulong Height { get; set; }
+    public ulong GetHeight()
     {
         return this.Height;
     }
-    public uint Width { get; set; }
+    public ulong Width { get; set; }
 
-    public uint GetWidth()
+    public ulong GetWidth()
     {
         return this.Width;
     }

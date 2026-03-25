@@ -212,11 +212,11 @@ public class GeoTiff
         Dictionary<string, object> geoKeyDirectory = new();
         for (int i = 4; i <= rawGeoKeyDirectory[3] * 4; i += 4)
         {
-            string key = FieldTypes.GeoKeyNames.GetByKey(rawGeoKeyDirectory[i]);
+            string key = TagFields.GeoKeyNames.GetByKey(rawGeoKeyDirectory[i]);
             // string key = FieldTypes.GeoKeyNames[rawGeoKeyDirectory[i]];
             // TODO: try find a tif where this is 0. Not clear what value it should be, perhaps undefined in JS means array isn't set?
             string? location = rawGeoKeyDirectory[i + 1] != 0
-                ? FieldTypes.FieldTags.GetByKey(rawGeoKeyDirectory[i + 1])
+                ? TagFields.FieldTags.GetByKey(rawGeoKeyDirectory[i + 1])
                 : null;
             ushort count = rawGeoKeyDirectory[i + 2];
             ushort offset = rawGeoKeyDirectory[i + 3];
@@ -292,8 +292,8 @@ public class GeoTiff
                 : (int)dataSlice.ReadUInt32(i + 4);
 
             GeoTiffTagValueResult fieldValues;
-            int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
-            GeotiffFieldDataType fieldTypeName = FieldTypes.FieldTypeLookup[fieldType];
+            int fieldTypeLength = TagFields.GetFieldTypeLength(fieldType);
+            GeotiffFieldDataType fieldTypeName = TagFields.FieldTypeLookup[fieldType];
             long valueOffset = i + (_bigTiff ? 12 : 8);
             // Check if the value is directly encoded or refers to another byte range
             if (fieldTypeLength * typeCount <= (_bigTiff ? 8 : 4))
@@ -303,7 +303,7 @@ public class GeoTiff
             else
             {
                 long actualOffset = dataSlice.ReadOffset((int)valueOffset);
-                long length = FieldTypes.GetFieldTypeLength(fieldType) * typeCount;
+                long length = TagFields.GetFieldTypeLength(fieldType) * typeCount;
 
                 if (dataSlice.Covers((int)actualOffset, (int)length))
                 {
@@ -315,12 +315,12 @@ public class GeoTiff
                     fieldValues = fieldDataSlice.GetValues(fieldType, typeCount, (int)actualOffset);
                 }
             }
-            bool isList = !((typeCount == 1 && !FieldTypes.ArrayTypeFields.Contains(fieldTagId)
+            bool isList = !((typeCount == 1 && !TagFields.ArrayTypeFields.Contains(fieldTagId)
                                             && !(fieldTypeName == GeotiffFieldDataType.SRATIONAL)) ||
                             fieldTypeName == GeotiffFieldDataType.ASCII);
             
             // Write the tag's value to the file directory
-            if (FieldTypes.FieldTags.TryGetByKey(fieldTagId, out string tagName))
+            if (TagFields.FieldTags.TryGetByKey(fieldTagId, out string tagName))
             {
                 fileDirectory[tagName] = new Tag(fieldTagId, tagName, fieldValues, isList);
                 rawFileDirectory[fieldTagId] = new Tag(fieldTagId, tagName, fieldValues, isList);

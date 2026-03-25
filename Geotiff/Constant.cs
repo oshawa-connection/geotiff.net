@@ -106,7 +106,7 @@ public enum TagDataType
 }
 
 
-public static class FieldTypes
+public static class TagFields
 {
     internal static Dictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
     {
@@ -156,6 +156,7 @@ public static class FieldTypes
     public static string FreeByteCounts = "FreeByteCounts";
     public static string GrayResponseCurve = "GrayResponseCurve";
     public static string PageNumber = "PageNumber";
+    public static string Predictor = "Predictor";
     public static string TransferFunction = "TransferFunction";
     public static string WhitePoint = "WhitePoint";
     public static string PrimaryChromacities = "PrimaryChromacities";
@@ -305,7 +306,7 @@ public static class FieldTypes
         { 0x015B, JPEGTables },
         { 0x011D, "PageName" },
         { 0x0129, PageNumber },
-        { 0x013D, "Predictor" },
+        { 0x013D, Predictor },
         { 0x013F, PrimaryChromacities },
         { 0x0214, "ReferenceBlackWhite" },
         { 0x0153, SampleFormat },

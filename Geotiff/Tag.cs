@@ -188,30 +188,30 @@ public class Tag
     /// </summary>
     /// <returns></returns>
     /// <exception cref="GeoTiffException"></exception>
-    public double GetAsInt()
+    public int GetAsInt()
     {
         if (Value.IsFloat64)
-            return Value.GetFloat64();
+            return (int)Value.GetFloat64();
         if (Value.IsFloat32)
-            return (double)Value.GetFloat32();
+            return (int)Value.GetFloat32();
         if (Value.IsInt64)
-            return (double)Value.GetInt64();
+            return (int)Value.GetInt64();
         if (Value.IsUInt64)
-            return (double)Value.GetUInt64();
+            return (int)Value.GetUInt64();
         if (Value.IsInt32)
-            return (double)Value.GetInt32();
+            return (int)Value.GetInt32();
         if (Value.IsUInt32)
-            return (double)Value.GetUInt32();
+            return (int)Value.GetUInt32();
         if (Value.IsInt16)
-            return (double)Value.GetInt16();
+            return (int)Value.GetInt16();
         if (Value.IsUInt16)
-            return (double)Value.GetUInt16();
+            return (int)Value.GetUInt16();
         if (Value.IsSByte)
-            return (double)Value.GetSByte();
+            return (int)Value.GetSByte();
         if (Value.IsRational)
-            return (double)Value.GetRational();
+            return (int)Value.GetRational();
         if (Value.IsSRational)
-            return (double)Value.GetSRational();
+            return (int)Value.GetSRational();
 
         throw new GeoTiffException("Tag does not contain a numeric value.");
     }
@@ -251,6 +251,38 @@ public class Tag
         throw new GeoTiffException("Tag does not contain a numeric array value.");
     }
     
+    /// <summary>
+    /// Some tags are stored as either ushort/ ulong.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
+    public ulong GetAsULong()
+    {
+        if (Value.IsFloat64)
+            return (ulong)Value.GetFloat64();
+        if (Value.IsFloat32)
+            return (ulong)Value.GetFloat32();
+        if (Value.IsInt64)
+            return (ulong)Value.GetInt64();
+        if (Value.IsUInt64)
+            return (ulong)Value.GetUInt64();
+        if (Value.IsInt32)
+            return (ulong)Value.GetInt32();
+        if (Value.IsUInt32)
+            return (ulong)Value.GetUInt32();
+        if (Value.IsInt16)
+            return (ulong)Value.GetInt16();
+        if (Value.IsUInt16)
+            return (ulong)Value.GetUInt16();
+        if (Value.IsSByte)
+            return (ulong)Value.GetSByte();
+        if (Value.IsRational)
+            return (ulong)Value.GetRational();
+        if (Value.IsSRational)
+            return (ulong)Value.GetSRational();
+
+        throw new GeoTiffException("Tag does not contain a numeric value.");
+    }
     
     /// <summary>
     /// Converts all elements to long so long as value is a numeric type
