@@ -254,8 +254,6 @@ public class GeoTiffImage
         var modelPixelScaleR = GetTag(TagFields.ModelPixelScale);
         var tiePointTag = GetTag(TagFields.ModelTiepoint);
         
-        
-        
         if (modelTransformationTag is not null)
         {
             return AffineTransformation.FromModelTransformation(modelTransformationTag.GetDoubleArray());
@@ -351,7 +349,7 @@ public class GeoTiffImage
             return tileLengthTag.GetAsULong();
         }
         
-        var rowsPerStripTag = GetTag(TagFields.TileLength);
+        var rowsPerStripTag = GetTag(TagFields.RowsPerStrip);
 
         var imageHeight = GetHeight();
         
