@@ -426,7 +426,6 @@ public class ReadingTests : GeoTiffTestBaseClass
             var resultAll = await image.ReadRasterAsync();
             var ones = resultAll.GetSampleAt(0);
             var twos = resultAll.GetSampleAt(1);
-            var badIndex = ones.GetIntArray().ToList().FindIndex(d => d == 0);
             ones.GetIntArray().ShouldAllBe(d => d == 1);
             twos.GetIntArray().ShouldAllBe(d => d == 2);
         }
