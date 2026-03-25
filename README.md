@@ -160,8 +160,7 @@ Console.WriteLine(reshaped[0,0]); // value at the geotiff origin
 
 For reading of tags that are standard (either in the Tiff standard, GeoTiff Standard, or custom tags defined by GDAL), there are two different methods:
 
-
-For some important tags, there are high level methods that tell you the type of value (as defined by the specifications) without you having to guess or otherwise know ahead of time, for example:
+For some important tags, especially geotiff specific tags, there are high level methods that tell you the type of value (as defined by the specifications) without you having to guess or otherwise know ahead of time, for example:
 
 ```csharp
 GeotiffImage yourImage = ...;
@@ -169,6 +168,12 @@ GeotiffImage yourImage = ...;
 int planarConfig = image.GetPlanarConfiguration();
 int nBytesPerPixel = image.GetNumberOfBytesPerPixel();
 int predictor = image.GetPredictor();
+VectorXYZ origin = image.GetOrigin();
+BoundingBox bbox = image.GetBoundingBox();
+VectorXYZ resolution = image.GetResolution();
+
+// There are also some higher level methods for important tags that might be represented in multiple different forms:
+AffineTransformation? affineTransform = GetOrCalculateAffineTransformation();
 ```
 
 Note that the values here are cast to `int` even if they are stored as other types, because they are used internally by this library to index arrays or other operations.
@@ -176,6 +181,8 @@ Note that the values here are cast to `int` even if they are stored as other typ
 You can also read tags using this method:
 
 ```csharp
+Tag predictorTagMethod1 = image.GetTag(TagFields.Predictor);
+// This is the equivalent to the above:
 Tag predictorTag = image.GetTag("Predictor");
 // Then, you can extract the value from tags using two different methods.
 // If you know the type and want to be precise:
@@ -218,16 +225,14 @@ Other than GDAL, there are several packages for reading (and possibly writing) g
 New contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Some ideas of good items to work on:
 
 Before release, the bare minimum:
-- Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing + allow user to read them explicitly.
-- Document how file stream reading works
-- Move away from using strings for tag names everywhere
-- Document or write friendly reading of ModelPixelScale,ModelTiepoint,ModelTransformation, origin, resolution, height, width, boundingbox
-- Move cached higher level tags to image rather than on FileDirectory
-- Handling of long vs long vs int. BigSeek implementation?
 - Move away from using ImageFileDirectory -> GeoTiffImage in DecoderRegistry if possible.
+- Test to cover GeoTiffImage.GetSampleType
+- Rework all `Get` methods into getters
 
 Post initial release:
 
+- Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing + allow user to read them explicitly.
+- Handling of long vs long vs int. BigSeek implementation?
 - Some tests with rasters that have rotation elements of their affine matrix.
 - More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`. This needs to handle resampling too.
 - Some tests for cases where values are close to the limits of their respective types, e.g. int32.Max, float32.Max

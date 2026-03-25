@@ -20,7 +20,7 @@ public class JpegGeoTiffDecoder: GeoTiffDecoder
         using var inputStreamManipulated = new MemoryStream();
         int imageStart = 0;
         
-        var jpegTables = image.FileDirectory.JpegTables;
+        var jpegTables = image.JpegTables;
         if (jpegTables is not null)
         {
             // Remove SOI (FFD8) and EOI (FFD9) from JpegTables

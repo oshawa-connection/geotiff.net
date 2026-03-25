@@ -18,6 +18,11 @@ public class GeoTiffImage
     
     private ulong[]? TileOffsetsCached;
     private ulong[]? TileByteCountsCached;
+    
+    private ushort[]? bitsPerSampleCached;
+    
+    private byte[]? jpegTablesCached = null;
+    
     public GeoTiffImage(ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {
         this.FileDirectory = fileDirectory;
@@ -42,7 +47,7 @@ public class GeoTiffImage
         }
 
         this.source = source;
-        var _ = this.FileDirectory.JpegTables;// Populate this to cache it before decoding starts
+        var _ = this.JpegTables;// Populate this to cache it before decoding starts
     }
 
     public bool HasValidTiePoints()
@@ -286,11 +291,74 @@ public class GeoTiffImage
         return bitsPerSample[sampleIndex];
     }
     
-    public ushort[] GetBitsPerSample()
+    public ushort[] BitsPerSample
     {
-        return GetTag(TagFields.BitsPerSample).GetUShortArray();
-    }
+        get
+        {
+            if (bitsPerSampleCached is null)
+            {
+                var tag = GetTag(TagFields.BitsPerSample);
+                var bitsPerSampleArray = tag.GetUShortArray();
+                bitsPerSampleCached = bitsPerSampleArray;
+            }
 
+            return bitsPerSampleCached;
+        }
+    }
+    
+    
+    
+    
+    private ushort[]? sampleFormatCached = null;
+    public ushort[]? SampleFormat
+    {
+        get
+        {
+            if (sampleFormatCached is null)
+            {
+                var sampleFormatTag = GetTag(TagFields.SampleFormat);
+                if (sampleFormatTag is not null)
+                {
+                    sampleFormatCached = sampleFormatTag.GetUShortArray();    
+                }
+            }
+
+            return sampleFormatCached;
+        }
+    }
+    
+    public byte[]? JpegTables
+    {
+        get
+        {
+            if (jpegTablesCached is null)
+            {
+                var tag = GetTag("JPEGTables");
+                if (tag is null)
+                {
+                    return null;
+                }
+                
+                jpegTablesCached = tag.GetByteArray();
+            }
+
+            return jpegTablesCached;
+        }
+    }
+    
+    public string? GDAL_NODATA
+    {
+        get
+        {
+            var gdalNoDataTag = GetTag("GDAL_NODATA");
+            if (gdalNoDataTag is null)
+            {
+                return null;
+            }
+            return gdalNoDataTag.GetString();
+        }
+    }
+    
     public ushort GetPlanarConfiguration()
     {
         return this.planarConfiguration;
@@ -301,7 +369,7 @@ public class GeoTiffImage
     /// </summary>
     public ulong GetNumberOfBytesPerPixel()
     {
-        var bitsPerSample = GetBitsPerSample();
+        var bitsPerSample = BitsPerSample;
         ulong bytes = 0;
         for (int i = 0; i < bitsPerSample.Length; ++i)
         {
@@ -711,7 +779,7 @@ public class GeoTiffImage
         {
             if (planarConfiguration == 1)
             {
-                srcSampleOffsets.Add(samples.ElementAt(i),sum(this.FileDirectory.BitsPerSample, 0, samples.ElementAt(i)) / 8);
+                srcSampleOffsets.Add(samples.ElementAt(i),sum(BitsPerSample, 0, samples.ElementAt(i)) / 8);
             }
             else
             {
@@ -794,10 +862,11 @@ public class GeoTiffImage
                                     (y + firstLine - imageWindow[1]) * windowWidth
                                 ) + x + firstCol - imageWindow[0];
 
-                                ushort format = FileDirectory.SampleFormat is not null
-                                    ? FileDirectory.SampleFormat[si]
+                                ushort format = SampleFormat is not null
+                                    ? SampleFormat[si]
                                     : (ushort)1;
-                                ushort bitsPerSample = FileDirectory.BitsPerSample[si];
+                                
+                                ushort bitsPerSample = GetBitsForSample(si);
 
                                 var myArray = valueArrays[si];
                                 var dv = dataView;
@@ -895,6 +964,7 @@ public class GeoTiffImage
     }
     
     /// <summary>
+    /// Check the sample types before reading them.
     /// Technically TIFF does support different types for each sample, but almost no software/ tooling supports this.
     /// (including geotiff.NET for that matter). If your use case requires this please file an issue on GitHub.
     /// </summary>
@@ -902,10 +972,11 @@ public class GeoTiffImage
     /// <returns></returns>
     public GeotiffSampleDataType GetSampleType(int sampleIndex = 0)
     {
-        int format = FileDirectory.SampleFormat is not null
-            ? FileDirectory.SampleFormat[sampleIndex]
+        int format = SampleFormat is not null
+            ? SampleFormat[sampleIndex]
             : 1;
-        ushort bitsPerSample = FileDirectory.BitsPerSample[sampleIndex];
+        
+        ushort bitsPerSample = GetBitsForSample(sampleIndex);
         switch (format)
         {
             case 1: // unsigned integer data
@@ -1097,14 +1168,15 @@ public class GeoTiffImage
     /// <returns></returns>
     private int? GetGDALNoData()
     {
-        if (FileDirectory.GDAL_NODATA == null)
+        if (GDAL_NODATA == null)
         {
             return null;
         }
 
-        string? str = FileDirectory.GDAL_NODATA;
+        string? str = GDAL_NODATA;
         return int.Parse(str.Substring(0, str.Length - 1));
     }
+    
     
     /// <summary>
     /// Not part of GeoTiff.js

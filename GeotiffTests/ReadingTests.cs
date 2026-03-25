@@ -146,7 +146,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         image.GetWidth().ShouldBe((uint)33);
         image.GetHeight().ShouldBe((uint)33);
-        image.GetBitsPerSample().ShouldAllBe(d => d == 32);
+        image.BitsPerSample.ShouldAllBe(d => d == 32);
         image.GetTag("Compression").GetUShort().ShouldBe((ushort)8);
         image.GetTag("PhotometricInterpretation").GetUShort().ShouldBe((ushort)1);
         image.GetTag("ImageDescription").GetString().ShouldBe("NAD83 (EPSG:4269) to NAD83(HARN) (EPSG:4152). Converted from FL");

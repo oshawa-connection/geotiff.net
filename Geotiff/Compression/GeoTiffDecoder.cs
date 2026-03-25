@@ -15,7 +15,7 @@ public abstract class GeoTiffDecoder
         if (predictor != 1) {
             var tileWidth = image.GetTileWidth();
             var tileHeight = image.GetTileHeight();
-            var bitsPerSample = image.GetBitsPerSample();
+            var bitsPerSample = image.BitsPerSample;
             var planarConfiguration = image.GetPlanarConfiguration();
             return ApplyPredictor(decoded, (int)tileWidth, (int)tileHeight, predictor, bitsPerSample, planarConfiguration);
         }
