@@ -26,9 +26,9 @@ public class DecoderRegistry
         _register.Add(geoTiffDecoder);
     }
 
-    public GeoTiffDecoder GetDecoder(ImageFileDirectory fileDirectory)
+    public GeoTiffDecoder GetDecoder(GeoTiffImage image)
     {
-        var compressionTag = fileDirectory.GetTag(TagFields.Compression);
+        var compressionTag = image.GetTag(TagFields.Compression);
         if (compressionTag is null)
         {
             return new RawGeoTiffDecoder();
@@ -46,9 +46,9 @@ public class DecoderRegistry
         return found;
     }
 
-    public async Task<byte[]> DecodeAsync(ImageFileDirectory fileDirectory, GeoTiffImage image, byte[] buffer, int predictor)
+    public async Task<byte[]> DecodeAsync(GeoTiffImage image, byte[] buffer, int predictor)
     {
-        GeoTiffDecoder? decoder = GetDecoder(fileDirectory);
+        GeoTiffDecoder? decoder = GetDecoder(image);
         return await decoder.Decode(buffer, image, predictor);
     }
 }

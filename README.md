@@ -225,12 +225,12 @@ Other than GDAL, there are several packages for reading (and possibly writing) g
 New contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Some ideas of good items to work on:
 
 Before release, the bare minimum:
-- Move away from using ImageFileDirectory -> GeoTiffImage in DecoderRegistry if possible.
-- Test to cover GeoTiffImage.GetSampleType
+
 - Rework all `Get` methods into getters
 
 Post initial release:
 
+- Test to cover GeoTiffImage.GetSampleType; its not used internally so cover in public API tests.
 - Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing + allow user to read them explicitly.
 - Handling of long vs long vs int. BigSeek implementation?
 - Some tests with rasters that have rotation elements of their affine matrix.
@@ -247,3 +247,7 @@ Post initial release:
 ## Compliance tests
 
 The Compliance tests are a set of that compare the read tag and pixel read values between geotiff.js and geotiff.net. The tifs are not kept under version control, but are downloaded from [OSGeo's website](https://download.osgeo.org/geotiff/samples/) which is a good sample set to test against.
+
+## Useful links
+
+https://jhove.openpreservation.org/modules/tiff/tags/

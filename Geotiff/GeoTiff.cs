@@ -390,7 +390,7 @@ public class GeoTiff
         for (int i = 1; i < imageCount; i++)
         {
             var possibleOverview = await this.GetImageAsync(i);
-            if (currentImage.GetHeight() < possibleOverview.GetHeight() && currentImage.GetWidth() < possibleOverview.GetWidth())
+            if (currentImage.Height < possibleOverview.Height && currentImage.Width < possibleOverview.Width)
             {
                 return false;
             }

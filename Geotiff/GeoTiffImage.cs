@@ -144,23 +144,29 @@ public class GeoTiffImage
     }
 
     /// <summary>
-    /// uint return type here is confirmed by geotiff spec
+    /// 
     /// </summary>
     /// <returns></returns>
-    public ulong GetWidth()
+    public ulong Width
     {
-        var imageWidthTag = this.GetTag(TagFields.ImageWidth);
-        return imageWidthTag.GetAsULong();
+        get
+        {
+            var imageWidthTag = this.GetTag(TagFields.ImageWidth);
+            return imageWidthTag.GetAsULong();
+        }
     }
 
     /// <summary>
-    /// uint return type here is confirmed by geotiff spec
+    /// 
     /// </summary>
     /// <returns></returns>
-    public ulong GetHeight()
+    public ulong Height
     {
-        var imageLengthTag = this.GetTag(TagFields.ImageLength);
-        return imageLengthTag.GetAsULong();
+        get
+        {
+            var imageLengthTag = this.GetTag(TagFields.ImageLength);
+            return imageLengthTag.GetAsULong();    
+        }
     }
 
 
@@ -200,8 +206,8 @@ public class GeoTiffImage
     /// <returns>The bounding box</returns>
     public BoundingBox? GetBoundingBox(bool tilegrid = false)
     {
-        var height = GetHeight();
-        var width = GetWidth();
+        var height = Height;
+        var width = Width;
 
         var modelTransformationList = GetTag(TagFields.ModelTransformation);
         
@@ -275,14 +281,17 @@ public class GeoTiffImage
     /// 
     /// </summary>
     /// <returns></returns>
-    public ushort GetSamplesPerPixel()
+    public ushort SamplesPerPixel
     {
-        var tag = GetTag(TagFields.SamplesPerPixel);
-        if (tag is null)
+        get
         {
-            return 1;
+            var tag = GetTag(TagFields.SamplesPerPixel);
+            if (tag is null)
+            {
+                return 1;
+            }
+            return tag.GetUShort();   
         }
-        return tag.GetUShort();
     }
     
     public ushort GetBitsForSample(int sampleIndex = 0)
@@ -305,9 +314,6 @@ public class GeoTiffImage
             return bitsPerSampleCached;
         }
     }
-    
-    
-    
     
     private ushort[]? sampleFormatCached = null;
     public ushort[]? SampleFormat
@@ -406,7 +412,7 @@ public class GeoTiffImage
             return tileWidthTag.GetAsULong();
         }
 
-        return GetWidth();
+        return Width;
     }
 
     /// <summary>
@@ -423,7 +429,7 @@ public class GeoTiffImage
         
         var rowsPerStripTag = GetTag(TagFields.RowsPerStrip);
 
-        var imageHeight = GetHeight();
+        var imageHeight = Height;
         
         if (rowsPerStripTag is not null)
         {
@@ -717,7 +723,7 @@ public class GeoTiffImage
     public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
         // TODO: Replace with ImagePixelWindow
-        ulong[] imageWindow = new ulong[] { 0, 0, GetWidth(), GetHeight() };
+        ulong[] imageWindow = new ulong[] { 0, 0, Width, Height };
 
         if (window is not null)
         {
@@ -738,10 +744,8 @@ public class GeoTiffImage
         ulong numPixels =
             (ulong)imageWindowWidth * (ulong)imageWindowHeight; // ignore resharper telling you that cast is redundant.
         
-        ulong samplesPerPixel = GetSamplesPerPixel();
-        
         IEnumerable<int> samples =
-            Enumerable.Range(0, (int)samplesPerPixel)
+            Enumerable.Range(0, (int)SamplesPerPixel)
                 .ToArray(); 
         
         if (sampleSelection is not null)
@@ -758,8 +762,8 @@ public class GeoTiffImage
         }
         var tileWidth = GetTileWidth();
         var tileHeight = GetTileHeight();
-        var imageWidth = GetWidth();
-        var imageHeight = GetHeight();
+        var imageWidth = Width;
+        var imageHeight = Height;
         ulong minXTile = (ulong)Math.Max(Math.Floor((double)imageWindow[0] / (double)tileWidth), 0);
         ulong maxXTile = (ulong)Math.Min(
             Math.Ceiling((double)imageWindow[2] / (double)tileWidth),
@@ -1038,8 +1042,8 @@ public class GeoTiffImage
     private async Task<TileOrStripResult> GetTileOrStripAsync(ulong x, ulong y, int sample, DecoderRegistry poolOrDecoder,
         CancellationToken? signal)
     {
-        ulong numTilesPerRow = (ulong)Math.Ceiling((double)GetWidth() / (double)GetTileWidth());
-        ulong numTilesPerCol = (ulong)Math.Ceiling((double)GetHeight() / (double)GetTileHeight());
+        ulong numTilesPerRow = (ulong)Math.Ceiling((double)Width / (double)GetTileWidth());
+        ulong numTilesPerCol = (ulong)Math.Ceiling((double)Height / (double)GetTileHeight());
         ulong index = 0;
         var sampleToUse = 0;
         if (planarConfiguration == 1)
@@ -1104,7 +1108,7 @@ public class GeoTiffImage
             {
                 int sampleFormat = GetSampleFormat();
                 uint bitsForCurrentSample = GetBitsForSample(); // TODO: pass sample index here; works right now because most tiffs only contain one sample type. 
-                byte[] data = await poolOrDecoder.DecodeAsync(FileDirectory, this, slice, predictor);
+                byte[] data = await poolOrDecoder.DecodeAsync(this, slice, predictor);
                 
                 if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
                 {
@@ -1151,13 +1155,13 @@ public class GeoTiffImage
 
     public ulong GetBlockHeight(ulong y)
     {
-        if (isTiled || (y + 1) * GetTileHeight() <= GetHeight())
+        if (isTiled || (y + 1) * GetTileHeight() <= Height)
         {
             return GetTileHeight();
         }
         else
         {
-            return GetHeight() - (y * GetTileHeight());
+            return Height - (y * GetTileHeight());
         }
     }
 

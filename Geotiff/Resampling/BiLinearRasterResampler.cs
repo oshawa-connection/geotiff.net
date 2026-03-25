@@ -58,7 +58,7 @@ public class BiLinearRasterResampler : RasterResamplerBaseClass
         var sampleIndices = raster.ListSampleIndices();
         foreach (var sampleIndex in sampleIndices)
         {
-            var currentSample = raster.GetSampleAt(sampleIndex);
+            var currentSample = raster.SampleAt(sampleIndex);
             double[] arr;
             switch (currentSample.SampleType)
             {

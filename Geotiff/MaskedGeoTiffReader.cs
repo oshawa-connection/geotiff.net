@@ -42,7 +42,7 @@ public class MaskedGeoTiffReader
         var maskImage = await multiGeoTiff.GetImageAsync(1);
         // TODO: check type of mask band here - should be byte. Double check this from GDAL.
         
-        if (mainImage.GetHeight() != maskImage.GetHeight() || mainImage.GetWidth() != maskImage.GetWidth())
+        if (mainImage.Height != maskImage.Height || mainImage.Width != maskImage.Width)
         {
             throw new InvalidMaskedGeoTiffException("Mask file must have the same dimensions as the main file");
         }

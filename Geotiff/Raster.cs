@@ -21,16 +21,7 @@ public class Raster
     }
     public AffineTransformation? AffineTransformation { get; set; }
     public ulong Height { get; set; }
-    public ulong GetHeight()
-    {
-        return this.Height;
-    }
     public ulong Width { get; set; }
-
-    public ulong GetWidth()
-    {
-        return this.Width;
-    }
     
     public readonly GeoTiffImage ParentImage;
     /// <summary>
@@ -40,9 +31,12 @@ public class Raster
     /// </summary>
     private SparseList<RasterSample> SampleData { get; set; }
 
-    public int GetNumberOfSamples()
+    public int NumberOfSamples
     {
-        return this.SampleData.Count();
+        get
+        {
+            return this.SampleData.Count();    
+        }
     }
     
     public IEnumerable<int> ListSampleIndices()
@@ -60,7 +54,7 @@ public class Raster
     /// </summary>
     /// <param name="sampleIndex">This is the index within the parent GeoTiff.</param>
     /// <returns></returns>
-    public RasterSample GetSampleAt(int sampleIndex)
+    public RasterSample SampleAt(int sampleIndex)
     {
         if (this.ListSampleIndices().Contains(sampleIndex) is false)
         {

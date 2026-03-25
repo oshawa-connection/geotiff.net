@@ -85,8 +85,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         resolution.Z.ShouldBe(0d);
         
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
-        readResult.GetNumberOfSamples().ShouldBe(4);
-        var doubleArray = readResult.GetSampleAt(0).GetAs2DDoubleArray();
+        readResult.NumberOfSamples.ShouldBe(4);
+        var doubleArray = readResult.SampleAt(0).GetAs2DDoubleArray();
         Console.WriteLine(doubleArray[0,0]);
     }
     
@@ -103,8 +103,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiffImage? image = await geotiff.GetImageAsync();
         
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
-        readResult.GetNumberOfSamples().ShouldBe(1);
-        var doubleArray = readResult.GetSampleAt(0).GetAs2DDoubleArray();
+        readResult.NumberOfSamples.ShouldBe(1);
+        var doubleArray = readResult.SampleAt(0).GetAs2DDoubleArray();
         Console.WriteLine(doubleArray[0,0]);
 
         // Console.WriteLine(image.GetProjectionString());
@@ -128,7 +128,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         bbox.YMin.ShouldBe(23.75, 0.001);
         bbox.XMax.ShouldBe(-79.75, 0.001);
         bbox.YMax.ShouldBe(32, 0.001);
-        var nPixels = image.GetHeight() * image.GetWidth();
+        var nPixels = image.Height * image.Width;
     }
     
     [TestMethod]
@@ -144,8 +144,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         VectorXYZ? origin = image.GetOrigin();
         BoundingBox? bbox = image.GetBoundingBox();
         
-        image.GetWidth().ShouldBe((uint)33);
-        image.GetHeight().ShouldBe((uint)33);
+        image.Width.ShouldBe((uint)33);
+        image.Height.ShouldBe((uint)33);
         image.BitsPerSample.ShouldAllBe(d => d == 32);
         image.GetTag("Compression").GetUShort().ShouldBe((ushort)8);
         image.GetTag("PhotometricInterpretation").GetUShort().ShouldBe((ushort)1);
@@ -254,7 +254,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         BoundingBox? bbox = image.GetBoundingBox();
         
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
-        var sample0 = readResult.GetSampleAt(0);
+        var sample0 = readResult.SampleAt(0);
         sample0.GetByteArray()[0].ShouldBe((byte)0);
         sample0.GetByteArray().Last().ShouldBe((byte)99);
     }
@@ -273,7 +273,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         VectorXYZ? origin = image.GetOrigin();
         BoundingBox? bbox = image.GetBoundingBox();
 
-        var nPixels = image.GetHeight() * image.GetWidth();
+        var nPixels = image.Height * image.Width;
 
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
     }
@@ -291,10 +291,10 @@ public class ReadingTests : GeoTiffTestBaseClass
         int count = await geotiff.GetImageCountAsync();
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var resultAll = await image.ReadRasterAsync();
-        resultAll.GetNumberOfSamples().ShouldBe(10);
-        for (int i = 0; i < resultAll.GetNumberOfSamples(); i++)
+        resultAll.NumberOfSamples.ShouldBe(10);
+        for (int i = 0; i < resultAll.NumberOfSamples; i++)
         {
-            var sample = resultAll.GetSampleAt(i);
+            var sample = resultAll.SampleAt(i);
             var ints = sample.GetByteArray();
             ints.ShouldAllBe(d => d == i + 1);
         }
@@ -312,13 +312,13 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var resultAll = await image.ReadRasterAsync(null, new [] {5,6});
-        resultAll.GetNumberOfSamples().ShouldBe(2);
+        resultAll.NumberOfSamples.ShouldBe(2);
 
         int i = 0;
         
         foreach(var sampleIndex in resultAll.ListSampleIndices())
         {
-            var sample = resultAll.GetSampleAt(sampleIndex);
+            var sample = resultAll.SampleAt(sampleIndex);
             var ints = sample.GetByteArray();
             ints.ShouldAllBe(d => d == sampleIndex + 1);
             i++;
@@ -334,7 +334,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync();
-        var reshaped = readResult.GetSampleAt(0).GetAs2DDoubleArray();
+        var reshaped = readResult.SampleAt(0).GetAs2DDoubleArray();
         reshaped[0,0].ShouldBe(49);
         reshaped[0,1].ShouldBe(49);
         reshaped[1,1].ShouldBe(48);
@@ -356,12 +356,12 @@ public class ReadingTests : GeoTiffTestBaseClass
         bbox.YMax += resolution.Y;
         
         var imagePixelWindow = image.BoundingBoxToPixelWindow(bbox);
-        var height = image.GetHeight();
-        var width = image.GetWidth();
+        var height = image.Height;
+        var width = image.Width;
         
         var readResult = await image.ReadRasterAsync(imagePixelWindow);
-        var xSample = readResult.GetSampleAt(1).Get2DIntArray();
-        var ySample = readResult.GetSampleAt(0).Get2DIntArray();
+        var xSample = readResult.SampleAt(1).Get2DIntArray();
+        var ySample = readResult.SampleAt(0).Get2DIntArray();
         
         for (int lon = (int)imagePixelWindow.Left - 1; lon < imagePixelWindow.Right - 1; lon++)
         {
@@ -393,12 +393,12 @@ public class ReadingTests : GeoTiffTestBaseClass
         bbox.YMax += resolution.Y;
         
         
-        var height = image.GetHeight();
-        var width = image.GetWidth();
+        var height = image.Height;
+        var width = image.Width;
         
         var readResult = await image.ReadRasterBoundingBoxAsync(bbox);
-        var xSample = readResult.GetSampleAt(1).Get2DIntArray();
-        var ySample = readResult.GetSampleAt(0).Get2DIntArray();
+        var xSample = readResult.SampleAt(1).Get2DIntArray();
+        var ySample = readResult.SampleAt(0).Get2DIntArray();
         
         for (int lon = (int)bbox.XMin - 1; lon < bbox.XMax - 1; lon++)
         {
@@ -426,8 +426,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         for (var i = 0; i < 100; i++)
         {
             var resultAll = await image.ReadRasterAsync();
-            var ones = resultAll.GetSampleAt(0);
-            var twos = resultAll.GetSampleAt(1);
+            var ones = resultAll.SampleAt(0);
+            var twos = resultAll.SampleAt(1);
             var badIndex = ones.GetIntArray().ToList().FindIndex(d => d == 0);
             ones.GetIntArray().ShouldAllBe(d => d == 1);
             twos.GetIntArray().ShouldAllBe(d => d == 2);
@@ -463,8 +463,8 @@ public class ReadingTests : GeoTiffTestBaseClass
                         result = await image.ReadPixelSamplesAtCoordinateAsync(lon + 0.5,
                             lat + 0.5); 
                     
-                    RasterSample xSample = result.GetSampleAt(1);
-                    RasterSample ySample =  result.GetSampleAt(0);
+                    RasterSample xSample = result.SampleAt(1);
+                    RasterSample ySample =  result.SampleAt(0);
                     
                     
                     var x = xSample.GetIntArray()[0];
@@ -500,8 +500,8 @@ public class ReadingTests : GeoTiffTestBaseClass
                         result = await image.ReadPixelSamplesAtCoordinateAsync(lon + 0.5,
                             lat + 0.5); // add 0.5 to be in the centre of the pixel.
                     
-                    RasterSample xSample = result.GetSampleAt(1);
-                    RasterSample ySample =  result.GetSampleAt(0);
+                    RasterSample xSample = result.SampleAt(1);
+                    RasterSample ySample =  result.SampleAt(0);
                     
                     var x = xSample.GetIntArray()[0];
                     var y = ySample.GetIntArray()[0];
@@ -535,8 +535,8 @@ public class ReadingTests : GeoTiffTestBaseClass
                 result = await image.ReadPixelSamplesAtCoordinateAsync(17 + 0.5,
                     0 + 0.5); // add 0.5 to be in the centre of the pixel.
             
-            RasterSample xSample = result.GetSampleAt(1);
-            RasterSample ySample =  result.GetSampleAt(0);
+            RasterSample xSample = result.SampleAt(1);
+            RasterSample ySample =  result.SampleAt(0);
             
             var x = xSample.GetIntArray()[0];
             var y = ySample.GetIntArray()[0];
@@ -697,12 +697,12 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff geotiff = await GeoTiff.FromStreamAsync(stream);
         var image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync();
-        var firstSampleOriginal = readResult.GetSampleAt(0);
+        var firstSampleOriginal = readResult.SampleAt(0);
         var firstSampleData= firstSampleOriginal.Get2DDoubleArray(); // A 5 * 5 array
         RasterResamplerBaseClass resamplerBaseClass = new BiLinearRasterResampler();
         var resampledResult = resamplerBaseClass.Resample(readResult, 3, 3);
         
-        var first = resampledResult.GetSampleAt(0);
+        var first = resampledResult.SampleAt(0);
         var final = first.Get2DDoubleArray(); // A 3 * 3 array
         final[1,1].ShouldBe(31.888888888888893);
     }
@@ -732,7 +732,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         resampledRes.Z.ShouldBe(0);
         
         
-        var first = resampledResult.GetSampleAt(0);
+        var first = resampledResult.SampleAt(0);
         var final = first.Get2DDoubleArray();
         final[1,1].ShouldBe(55);
     }
@@ -747,10 +747,10 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         var image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync();
-        var firstSampleOriginal = readResult.GetSampleAt(0);
+        var firstSampleOriginal = readResult.SampleAt(0);
 
-        var firstSample = readResult.GetSampleAt(0).Get2DUShortArray();
-        var secondSample = readResult.GetSampleAt(1).Get2DUShortArray();
+        var firstSample = readResult.SampleAt(0).Get2DUShortArray();
+        var secondSample = readResult.SampleAt(1).Get2DUShortArray();
         
     }
 
@@ -843,8 +843,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var resolution = image.GetResolution();
 
         
-        var height = image.GetHeight();
-        var width = image.GetWidth();
+        var height = image.Height;
+        var width = image.Width;
         GeoTiffException? ex = null;
         try
         {
@@ -868,8 +868,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
 
-        var height = image.GetHeight();
-        var width = image.GetWidth();
+        var height = image.Height;
+        var width = image.Width;
         
         var tileWidth = image.GetTileWidth();
         var tileHeight = image.GetTileHeight();
@@ -886,13 +886,13 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
 
-        var height = image.GetHeight();
-        var width = image.GetWidth();
+        var height = image.Height;
+        var width = image.Width;
         
         var tileWidth = image.GetTileWidth();
         var tileHeight = image.GetTileHeight();
         var readResult = await image.ReadRasterAsync();
-        var firstSample = readResult.GetSampleAt(0);
+        var firstSample = readResult.SampleAt(0);
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.Float16);
         firstSample.GetFloatArray().Last().ShouldBe(9.8984375f);
     }
@@ -907,13 +907,13 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
 
-        var height = image.GetHeight();
-        var width = image.GetWidth();
+        var height = image.Height;
+        var width = image.Width;
         
         var tileWidth = image.GetTileWidth();
         var tileHeight = image.GetTileHeight();
         var readResult = await image.ReadRasterAsync();
-        var firstSample = readResult.GetSampleAt(0);
+        var firstSample = readResult.SampleAt(0);
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.Int16);
         firstSample.GetShortArray().Last().ShouldBe((short)-8121);
     }
@@ -928,13 +928,13 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
 
-        var height = image.GetHeight();
-        var width = image.GetWidth();
+        var height = image.Height;
+        var width = image.Width;
         
         var tileWidth = image.GetTileWidth();
         var tileHeight = image.GetTileHeight();
         var readResult = await image.ReadRasterAsync();
-        var firstSample = readResult.GetSampleAt(0);
+        var firstSample = readResult.SampleAt(0);
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.UInt16);
         firstSample.GetUShortArray().Last().ShouldBe((ushort)56582);
     }
@@ -949,10 +949,10 @@ public class ReadingTests : GeoTiffTestBaseClass
         var image = await geotiff.GetImageAsync();
 
         var readResult = await image.ReadRasterAsync();
-        readResult.GetNumberOfSamples().ShouldBe(3);
-        var rSample = readResult.GetSampleAt(0);
-        var gSample = readResult.GetSampleAt(1);
-        var bSample = readResult.GetSampleAt(2);
+        readResult.NumberOfSamples.ShouldBe(3);
+        var rSample = readResult.SampleAt(0);
+        var gSample = readResult.SampleAt(1);
+        var bSample = readResult.SampleAt(2);
         
         rSample.GetByteArray().ShouldAllBe(d => d == 254);
         gSample.GetByteArray().ShouldAllBe(d => d == 0);
@@ -970,8 +970,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var image = await geotiff.GetImageAsync();
 
         var readResult = await image.ReadRasterAsync();
-        readResult.GetNumberOfSamples().ShouldBe(1);
-        var rSample = readResult.GetSampleAt(0);
+        readResult.NumberOfSamples.ShouldBe(1);
+        var rSample = readResult.SampleAt(0);
         
         
         rSample.GetByteArray().ShouldAllBe(d => d == 128);
@@ -988,11 +988,11 @@ public class ReadingTests : GeoTiffTestBaseClass
         var image = await geotiff.GetImageAsync();
         
         var readResult = await image.ReadRasterAsync();
-        readResult.GetNumberOfSamples().ShouldBe(4);
-        var cyanSample = readResult.GetSampleAt(0);
-        var magentaSample = readResult.GetSampleAt(1);
-        var yellowSample = readResult.GetSampleAt(2);
-        var blackSample = readResult.GetSampleAt(3);
+        readResult.NumberOfSamples.ShouldBe(4);
+        var cyanSample = readResult.SampleAt(0);
+        var magentaSample = readResult.SampleAt(1);
+        var yellowSample = readResult.SampleAt(2);
+        var blackSample = readResult.SampleAt(3);
         
         cyanSample.GetByteArray().ShouldAllBe(d => d == 255);
         magentaSample.GetByteArray().ShouldAllBe(d => d == 0);
