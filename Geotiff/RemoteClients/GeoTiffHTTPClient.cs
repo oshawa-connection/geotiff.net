@@ -92,7 +92,7 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
             var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             ms.Position = 0;
-            var data = ms.ToArray().BigSkip(slices.First().Offset).Take(slices.First().Length).ToArray();
+            var data = ms.ToArray().BigSkip((long)slices.First().Offset).Take((int)slices.First().Length).ToArray();
             
             return new[] { data };
         }
@@ -100,8 +100,8 @@ public class GeoTiffHTTPClient : IGeoTiffRemoteClient
 
     public async Task<byte[]> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
     {
-        long offset = slice.Offset;
-        int length = slice.Length;
+        long offset = (long)slice.Offset;
+        int length = (int)slice.Length;
         using HttpRequestMessage request = new(
             HttpMethod.Get,
             url);

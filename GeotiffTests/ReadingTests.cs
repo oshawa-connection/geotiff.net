@@ -754,24 +754,28 @@ public class ReadingTests : GeoTiffTestBaseClass
     [TestMethod]
     public async Task TestModelTransformationTag()
     {
-        string transform = Path.Combine(GetDataFolderPath(), "image1.tif");
+        string transform = Path.Combine(GetDataFolderPath(), "model_transform.tif");
         await using var stream = File.OpenRead(transform);
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(stream);
         
         var image = await geotiff.GetImageAsync();
 
         var x = image.GetResolution();
-        x.X.ShouldBe(0.3001842105263349d);
-        x.Y.ShouldBe(-0.1850509803921595d);
+        x.X.ShouldBe(1);
+        x.Y.ShouldBe(-1);
         var bbox = image.GetBoundingBox();
-        bbox.XMax.ShouldBe(129.053d);
-        bbox.YMax.ShouldBe(109.03599999999999d);
-        bbox.XMin.ShouldBe(-12.511000000002014d);
-        bbox.YMin.ShouldBe(-5.034000000007282d);
+        bbox.XMax.ShouldBe(50);
+        bbox.YMax.ShouldBe(50);
+        bbox.XMin.ShouldBe(0);
+        bbox.YMin.ShouldBe(0);
 
         var origin = image.GetOrigin();
-        origin.X.ShouldBe(129.053);
-        origin.Y.ShouldBe(109.03599999999999);
+        origin.X.ShouldBe(0);
+        origin.Y.ShouldBe(50);
+
+        var affine = image.GetOrCalculateAffineTransformation();
+        affine.b.ShouldBe(0,"No rotation");
+        affine.e.ShouldBe(0,"No rotation");
 
     }
 

@@ -198,10 +198,10 @@ else if (predictorTag.IsFloatingPoint)
 predictorTag.GetString();
 ```
 
-Finally, if you know the tag id and its not available from this library (perhaps it is a custom tag) you can access it from its numeric ID:
+Finally, if you know the tag id and its not available from this library (e.g. custom tags) you can access it from its numeric ID:
 
 ```csharp
-image.GetTag(65000).GetString().ShouldBe("hello world\0");
+image.GetTag(65000).GetString().ShouldBe("hello world");
 ```
 
 ## Alternatives libraries
@@ -222,6 +222,10 @@ Before release, the bare minimum:
 - Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing + allow user to read them explicitly.
 - More friendly reading of tag strings -> don't say that they're byte[]s.
 - Document how file stream reading works
+- Move away from using strings for tag names everywhere
+- Document or write friendly reading of ModelPixelScale,ModelTiepoint,ModelTransformation, origin, resolution, height, width, boundingbox
+- Move cached higher level tags to image rather than on FileDirectory
+- Handling of long vs long vs int. BigSeek implementation?
 
 Post initial release:
 

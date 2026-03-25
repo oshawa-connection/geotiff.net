@@ -37,19 +37,19 @@ public class GeoTiffAmazonClient : IGeoTiffRemoteClient
     public async Task<IEnumerable<byte[]>> FetchSlicesAsync(IEnumerable<Slice> slices, CancellationToken? signal = null)
     {
         IEnumerable<Task<byte[]>>? tasks = slices.Select(slice =>
-            DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset, signal));
+            DownloadRangeFromS3Async((long)slice.Offset, (long)(slice.Length + slice.Offset), signal));
         return await Task.WhenAll(tasks);
     }
 
     public async Task<byte[]> FetchSliceAsync(Slice slice, CancellationToken? signal = null)
     {
-        return await DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset, signal);
+        return await DownloadRangeFromS3Async((long)slice.Offset, (long)(slice.Length + slice.Offset), signal);
     }
 
     public IEnumerable<byte[]> FetchSlices(IEnumerable<Slice> slices)
     {
         IEnumerable<Task<byte[]>>? tasks = slices.Select(slice =>
-            DownloadRangeFromS3Async(slice.Offset, slice.Length + slice.Offset));
+            DownloadRangeFromS3Async((long)slice.Offset, (long)(slice.Length + slice.Offset)));
         var task = Task.WhenAll(tasks);
         task.Wait();
         return task.Result;

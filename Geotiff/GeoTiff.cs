@@ -180,17 +180,17 @@ public class GeoTiff
         return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
 
-    private async Task<DataSlice> GetSliceAsync(int offset, int? size = null)
+    private async Task<DataSlice> GetSliceAsync(ulong offset, ulong? size = null)
     {
-        int fallbackSize = _bigTiff ? 4048 : 1024;
-        int sizeToUse = size is null ? fallbackSize : (int)size;
+        ulong fallbackSize = _bigTiff ? 4048ul : 1024ul;
+        ulong sizeToUse = size is null ? fallbackSize : (ulong)size;
         var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
         IEnumerable<byte[]>? results = await Source.FetchAsync(slices);
 
         return new DataSlice(
             results.Single(), // TODO: Double check this.  
-            offset,
+            (int)offset,
             IsLittleEndian,
             _bigTiff
         );
@@ -266,7 +266,7 @@ public class GeoTiff
         int entrySize = _bigTiff ? 20 : 12;
         int offsetSize = _bigTiff ? 8 : 2;
 
-        DataSlice? dataSlice = await GetSliceAsync(offset);
+        DataSlice? dataSlice = await GetSliceAsync((ulong)offset);
 
         int numDirEntries = _bigTiff
             ? (int)dataSlice.ReadUInt64(offset)
@@ -276,7 +276,7 @@ public class GeoTiff
         int byteSize = ((int)numDirEntries * (int)entrySize) + (_bigTiff ? 16 : 6);
         if (!dataSlice.Covers(offset, byteSize))
         {
-            dataSlice = await GetSliceAsync(offset, byteSize);
+            dataSlice = await GetSliceAsync((ulong)offset, (ulong?)byteSize);
         }
 
         var fileDirectory = new Dictionary<string, Tag>();
@@ -311,7 +311,7 @@ public class GeoTiff
                 }
                 else
                 {
-                    DataSlice? fieldDataSlice = await GetSliceAsync((int)actualOffset, (int)length);
+                    DataSlice? fieldDataSlice = await GetSliceAsync((ulong)actualOffset, (ulong)length);
                     fieldValues = fieldDataSlice.GetValues(fieldType, typeCount, (int)actualOffset);
                 }
             }

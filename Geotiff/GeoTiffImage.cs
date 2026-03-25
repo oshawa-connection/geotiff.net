@@ -13,11 +13,11 @@ public class GeoTiffImage
     private readonly Dictionary<int, byte[]>? tiles;
     private readonly bool isTiled;
     private readonly ushort planarConfiguration;
-    private long[]? StripOffsets;
+    private ulong[]? StripOffsetsCached;
+    private ulong[]? StripByteCountsCached;
     
-    private int[]? StripByteCounts;
-    private long[]? TileOffsets;
-    private int[]? TileByteCounts;
+    private ulong[]? TileOffsetsCached;
+    private ulong[]? TileByteCountsCached;
     public GeoTiffImage(ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {
         this.FileDirectory = fileDirectory;
@@ -42,20 +42,30 @@ public class GeoTiffImage
         }
 
         this.source = source;
-        this.FileDirectory.GetFileDirectoryListValue<byte>("JPEGTables"); // Populate this to cache it before decoding starts
+        var _ = this.FileDirectory.JpegTables;// Populate this to cache it before decoding starts
     }
 
     public bool HasValidTiePoints()
     {
-        IEnumerable<double>? tiePoint = FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
-        return tiePoint is not null && tiePoint.Count() == 6;
+        var tiePoint = FileDirectory.GetTag(FieldTypes.ModelTiepoint);
+        if (tiePoint is null)
+        {
+            return false;
+        }
+        //The ModelTiepointTag SHALL have type = DOUBLE
+        //The ModelTiepointTag SHALL have 6 values for each of the tiepoints
+        return tiePoint.GetDoubleArray().Count() % 6 == 0;
     }
 
     public bool HasValidModelTransformation()
     {
-        IEnumerable<double>? modelTransformation =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
-        return modelTransformation is not null && modelTransformation.Count() > 11;
+        var modelTag = this.GetTag(FieldTypes.ModelTransformation);
+        if (modelTag is null)
+        {
+            return false;
+        }
+        
+        return modelTag.GetDoubleArray().Count() > 11;
     }
 
     /// <summary>
@@ -75,19 +85,18 @@ public class GeoTiffImage
     /// <exception cref="GeoTiffException">Thrown if the affine transformation is invalid</exception>
     public VectorXYZ? GetOrigin()
     {
-        IEnumerable<double>? tiePoint = FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
-        IEnumerable<double>? modelTransformation =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
-
+        var tiepointtag = GetTag(FieldTypes.ModelTiepoint);
+        var modelTransformationTag = this.GetTag(FieldTypes.ModelTransformation);
+        
         if (HasValidTiePoints())
         {
-            var affine = AffineTransformation.FromTiepoint(tiePoint.ToArray());
+            var affine = AffineTransformation.FromTiepoint(tiepointtag.GetDoubleArray());
             return affine.GetOrigin();
         }
 
-        if (modelTransformation is not null)
+        if (modelTransformationTag is not null)
         {
-            var affine = AffineTransformation.FromModelTransformation(modelTransformation.ToArray());
+            var affine = AffineTransformation.FromModelTransformation(modelTransformationTag.GetDoubleArray());
             return affine.GetOrigin();
         }
 
@@ -154,22 +163,20 @@ public class GeoTiffImage
     /// <returns></returns>
     public VectorXYZ? GetResolution()
     {
-        IEnumerable<double>? modelPixelScaleR =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelPixelScale);
+        var modelPixelScaleTag = GetTag(FieldTypes.ModelPixelScale);
         
-        if (modelPixelScaleR is not null)
+        if (modelPixelScaleTag is not null)
         {
-            double[] modelPixelScale = modelPixelScaleR.ToArray();
+            double[] modelPixelScale = modelPixelScaleTag.GetDoubleArray();
             var affine = AffineTransformation.FromModelPixelScale(modelPixelScale);
             return affine.GetResolution();
         }
-        
-        IEnumerable<double>? modelTransformationR =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+
+        var modelTransformationR = GetTag(FieldTypes.ModelTransformation);
         
         if (modelTransformationR is not null)
         {
-            double[] modelTransformation = modelTransformationR.ToArray();
+            double[] modelTransformation = modelTransformationR.GetDoubleArray();
             var affineTransformation = AffineTransformation.FromModelTransformation(modelTransformation);
             return affineTransformation.GetResolution();
         }
@@ -188,12 +195,12 @@ public class GeoTiffImage
     {
         uint height = GetHeight();
         uint width = GetWidth();
-        IEnumerable<double>? modelTransformationList =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+
+        var modelTransformationList = GetTag(FieldTypes.ModelTransformation);
         
         if (modelTransformationList is not null && !tilegrid)
         {
-            ModelTransformation mt = ModelTransformation.FromIEnumerable(modelTransformationList);
+            ModelTransformation mt = ModelTransformation.FromDoubleArray(modelTransformationList.GetDoubleArray());
             
             var corners = new List<List<double>>()
             {
@@ -241,21 +248,20 @@ public class GeoTiffImage
     /// <returns></returns>
     public AffineTransformation? GetOrCalculateAffineTransformation()
     {
-        IEnumerable<double>? modelPixelScaleR =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelPixelScale);
-        IEnumerable<double>? tiePoint = FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTiepoint);
-        IEnumerable<double>? modelTransformation =
-            FileDirectory.GetFileDirectoryListValue<double>(FieldTypes.ModelTransformation);
+        var modelTransformationTag = GetTag(FieldTypes.ModelTransformation);
+        var modelPixelScaleR = GetTag(FieldTypes.ModelPixelScale);
+        var tiePointTag = GetTag(FieldTypes.ModelTiepoint);
         
-        if (modelTransformation is not null)
+        
+        
+        if (modelTransformationTag is not null)
         {
-            return AffineTransformation.FromModelTransformation(modelTransformation.ToArray());
+            return AffineTransformation.FromModelTransformation(modelTransformationTag.GetDoubleArray());
         }
         
-        if (modelPixelScaleR is not null && tiePoint is not null)
+        if (modelPixelScaleR is not null && tiePointTag is not null)
         {
-            return AffineTransformation.FromModelPixelScaleAndTiePoints(modelPixelScaleR.ToArray(),tiePoint.ToArray());
-            
+            return AffineTransformation.FromModelPixelScaleAndTiePoints(modelPixelScaleR.GetDoubleArray(),tiePointTag.GetDoubleArray());
         }
         return null;
     }
@@ -273,7 +279,7 @@ public class GeoTiffImage
 
     public ushort GetBitsForSample(int sampleIndex = 0)
     {
-        ushort[] bitsPerSample = this.GetTag(FieldTypes.BitsPerSample).GetUShortArray();
+        ushort[] bitsPerSample = GetTag(FieldTypes.BitsPerSample).GetUShortArray();
         return bitsPerSample[sampleIndex];
     }
     
@@ -292,7 +298,7 @@ public class GeoTiffImage
     /// </summary>
     public int GetNumberOfBytesPerPixel()
     {
-        ushort[] bitsPerSample = FileDirectory.GetFileDirectoryListValue<ushort>(FieldTypes.BitsPerSample).ToArray();
+        var bitsPerSample = GetBitsPerSample();
         int bytes = 0;
         for (int i = 0; i < bitsPerSample.Length; ++i)
         {
@@ -316,7 +322,7 @@ public class GeoTiffImage
         return (int)Math.Ceiling(bitsPerSample[i] / 8.0);
     }
 
-
+    
     /// <summary>
     /// Returns the width of each tile.
     /// </summary>
@@ -355,8 +361,12 @@ public class GeoTiffImage
     /// <returns></returns>
     private int GetSampleFormat(int sampleIndex = 0)
     {
-        IEnumerable<int>? samplesFormat = FileDirectory.GetFileDirectoryListValue<int>(FieldTypes.SampleFormat);
-        return samplesFormat?.ElementAt(sampleIndex) ?? 1;
+        var sampleFormatTag = GetTag(FieldTypes.SampleFormat);
+        if (sampleFormatTag is null)
+        {
+            return 1;
+        }
+        return sampleFormatTag.GetUShortArray()[sampleIndex];
     }
 
     public int GetPredictor()
@@ -368,8 +378,62 @@ public class GeoTiffImage
 
         return 1;
     }
+    
+    
+    public ulong[] GetTileOffsets()
+    {
+        if (TileOffsetsCached is not null)
+        {
+            return TileOffsetsCached;
+        }
+        
+        var stripOffsetsTag = GetTag(FieldTypes.TileOffsets);
+        TileOffsetsCached = stripOffsetsTag.GetAsULongArray();
+        return TileOffsetsCached;
+    }
+    
+    public ulong[] GetTileByteCounts()
+    {
+        if (TileByteCountsCached is not null)
+        {
+            return TileByteCountsCached;
+        }
+        
+        var tileByteCountsTag = GetTag(FieldTypes.TileByteCounts);
+        TileByteCountsCached = tileByteCountsTag.GetAsULongArray();
+        return TileByteCountsCached;
+    }
+    
+    
+    /// <summary>
+    /// StripOffsets can be either a ushort or a ulong so make sure to cast it. 
+    /// </summary>
+    /// <returns></returns>
+    public ulong[] GetStripOffsets()
+    {
+        if (StripOffsetsCached is not null)
+        {
+            return StripOffsetsCached;
+        }
+        
+        var stripOffsetsTag = GetTag(FieldTypes.StripOffsets);
+        StripOffsetsCached = stripOffsetsTag.GetAsULongArray();
+        return StripOffsetsCached;
+    }
 
+    public ulong[] GetStripByteCounts()
+    {
+        if (StripByteCountsCached is not null)
+        {
+            return StripByteCountsCached;
+        }
+        
+        var stripByteCountsTag = GetTag(FieldTypes.StripByteCounts);
+        StripByteCountsCached = stripByteCountsTag.GetAsULongArray();
+        return StripByteCountsCached;
+    }
 
+    
     private GeotiffSampleDataType SampleDataTypeForSample(int sampleIndex)
     {
         int format = GetSampleFormat(sampleIndex);
@@ -643,15 +707,17 @@ public class GeoTiffImage
             }
         }
 
+        // Setup cached values for either strips or tiles.
+        // Long term todo item would be to not read the entire array; for particularly large tiffs the offsets will be giant.
         if (isTiled is false)
         {
-            StripOffsets = FileDirectory.GetFileDirectoryListValue<long>("StripOffsets").ToArray();
-            StripByteCounts = FileDirectory.GetFileDirectoryListValue<int>("StripByteCounts").ToArray();
+            GetStripOffsets();
+            GetStripByteCounts();
         }
         else
         {
-            TileOffsets = FileDirectory.GetFileDirectoryListValue<long>("TileOffsets").ToArray();
-            TileByteCounts = FileDirectory.GetFileDirectoryListValue<int>("TileByteCounts").ToArray();
+            GetTileOffsets();
+            GetTileByteCounts();
         }
         
         var promises = new List<Task>();
@@ -891,33 +957,17 @@ public class GeoTiffImage
             index = (sampleToUse * numTilesPerRow * numTilesPerCol) + (y * numTilesPerRow) + x;
         }
 
-        long offset;
-        int byteCount;
+        ulong offset;
+        ulong byteCount;
         if (isTiled)
         {
-            if (TileOffsets is not null)
-            {
-                offset = TileOffsets.ElementAt(index);
-                byteCount = TileByteCounts.ElementAt(index);
-            }
-            else
-            {
-                offset = FileDirectory.GetFileDirectoryListValue<long>("TileOffsets").ElementAt(index);
-                byteCount = FileDirectory.GetFileDirectoryListValue<int>("TileByteCounts").ElementAt(index);
-            }
+            offset = GetTileOffsets().ElementAt(index);
+            byteCount = GetTileByteCounts().ElementAt(index);
         }
         else
         {
-            if (StripOffsets is not null)
-            {
-                offset = StripOffsets.ElementAt(index);
-                byteCount = StripByteCounts.ElementAt(index);
-            }
-            else
-            {
-                offset = FileDirectory.GetFileDirectoryListValue<long>("StripOffsets").ElementAt(index);
-                byteCount = FileDirectory.GetFileDirectoryListValue<int>("StripByteCounts").ElementAt(index);    
-            }
+            offset = GetStripOffsets().ElementAt(index);
+            byteCount = GetStripByteCounts().ElementAt(index);
         }
 
         if (byteCount == 0)

@@ -250,6 +250,42 @@ public class Tag
         
         throw new GeoTiffException("Tag does not contain a numeric array value.");
     }
+    
+    
+    /// <summary>
+    /// Converts all elements to long so long as value is a numeric type
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
+    public ulong[] GetAsULongArray()
+    {
+        if (Value.IsFloat64)
+            return Value.GetFloat64Array().Select(f => (ulong)f).ToArray();
+        if (Value.IsFloat32)
+            return Value.GetFloat32Array().Select(f => (ulong)f).ToArray();
+        if (Value.IsInt64)
+            return Value.GetInt64Array().Select(l => (ulong)l).ToArray();
+        if (Value.IsUInt64)
+            return Value.GetUInt64Array().Select(ul => (ulong)ul).ToArray();
+        if (Value.IsInt32)
+            return Value.GetInt32Array().Select(i => (ulong)i).ToArray();
+        if (Value.IsUInt32)
+            return Value.GetUInt32Array().Select(ui => (ulong)ui).ToArray();
+        if (Value.IsInt16)
+            return Value.GetInt16Array().Select(s => (ulong)s).ToArray();
+        if (Value.IsUInt16)
+            return Value.GetUInt16Array().Select(us => (ulong)us).ToArray();
+        if (Value.IsByte)
+            return Value.GetByteArray().Select(sb => (ulong)sb).ToArray();
+        if (Value.IsSByte)
+            return Value.GetSByteArray().Select(sb => (ulong)sb).ToArray();
+        if (Value.IsRational)
+            return Value.GetRationalArray().Select(r => (ulong)r).ToArray();
+        if (Value.IsSRational)
+            return Value.GetSRationalArray().Select(sr => (ulong)sr).ToArray();
+        
+        throw new GeoTiffException("Tag does not contain a numeric array value.");
+    }
 
 
     public TagDataType DataType
