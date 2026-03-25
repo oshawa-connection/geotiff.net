@@ -62,49 +62,9 @@ public class ImageFileDirectory
 
         return default!;
     }
-    public ushort? GetFileDirectoryValueUShortOrNull(string key)
-    {
-        if (TagDictionary.TryGetValue(key, out var v))
-        {
-            return v.GetUShort();
-        }
-        return null;
-    }
-    public int? GetFileDirectoryValueIntOrNull(string key)
-    {
-        if (TagDictionary.TryGetValue(key, out var v))
-        {
-            return v.GetInt();
-        }
-        return null;
-    }
+
     
-    public ulong GetFileDirectoryValueULong(string key)
-    {
-        if (TagDictionary.TryGetValue(key, out var v))
-        {
-            return v.GetULong();
-        }
-        throw new GeoTiffTagKeyNotFoundException($"Tag '{key}' was not found.");
-    }
-    public ushort[] GetFileDirectoryValueUShortArray(string key)
-    {
-        if (TagDictionary.TryGetValue(key, out var v))
-        {
-            return v.GetUShortArray();
-        }
-        throw new GeoTiffTagKeyNotFoundException($"Tag '{key}' was not found.");
-    }
-    public uint GetFileDirectoryValueUInt(string key)
-    {
-        if (TagDictionary.TryGetValue(key, out var v))
-        {
-            return v.GetUInt();
-        }
-        throw new GeoTiffTagKeyNotFoundException($"Tag '{key}' was not found.");
-    }
-    
-    public string? GetFileDirectoryValueString(string key)
+    private string? GetFileDirectoryValueString(string key)
     {
         if (TagDictionary.TryGetValue(key, out var v))
         {
@@ -114,11 +74,6 @@ public class ImageFileDirectory
         return null;
     }
     
-    public bool HasTag(string tagName)
-    {
-        return TagDictionary.ContainsKey(tagName);
-    }
-
     public ushort[]? bitsPerSampleCached;
 
     public ushort[] BitsPerSample

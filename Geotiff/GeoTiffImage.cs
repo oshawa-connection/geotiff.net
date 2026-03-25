@@ -25,15 +25,15 @@ public class GeoTiffImage
         tiles = cache ? new Dictionary<ulong, byte[]>() : null;
 
         isTiled = fileDirectory.TagDictionary.ContainsKey("StripOffsets") is false;
-        ushort? planarConfiguration = fileDirectory.GetFileDirectoryValueUShortOrNull(TagFields.PlanarConfiguration);
-
-        if (planarConfiguration is null)
+        var planarConfigurationTag = GetTag(TagFields.PlanarConfiguration);
+        
+        if (planarConfigurationTag is null)
         {
             this.planarConfiguration = 1;
         }
         else
         {
-            this.planarConfiguration = (ushort)planarConfiguration;
+            this.planarConfiguration = (ushort)planarConfigurationTag.GetUShort();
         }
 
         if (this.planarConfiguration != 1 && this.planarConfiguration != 2)
@@ -270,10 +270,14 @@ public class GeoTiffImage
     /// 
     /// </summary>
     /// <returns></returns>
-    public ulong GetSamplesPerPixel()
+    public ushort GetSamplesPerPixel()
     {
-        ulong samplesPerPixel = FileDirectory.GetFileDirectoryValueULong(TagFields.SamplesPerPixel);
-        return samplesPerPixel != 0 ? samplesPerPixel : 1;
+        var tag = GetTag(TagFields.SamplesPerPixel);
+        if (tag is null)
+        {
+            return 1;
+        }
+        return tag.GetUShort();
     }
     
     public ushort GetBitsForSample(int sampleIndex = 0)
@@ -287,7 +291,7 @@ public class GeoTiffImage
         return GetTag(TagFields.BitsPerSample).GetUShortArray();
     }
 
-    public int GetPlanarConfiguration()
+    public ushort GetPlanarConfiguration()
     {
         return this.planarConfiguration;
     }

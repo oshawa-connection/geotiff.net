@@ -226,6 +226,7 @@ Before release, the bare minimum:
 - Document or write friendly reading of ModelPixelScale,ModelTiepoint,ModelTransformation, origin, resolution, height, width, boundingbox
 - Move cached higher level tags to image rather than on FileDirectory
 - Handling of long vs long vs int. BigSeek implementation?
+- Move away from using ImageFileDirectory -> GeoTiffImage in DecoderRegistry if possible.
 
 Post initial release:
 

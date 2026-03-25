@@ -161,6 +161,7 @@ public static class TagFields
     public static string WhitePoint = "WhitePoint";
     public static string PrimaryChromacities = "PrimaryChromacities";
     public static string ColorMap = "ColorMap";
+    public static string Compression = "Compression";
     public static string HalftoneHints = "HalftoneHints";
     public static string DotRange = "DotRange";
     public static string SMinSampleValue = "SMinSampleValue";
@@ -260,7 +261,7 @@ public static class TagFields
         { 0x0109, "CellLength" },
         { 0x0108, "CellWidth" },
         { 0x0140, ColorMap },
-        { 0x0103, "Compression" },
+        { 0x0103, Compression },
         { 0x8298, "Copyright" },
         { 0x0132, "DateTime" },
         { 0x0152, ExtraSamples },

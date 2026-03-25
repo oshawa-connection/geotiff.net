@@ -154,7 +154,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         image.GetTag("SamplesPerPixel").GetUShort().ShouldBe((ushort)2);
         image.GetTag("RowsPerStrip").GetUShort().ShouldBe((ushort)33);
         image.GetTag("StripByteCounts").GetUShortArray().ShouldBe(new ushort[] {3632, 3648});
-        image.GetPlanarConfiguration().ShouldBe(2);
+        image.GetPlanarConfiguration().ShouldBe((ushort)2);
         image.GetTag("DateTime").GetString().ShouldBe("2019:12:28 00:00:00");
         image.GetPredictor().ShouldBe((ushort)3);
         image.GetTag("ExtraSamples").GetUShort().ShouldBe((ushort)0);
@@ -179,7 +179,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         image.GetTag("SamplesPerPixel").GetAsInt().ShouldBe(2);
         image.GetTag("RowsPerStrip").GetAsInt().ShouldBe(33);
         image.GetTag("StripByteCounts").GetAsIntArray().ShouldBe(new int[] {3632, 3648});
-        image.GetPlanarConfiguration().ShouldBe(2);
+        image.GetPlanarConfiguration().ShouldBe((ushort)2);
         
         image.GetPredictor().ShouldBe((ushort)3);
         image.GetTag("ExtraSamples").GetAsInt().ShouldBe(0);
