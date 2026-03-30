@@ -93,4 +93,14 @@ public class Raster : IGetTagable
     {
         return this.ParentImage.GetTag(name);
     }
+
+    public bool HasTag(string name)
+    {
+        return this.GetTag(name) is not null;
+    }
+
+    public bool HasTag(int id)
+    {
+        return this.GetTag(id) is not null;
+    }
 }

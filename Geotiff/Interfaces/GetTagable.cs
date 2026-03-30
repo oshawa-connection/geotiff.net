@@ -24,4 +24,7 @@ public interface IGetTagable
     /// <param name="name"></param>
     /// <returns></returns>
     public Tag? GetTag(string name);
+
+    public bool HasTag(string name);
+    public bool HasTag(int id);
 }

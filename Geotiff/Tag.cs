@@ -7,6 +7,10 @@ public class Tag
 {
     public int RawId { get; }
     public string? TagName { get; }
+    public bool IsArray { get; }
+
+    public int Length =>  this.Value.Length;
+
     private GeoTiffTagValueResult Value { get; set; }
     public string GetString() {
         var s = Value.GetString();
@@ -360,7 +364,7 @@ public class Tag
         }
     }
 
-    public bool IsArray { get; }
+    
 
     internal Tag(int rawId, string? tagName, GeoTiffTagValueResult value, bool isArray)
     {

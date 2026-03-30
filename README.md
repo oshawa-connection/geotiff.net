@@ -4,9 +4,11 @@ A port of [geotiff.js](https://geotiffjs.github.io/) to .Net.
 
 This project adds native .Net handling of geotiff files, the benefits being:
 - Easier cross platform compatibility (over GDAL which requires native dependencies to be compiled on the target platform)
-- Asynchronous and streamed reads + writes
+- Asynchronous streamed reads from AWS, HTTP servers and filesystems.
 - Easier debugging
 - Extensibility in C# (e.g. define your own source types, decoders, sidecar file handlers)
+- Support for multi-image, multi-tile, multi-strip and compressed tiffs. Currently supported compression methods are Deflate, packbits, LZW and JPEG.
+- Support for `.ovr` and `.msk` sidecar files.
 
 It also opens up the .Net ecosystem to GIS developers, for example, desktop applications, ASP.Net apps and game engines. Here's a cool screenshot of a geotiff visualised in 3D using Unity using this library:
 
@@ -211,14 +213,6 @@ Finally, if you know the tag id and its not available from this library (e.g. cu
 image.GetTag(65000).GetString().ShouldBe("hello world");
 ```
 
-## Alternatives libraries
-
-Other than GDAL, there are several packages for reading (and possibly writing) geotiffs.
-
-- [GDAL through gdal.netcore](https://github.com/MaxRev-Dev/gdal.netcore) - [Quite low level](https://github.com/OSGeo/gdal/blob/master/doc/source/api/csharp/csharp_raster.rst). Synchronous. Packages up GDAL for you so you don't have to compile it + the C# bindings yourself.
-- [ImageSharp](https://github.com/SixLabors/ImageSharp) - Does not support geotiff tags, COGs or spatial operations, synchronous.
-- [Mission controller](https://github.com/ArduPilot/MissionPlanner/blob/cedabf7b610c0e54b8fe4409d903963faa69ab90/ExtLibs/Utilities/GeoTiff.cs) - Does not support COGs or spatial operations, synchronous. Tailored to the requirements of Ardupilot itself.
-- [DEM.NET](https://github.com/dem-net/DEM.Net) - a wrapper around LibTiff.Net. Synchronous. Only filesystem files supported.
 
 ## Contributing
 
@@ -227,6 +221,17 @@ New contributors are very welcome. If you’d like to get involved, please open 
 ## Compliance tests
 
 The Compliance tests are a set of that compare the read tag and pixel read values between geotiff.js and geotiff.net. The tifs are not kept under version control, but are downloaded from [OSGeo's website](https://download.osgeo.org/geotiff/samples/) which is a good sample set to test against.
+
+
+## Alternatives libraries
+
+There are several packages for reading and writing geotiffs.
+
+- [GDAL through gdal.netcore](https://github.com/MaxRev-Dev/gdal.netcore) - [Quite low level](https://github.com/OSGeo/gdal/blob/master/doc/source/api/csharp/csharp_raster.rst). Synchronous. Packages up GDAL for you so you don't have to compile it + the C# bindings yourself.
+- [ImageSharp](https://github.com/SixLabors/ImageSharp) - Does not support geotiff tags, COGs or spatial operations, synchronous.
+- [Mission controller](https://github.com/ArduPilot/MissionPlanner/blob/cedabf7b610c0e54b8fe4409d903963faa69ab90/ExtLibs/Utilities/GeoTiff.cs) - Does not support COGs or spatial operations, synchronous. Tailored to the requirements of Ardupilot itself.
+- [DEM.NET](https://github.com/dem-net/DEM.Net) - a wrapper around LibTiff.Net. Synchronous. Only filesystem files supported.
+
 
 ## Useful links
 

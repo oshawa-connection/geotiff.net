@@ -362,8 +362,9 @@ internal class GeoTiffTagValueResult
             throw new GeoTiffException("Unrecognised tag type");
         }
     }
-    
-    
+
+    public int Length => this.GetList().Length;
+
     private GeoTiffTagValueResult() { }
 
     public override string ToString()

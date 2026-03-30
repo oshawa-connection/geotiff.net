@@ -5,7 +5,7 @@ namespace ConformanceTests;
 
 using System.Text.Json.Serialization;
 
-public class PixelInfo
+public class PixelJsonInfo
 {
     [JsonPropertyName("x")] public int X { get; set; }
 
@@ -14,16 +14,16 @@ public class PixelInfo
     [JsonPropertyName("bandInfo")] public List<double> BandInfo { get; set; } = new();
 }
 
-public class GeotiffImage
+public class GeotiffImageJsonInfo
 {
     [JsonPropertyName("tags")] public Dictionary<string, JsonElement> Tags { get; set; } = new();
 
-    [JsonPropertyName("pixels")] public List<PixelInfo> Pixels { get; set; } = new();
+    [JsonPropertyName("pixels")] public List<PixelJsonInfo> Pixels { get; set; } = new();
 }
 
-public class GeotiffDump
+public class GeotiffJsonDump
 {
     [JsonPropertyName("fileName")] public string FileName { get; set; }
 
-    [JsonPropertyName("images")] public List<GeotiffImage> Images { get; set; } = new();
+    [JsonPropertyName("images")] public List<GeotiffImageJsonInfo> Images { get; set; } = new();
 }
