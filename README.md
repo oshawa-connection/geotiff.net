@@ -222,27 +222,7 @@ Other than GDAL, there are several packages for reading (and possibly writing) g
 
 ## Contributing
 
-New contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Some ideas of good items to work on:
-
-Before release, the bare minimum:
-
-- Rework all `Get` methods into getters
-
-Post initial release:
-
-- Test to cover GeoTiffImage.GetSampleType; its not used internally so cover in public API tests.
-- Move GeoKeyDirectory to a dedicated class and prevent boxing/ unboxing + allow user to read them explicitly.
-- Handling of long vs long vs int. BigSeek implementation?
-- Some tests with rasters that have rotation elements of their affine matrix.
-- More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`. This needs to handle resampling too.
-- Some tests for cases where values are close to the limits of their respective types, e.g. int32.Max, float32.Max
-- Writing, particularly to COG format with overviews
-- Offer up a synchronous API too for legacy codebases and environments where that is preferred.
-- Benchmarking
-- GeotiffAzureClient
-- More spatial operation support
-- Support multi-threading/ parallel?
-- Way to stream over all the tiles or strips if the file is tiled/ stripped. This one needs some thought; different planar configurations require different handling.
+New contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Check the issues tab for good first items to work on.
 
 ## Compliance tests
 
