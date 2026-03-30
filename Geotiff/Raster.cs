@@ -1,4 +1,5 @@
 using Geotiff.Exceptions;
+using Geotiff.Interfaces;
 
 namespace Geotiff;
 
@@ -9,9 +10,9 @@ namespace Geotiff;
 /// <param name="width"></param>
 /// <param name="height"></param>
 /// <param name="parentImage"></param>
-public class Raster
+public class Raster : IGetTagable
 {
-    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, uint width, uint height, GeoTiffImage parentImage)
+    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, ulong width, ulong height, GeoTiffImage parentImage)
     {
         this.SampleData = sampleData;
         this.AffineTransformation = affine;
@@ -20,17 +21,8 @@ public class Raster
         this.ParentImage = parentImage;
     }
     public AffineTransformation? AffineTransformation { get; set; }
-    public uint Height { get; set; }
-    public uint GetHeight()
-    {
-        return this.Height;
-    }
-    public uint Width { get; set; }
-
-    public uint GetWidth()
-    {
-        return this.Width;
-    }
+    public ulong Height { get; set; }
+    public ulong Width { get; set; }
     
     public readonly GeoTiffImage ParentImage;
     /// <summary>
@@ -40,9 +32,12 @@ public class Raster
     /// </summary>
     private SparseList<RasterSample> SampleData { get; set; }
 
-    public int GetNumberOfSamples()
+    public int NumberOfSamples
     {
-        return this.SampleData.Count();
+        get
+        {
+            return this.SampleData.Count();
+        }
     }
     
     public IEnumerable<int> ListSampleIndices()
@@ -77,5 +72,35 @@ public class Raster
         }
 
         return this.AffineTransformation.GetResolution();
+    }
+    
+    public IEnumerable<Tag> GetAllRawTags()
+    {
+        return this.ParentImage.GetAllRawTags();
+    }
+
+    public IEnumerable<Tag> GetAllKnownTags()
+    {
+        return this.ParentImage.GetAllKnownTags();
+    }
+
+    public Tag? GetTag(int id)
+    {
+        return this.ParentImage.GetTag(id);
+    }
+
+    public Tag? GetTag(string name)
+    {
+        return this.ParentImage.GetTag(name);
+    }
+
+    public bool HasTag(string name)
+    {
+        return this.GetTag(name) is not null;
+    }
+
+    public bool HasTag(int id)
+    {
+        return this.GetTag(id) is not null;
     }
 }

@@ -174,16 +174,19 @@ internal class DataSlice
     {
         GeoTiffTagValueResult finalResult;
 
-        int fieldTypeLength = FieldTypes.GetFieldTypeLength(fieldType);
-        GeotiffFieldDataType fieldTypeStr = FieldTypes.FieldTypeLookup[fieldType];
+        int fieldTypeLength = TagFields.GetFieldTypeLength(fieldType);
+        GeotiffFieldDataType fieldTypeStr = TagFields.FieldTypeLookup[fieldType];
 
         switch (fieldTypeStr)
         {
             case GeotiffFieldDataType.BYTE:
-            case GeotiffFieldDataType.ASCII:
             case GeotiffFieldDataType.UNDEFINED:
                 byte[]? bytes = ReadAll(ReadByte, count, offset, fieldTypeLength);
                 finalResult = GeoTiffTagValueResult.FromByte(bytes);
+                break;
+            case GeotiffFieldDataType.ASCII:
+                byte[]? asciibytes = ReadAll(ReadByte, count, offset, fieldTypeLength);
+                finalResult = GeoTiffTagValueResult.FromAscii(asciibytes);
                 break;
             case GeotiffFieldDataType.SBYTE:
                 finalResult = GeoTiffTagValueResult.FromSBytes(ReadAll(ReadSByte, count, offset, fieldTypeLength));

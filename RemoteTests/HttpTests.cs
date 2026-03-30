@@ -21,14 +21,13 @@ public class HttpTests
         
         var bbox = new BoundingBox() { XMin = 585640, YMax = 1818911, XMax = 609070, YMin = 1791662 };
         var readResult = await image.ReadRasterBoundingBoxAsync(bbox);
-        readResult.GetNumberOfSamples().ShouldBe(3); // RGB
+        readResult.NumberOfSamples.ShouldBe(3); // RGB
         var res = readResult.GetResolution();
         readResult.Width.ShouldBe((uint)((bbox.XMax - bbox.XMin) / res.X));
         readResult.Height.ShouldBe((uint) Math.Abs(((bbox.YMax - bbox.YMin) / res.Y)) + 1);
 
         var sample1 = readResult.GetSampleAt(0);
         var ushorts = sample1.GetByteArray();
-        Console.WriteLine("HELLO");
     }
 
     [TestMethod]
@@ -39,7 +38,6 @@ public class HttpTests
         var httpClient = new GeoTiffHTTPClient(baseURL, client, true);
         GeoTiff? cog = await GeoTiff.FromRemoteClientAsync(httpClient);
         GeoTiffImage? image = await cog.GetImageAsync();
-        Console.WriteLine("HELLO WORLD");
     }
 
     [TestMethod]

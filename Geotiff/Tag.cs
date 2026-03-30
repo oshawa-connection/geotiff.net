@@ -7,8 +7,24 @@ public class Tag
 {
     public int RawId { get; }
     public string? TagName { get; }
+    public bool IsArray { get; }
+
+    public int Length =>  this.Value.Length;
+
     private GeoTiffTagValueResult Value { get; set; }
-    public string GetString() => this.Value.GetString();
+    public string GetString() {
+        var s = Value.GetString();
+        if (s.EndsWith("\0"))
+        {
+            s = s.Substring(0, s.Length - 1);
+        }
+        return s;
+    }
+
+    public override string ToString()
+    {
+        return $"{this.TagName}: {this.Value}";
+    }
     
     /// <summary>
     /// Useful in the case where the type of object isn't important, e.g. Console.WriteLine
@@ -24,12 +40,12 @@ public class Tag
     public ulong[] GetULongArray() => this.Value.GetUInt64Array();
     public ulong GetULong()
     {
-        if (this.Value.IsUint16)
+        if (this.Value.IsUShort)
         {
             return this.Value.GetUInt16();
         }
 
-        if (this.Value.IsUInt32)
+        if (this.Value.IsUInt)
         {
             return this.Value.GetUInt32();    
         }
@@ -43,13 +59,16 @@ public class Tag
     public sbyte GetSByte()=> this.Value.GetSByte();
     public long[] GetLongArray()=> this.Value.GetInt64Array();
 
+    public byte[] GetByteArray()=> this.Value.GetByteArray();
+    public byte GetByte()=> this.Value.GetByte();
+    
     public long GetLong()
     {
-        if (this.Value.IsInt16)
+        if (this.Value.IsShort)
         {
             return this.Value.GetInt16();
         }
-        if (this.Value.IsUInt32)
+        if (this.Value.IsUInt)
         {
             return this.Value.GetInt32();
         }
@@ -60,7 +79,7 @@ public class Tag
 
     public double GetDouble()
     {
-        if (this.Value.IsFloat32)
+        if (this.Value.IsFloat)
         {
             return this.Value.GetFloat32();
         }
@@ -69,12 +88,12 @@ public class Tag
     public float[] GetFloatArray()=> this.Value.GetFloat32Array();
     public float GetFloat()=> this.Value.GetFloat32();
     public ushort[] GetUShortArray()=> this.Value.GetUInt16Array();
-    public ushort GetUShort()=> this.Value.GetUInt16();
+    public ushort GetUShort() => this.Value.GetUInt16();
     public uint[] GetUIntArray()=> this.Value.GetUInt32Array();
 
     public uint GetUInt()
     {
-        if (this.Value.IsUint16)
+        if (this.Value.IsUShort)
         {
             return this.Value.GetUInt16();
         }
@@ -84,11 +103,11 @@ public class Tag
 
     public int GetInt()
     {
-        if (this.Value.IsUint16)
+        if (this.Value.IsUShort)
         {
             return this.Value.GetUInt16();
         }
-        if (this.Value.IsInt16)
+        if (this.Value.IsShort)
         {
             return this.Value.GetInt16();
         }
@@ -107,21 +126,21 @@ public class Tag
     /// <exception cref="GeoTiffException"></exception>
     public double GetAsDouble()
     {
-        if (Value.IsFloat64)
+        if (Value.IsDouble)
             return Value.GetFloat64();
-        if (Value.IsFloat32)
+        if (Value.IsFloat)
             return (double)Value.GetFloat32();
-        if (Value.IsInt64)
+        if (Value.IsLong)
             return (double)Value.GetInt64();
-        if (Value.IsUInt64)
+        if (Value.IsULong)
             return (double)Value.GetUInt64();
-        if (Value.IsInt32)
+        if (Value.IsInt)
             return (double)Value.GetInt32();
-        if (Value.IsUInt32)
+        if (Value.IsUInt)
             return (double)Value.GetUInt32();
-        if (Value.IsInt16)
+        if (Value.IsShort)
             return (double)Value.GetInt16();
-        if (Value.IsUint16)
+        if (Value.IsUShort)
             return (double)Value.GetUInt16();
         if (Value.IsSByte)
             return (double)Value.GetSByte();
@@ -133,24 +152,28 @@ public class Tag
         throw new GeoTiffException("Tag does not contain a numeric value.");
     }
     
-    
+    /// <summary>
+    /// Converts all elements to double so long as value is a numeric type
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
     public double[] GetAsDoubleArray()
     {
-        if (Value.IsFloat64)
+        if (Value.IsDouble)
             return Value.GetFloat64Array();
-        if (Value.IsFloat32)
+        if (Value.IsFloat)
             return Value.GetFloat32Array().Select(f => (double)f).ToArray();
-        if (Value.IsInt64)
+        if (Value.IsLong)
             return Value.GetInt64Array().Select(l => (double)l).ToArray();
-        if (Value.IsUInt64)
+        if (Value.IsULong)
             return Value.GetUInt64Array().Select(ul => (double)ul).ToArray();
-        if (Value.IsInt32)
+        if (Value.IsInt)
             return Value.GetInt32Array().Select(i => (double)i).ToArray();
-        if (Value.IsUInt32)
+        if (Value.IsUInt)
             return Value.GetUInt32Array().Select(ui => (double)ui).ToArray();
-        if (Value.IsInt16)
+        if (Value.IsShort)
             return Value.GetInt16Array().Select(s => (double)s).ToArray();
-        if (Value.IsUint16)
+        if (Value.IsUShort)
             return Value.GetUInt16Array().Select(us => (double)us).ToArray();
         if (Value.IsByte)
             return Value.GetByteArray().Select(sb => (double)sb).ToArray();
@@ -163,6 +186,142 @@ public class Tag
         
         throw new GeoTiffException("Tag does not contain a numeric array value.");
     }
+    
+    /// <summary>
+    /// Converts element to int so long as value is a numeric type
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
+    public int GetAsInt()
+    {
+        if (Value.IsDouble)
+            return (int)Value.GetFloat64();
+        if (Value.IsFloat)
+            return (int)Value.GetFloat32();
+        if (Value.IsLong)
+            return (int)Value.GetInt64();
+        if (Value.IsULong)
+            return (int)Value.GetUInt64();
+        if (Value.IsInt)
+            return (int)Value.GetInt32();
+        if (Value.IsUInt)
+            return (int)Value.GetUInt32();
+        if (Value.IsShort)
+            return (int)Value.GetInt16();
+        if (Value.IsUShort)
+            return (int)Value.GetUInt16();
+        if (Value.IsSByte)
+            return (int)Value.GetSByte();
+        if (Value.IsRational)
+            return (int)Value.GetRational();
+        if (Value.IsSRational)
+            return (int)Value.GetSRational();
+
+        throw new GeoTiffException("Tag does not contain a numeric value.");
+    }
+    
+    /// <summary>
+    /// Converts all elements to int so long as value is a numeric type
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
+    public int[] GetAsIntArray()
+    {
+        if (Value.IsDouble)
+            return Value.GetFloat64Array().Select(f => (int)f).ToArray();
+        if (Value.IsFloat)
+            return Value.GetFloat32Array().Select(f => (int)f).ToArray();
+        if (Value.IsLong)
+            return Value.GetInt64Array().Select(l => (int)l).ToArray();
+        if (Value.IsULong)
+            return Value.GetUInt64Array().Select(ul => (int)ul).ToArray();
+        if (Value.IsInt)
+            return Value.GetInt32Array().Select(i => (int)i).ToArray();
+        if (Value.IsUInt)
+            return Value.GetUInt32Array().Select(ui => (int)ui).ToArray();
+        if (Value.IsShort)
+            return Value.GetInt16Array().Select(s => (int)s).ToArray();
+        if (Value.IsUShort)
+            return Value.GetUInt16Array().Select(us => (int)us).ToArray();
+        if (Value.IsByte)
+            return Value.GetByteArray().Select(sb => (int)sb).ToArray();
+        if (Value.IsSByte)
+            return Value.GetSByteArray().Select(sb => (int)sb).ToArray();
+        if (Value.IsRational)
+            return Value.GetRationalArray().Select(r => (int)r).ToArray();
+        if (Value.IsSRational)
+            return Value.GetSRationalArray().Select(sr => (int)sr).ToArray();
+        
+        throw new GeoTiffException("Tag does not contain a numeric array value.");
+    }
+    
+    /// <summary>
+    /// Some tags are stored as either ushort/ ulong.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
+    public ulong GetAsULong()
+    {
+        if (Value.IsDouble)
+            return (ulong)Value.GetFloat64();
+        if (Value.IsFloat)
+            return (ulong)Value.GetFloat32();
+        if (Value.IsLong)
+            return (ulong)Value.GetInt64();
+        if (Value.IsULong)
+            return (ulong)Value.GetUInt64();
+        if (Value.IsInt)
+            return (ulong)Value.GetInt32();
+        if (Value.IsUInt)
+            return (ulong)Value.GetUInt32();
+        if (Value.IsShort)
+            return (ulong)Value.GetInt16();
+        if (Value.IsUShort)
+            return (ulong)Value.GetUInt16();
+        if (Value.IsSByte)
+            return (ulong)Value.GetSByte();
+        if (Value.IsRational)
+            return (ulong)Value.GetRational();
+        if (Value.IsSRational)
+            return (ulong)Value.GetSRational();
+
+        throw new GeoTiffException("Tag does not contain a numeric value.");
+    }
+    
+    /// <summary>
+    /// Converts all elements to long so long as value is a numeric type
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="GeoTiffException"></exception>
+    public ulong[] GetAsULongArray()
+    {
+        if (Value.IsDouble)
+            return Value.GetFloat64Array().Select(f => (ulong)f).ToArray();
+        if (Value.IsFloat)
+            return Value.GetFloat32Array().Select(f => (ulong)f).ToArray();
+        if (Value.IsLong)
+            return Value.GetInt64Array().Select(l => (ulong)l).ToArray();
+        if (Value.IsULong)
+            return Value.GetUInt64Array().Select(ul => (ulong)ul).ToArray();
+        if (Value.IsInt)
+            return Value.GetInt32Array().Select(i => (ulong)i).ToArray();
+        if (Value.IsUInt)
+            return Value.GetUInt32Array().Select(ui => (ulong)ui).ToArray();
+        if (Value.IsShort)
+            return Value.GetInt16Array().Select(s => (ulong)s).ToArray();
+        if (Value.IsUShort)
+            return Value.GetUInt16Array().Select(us => (ulong)us).ToArray();
+        if (Value.IsByte)
+            return Value.GetByteArray().Select(sb => (ulong)sb).ToArray();
+        if (Value.IsSByte)
+            return Value.GetSByteArray().Select(sb => (ulong)sb).ToArray();
+        if (Value.IsRational)
+            return Value.GetRationalArray().Select(r => (ulong)r).ToArray();
+        if (Value.IsSRational)
+            return Value.GetSRationalArray().Select(sr => (ulong)sr).ToArray();
+        
+        throw new GeoTiffException("Tag does not contain a numeric array value.");
+    }
 
 
     public TagDataType DataType
@@ -171,31 +330,32 @@ public class Tag
         {
             if (this.IsArray)
             {
-                if (this.Value.IsInt16) return TagDataType.SHORT_ARRAY;
+                if (this.Value.IsShort) return TagDataType.SHORT_ARRAY;
                 if (this.Value.IsSByte) return TagDataType.SBYTE_ARRAY;
-                if (this.Value.IsInt64) return TagDataType.LONG8_ARRAY;
+                if (this.Value.IsLong) return TagDataType.LONG_ARRAY;
                 if (this.Value.IsByte) return TagDataType.BYTE_ARRAY;
-                if (this.Value.IsFloat64) return TagDataType.DOUBLE_ARRAY;
-                if (this.Value.IsFloat32) return TagDataType.FLOAT_ARRAY;
-                if (this.Value.IsUint16) return TagDataType.SHORT_ARRAY;
-                if (this.Value.IsUInt64) return TagDataType.LONG8_ARRAY;
-                if (this.Value.IsUInt32) return TagDataType.LONG_ARRAY;
-                if (this.Value.IsInt32) return TagDataType.SLONG_ARRAY;
+                if (this.Value.IsDouble) return TagDataType.DOUBLE_ARRAY;
+                if (this.Value.IsFloat) return TagDataType.FLOAT_ARRAY;
+                if (this.Value.IsUShort) return TagDataType.SHORT_ARRAY;
+                if (this.Value.IsULong) return TagDataType.ULONG_ARRAY;
+                if (this.Value.IsUInt) return TagDataType.UINT_ARRAY;
+                if (this.Value.IsInt) return TagDataType.INT_ARRAY;
                 if (this.Value.IsRational) return TagDataType.RATIONAL_ARRAY;
                 if (this.Value.IsSRational) return TagDataType.SRATIONAL_ARRAY;
             }
             else
             {
-                if (this.Value.IsInt16) return TagDataType.SSHORT;
+                if (this.Value.IsString) return TagDataType.ASCII;
+                if (this.Value.IsShort) return TagDataType.SHORT;
                 if (this.Value.IsSByte) return TagDataType.SBYTE;
-                if (this.Value.IsInt64) return TagDataType.SLONG8;
+                if (this.Value.IsLong) return TagDataType.LONG;
                 if (this.Value.IsByte) return TagDataType.BYTE;
-                if (this.Value.IsFloat64) return TagDataType.DOUBLE;
-                if (this.Value.IsFloat32) return TagDataType.FLOAT;
-                if (this.Value.IsUint16) return TagDataType.SHORT;
-                if (this.Value.IsUInt64) return TagDataType.LONG8;
-                if (this.Value.IsUInt32) return TagDataType.LONG;
-                if (this.Value.IsInt32) return TagDataType.SLONG;
+                if (this.Value.IsDouble) return TagDataType.DOUBLE;
+                if (this.Value.IsFloat) return TagDataType.FLOAT;
+                if (this.Value.IsUShort) return TagDataType.USHORT;
+                if (this.Value.IsULong) return TagDataType.ULONG;
+                if (this.Value.IsUInt) return TagDataType.UINT;
+                if (this.Value.IsInt) return TagDataType.INT;
                 if (this.Value.IsRational) return TagDataType.RATIONAL;
                 if (this.Value.IsSRational) return TagDataType.SRATIONAL;
             }
@@ -204,7 +364,7 @@ public class Tag
         }
     }
 
-    public bool IsArray { get; }
+    
 
     internal Tag(int rawId, string? tagName, GeoTiffTagValueResult value, bool isArray)
     {

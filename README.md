@@ -4,9 +4,11 @@ A port of [geotiff.js](https://geotiffjs.github.io/) to .Net.
 
 This project adds native .Net handling of geotiff files, the benefits being:
 - Easier cross platform compatibility (over GDAL which requires native dependencies to be compiled on the target platform)
-- Asynchronous and streamed reads + writes
+- Asynchronous streamed reads from AWS, HTTP servers and filesystems.
 - Easier debugging
 - Extensibility in C# (e.g. define your own source types, decoders, sidecar file handlers)
+- Support for multi-image, multi-tile, multi-strip and compressed tiffs. Currently supported compression methods are Deflate, packbits, LZW and JPEG.
+- Support for `.ovr` and `.msk` sidecar files.
 
 It also opens up the .Net ecosystem to GIS developers, for example, desktop applications, ASP.Net apps and game engines. Here's a cool screenshot of a geotiff visualised in 3D using Unity using this library:
 
@@ -107,7 +109,7 @@ var result = sample0.GetAsDoubleArray(); // Get As -> Converts your datatype, us
 var result = sample0.GetAsIntArray();
 
 
-if (result.IsInteger()) // any signed or unsigned integer type.
+if (result.IsInteger) // any signed or unsigned integer type.
 {
     var result = sample0.GetAsIntArray();
 }
@@ -117,10 +119,11 @@ if (result.IsFloatingPoint) // either a double of float
         var result = sample0.GetAsDoubleArray();
 }
 
-// Lastly, if precision is important or your data values are close to the upper/ lower limits of the storage type, you can do:
+// If precision or performance are important, or if your data values are close to the upper/ lower limits of the storage type, you can do:
 switch (sample0.SampleType)
 {
     case GeotiffSampleDataType.UInt8:
+	// Your logic for byte sample data here
         break;
     case GeotiffSampleDataType.Int8:
         break;
@@ -144,7 +147,7 @@ switch (sample0.SampleType)
 
 ```
 
-Lastly, if you want to reshape the data into a 2D array organised so that the first element is at the top left (as per geotiff convention, at its origin):
+If you want to reshape the data into a 2D array organised so that the first element is at the top left (as per geotiff convention, at its origin):
 
 ```csharp
 string lonLatTif = Path.Combine(GetDataFolderPath(), "lat_lon_grid.tif");
@@ -157,41 +160,79 @@ var reshaped = readResult.GetSampleAt(0).GetAs2DDoubleArray();
 Console.WriteLine(reshaped[0,0]); // value at the geotiff origin
 ```
 
+For reading of tags that are standard (either in the Tiff standard, GeoTiff Standard, or custom tags defined by GDAL), there are two different methods:
+
+For some important tags, especially geotiff specific tags, there are high level methods that tell you the type of value (as defined by the specifications) without you having to guess or otherwise know ahead of time, for example:
+
+```csharp
+GeotiffImage yourImage = ...;
+
+int planarConfig = image.GetPlanarConfiguration();
+int nBytesPerPixel = image.GetNumberOfBytesPerPixel();
+int predictor = image.GetPredictor();
+VectorXYZ origin = image.GetOrigin();
+BoundingBox bbox = image.GetBoundingBox();
+VectorXYZ resolution = image.GetResolution();
+
+// There are also some higher level methods for important tags that might be represented in multiple different forms:
+AffineTransformation? affineTransform = GetOrCalculateAffineTransformation();
+```
+
+Note that the values here are cast to `int` even if they are stored as other types, because they are used internally by this library to index arrays or other operations.
+
+You can also read tags using this method:
+
+```csharp
+Tag predictorTagMethod1 = image.GetTag(TagFields.Predictor);
+// This is the equivalent to the above:
+Tag predictorTag = image.GetTag("Predictor");
+// Then, you can extract the value from tags using two different methods.
+// If you know the type and want to be precise:
+ushort predictorValueUShort = predictorTag.GetUShort()
+
+// if you don't know the type and don't mind converting:
+int predictorValueConverted = predictorTag.GetAsInt();
+double predictorValueDoubleConverted = predictorTag.GetAsDouble();
+
+// or:
+if (predictorTag.IsInteger) 
+{
+    int predictorValueConverted = predictorTag.GetAsInt();	
+}
+else if (predictorTag.IsFloatingPoint)
+{
+    double predictorValueConverted = predictorTag.GetAsDouble();	
+} 
+// else its probably a string 
+predictorTag.GetString();
+```
+
+Finally, if you know the tag id and its not available from this library (e.g. custom tags) you can access it from its numeric ID:
+
+```csharp
+image.GetTag(65000).GetString().ShouldBe("hello world");
+```
+
+
+## Contributing
+
+New contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Check the issues tab for good first items to work on.
+
+## Compliance tests
+
+The Compliance tests are a set of that compare the read tag and pixel read values between geotiff.js and geotiff.net. The tifs are not kept under version control, but are downloaded from [OSGeo's website](https://download.osgeo.org/geotiff/samples/) which is a good sample set to test against.
+
 
 ## Alternatives libraries
 
-Other than GDAL, there are several packages for reading (and possibly writing) geotiffs.
+There are several packages for reading and writing geotiffs.
 
 - [GDAL through gdal.netcore](https://github.com/MaxRev-Dev/gdal.netcore) - [Quite low level](https://github.com/OSGeo/gdal/blob/master/doc/source/api/csharp/csharp_raster.rst). Synchronous. Packages up GDAL for you so you don't have to compile it + the C# bindings yourself.
 - [ImageSharp](https://github.com/SixLabors/ImageSharp) - Does not support geotiff tags, COGs or spatial operations, synchronous.
 - [Mission controller](https://github.com/ArduPilot/MissionPlanner/blob/cedabf7b610c0e54b8fe4409d903963faa69ab90/ExtLibs/Utilities/GeoTiff.cs) - Does not support COGs or spatial operations, synchronous. Tailored to the requirements of Ardupilot itself.
 - [DEM.NET](https://github.com/dem-net/DEM.Net) - a wrapper around LibTiff.Net. Synchronous. Only filesystem files supported.
 
-## Contributing
 
-New contributors are very welcome. If you’d like to get involved, please open an early PR or start a discussion to share your ideas. Some ideas of good items to work on:
+## Useful links
 
-Before release, the bare minimum:
-
-- Find and resolve all [Obsolete] attributes
-- Better tag reading API
-- Test to cover packbits decoder
-- Merge GeoTiffTagValueResult with Tag class
-- Don't cast tag numeric values to double during parsing
-
-Post initial release:
-
-- Some tests with rasters that have rotation elements of their affine matrix.
-- More friendly handling of NO_DATA values in general through `MaskedGeoTIFFReader`. This needs to handle resampling too.
-- Some tests for cases where values are close to the limits of their respective types, e.g. int32.Max, float32.Max
-- Writing, particularly to COG format with overviews
-- Offer up a synchronous API too for legacy codebases and environments where that is preferred.
-- Benchmarking
-- GeotiffAzureClient
-- More spatial operation support
-- Support multi-threading/ parallel?
-- Way to stream over all the tiles or strips if the file is tiled/ stripped. This one needs some thought; different planar configurations require different handling.
-
-## Compliance tests
-
-The Compliance tests are a set of that compare the read tag and pixel read values between geotiff.js and geotiff.net. The tifs are not kept under version control, but are downloaded from [OSGeo's website](https://download.osgeo.org/geotiff/samples/) which is a good sample set to test against.
+https://jhove.openpreservation.org/modules/tiff/tags/

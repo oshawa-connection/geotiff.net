@@ -18,16 +18,16 @@ public class FileSource : BaseSource
     {
         byte[]? x = new byte[slice.Length];
         
-        stream.Seek(slice.Offset, SeekOrigin.Begin);
+        stream.Seek((long)slice.Offset, SeekOrigin.Begin);
 
         int nReadBytes = 0;
         if (cancellationToken is null)
         {
-            nReadBytes = await stream.ReadAsync(x, 0, slice.Length);
+            nReadBytes = await stream.ReadAsync(x, 0, (int)slice.Length);
         }
         else
         {
-            nReadBytes = await stream.ReadAsync(x, 0, slice.Length, (CancellationToken)cancellationToken);
+            nReadBytes = await stream.ReadAsync(x, 0, (int)slice.Length, (CancellationToken)cancellationToken);
         }
         
         return x;
@@ -37,9 +37,9 @@ public class FileSource : BaseSource
     {
         byte[]? x = new byte[slice.Length];
 
-        stream.Seek(slice.Offset, SeekOrigin.Begin);
+        stream.Seek((long)slice.Offset, SeekOrigin.Begin);
 
-        int nReadBytes = stream.Read(x, 0, slice.Length); // ok if nReadBytes is less than requested
+        int nReadBytes = stream.Read(x, 0, (int)slice.Length); // ok if nReadBytes is less than requested
         
         return x;
     }

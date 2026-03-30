@@ -11,7 +11,7 @@ public class ModelTransformation
     public double g { get; set; }
     public double h { get; set; }
 
-    public static ModelTransformation FromIEnumerable(IEnumerable<double> list)
+    public static ModelTransformation FromDoubleArray(double[] list)
     {
         return new ModelTransformation()
         {

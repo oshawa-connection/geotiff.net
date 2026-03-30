@@ -13,11 +13,11 @@ public class PackBitsGeoTiffDecoder : GeoTiffDecoder
 
         for (int i = 0; i < buffer.Length; ++i)
         {
-            byte header = dataView.GetUint8(i);
+            sbyte header = dataView.GetInt8(i);
             if (header < 0)
             {
                 byte next = dataView.GetUint8(i + 1);
-                header = (byte)-(int)header; // Ignore narrowing conversion
+                header = (sbyte)(header * -1);
                 for (int j = 0; j <= header; ++j)
                 {
                     outbytes.Add(next);

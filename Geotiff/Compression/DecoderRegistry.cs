@@ -18,7 +18,7 @@ public class DecoderRegistry
     };
 
     /// <summary>
-    /// TODO: check no clash of codes
+    /// If user passes a code that already exists, replace it.
     /// </summary>
     /// <param name="geoTiffDecoder"></param>
     public void AddDecoder(GeoTiffDecoder geoTiffDecoder)
@@ -26,13 +26,16 @@ public class DecoderRegistry
         _register.Add(geoTiffDecoder);
     }
 
-    public GeoTiffDecoder GetDecoder(ImageFileDirectory fileDirectory)
+    public GeoTiffDecoder GetDecoder(GeoTiffImage image)
     {
-        int? compressionCode = fileDirectory.GetFileDirectoryValueIntOrNull("Compression");
-        if (compressionCode is null)
+        var compressionTag = image.GetTag(TagFields.Compression);
+        if (compressionTag is null)
         {
             return new RawGeoTiffDecoder();
         }
+        
+        int? compressionCode = compressionTag.GetUShort();
+        
 
         var found = _register.FirstOrDefault(d => d.codes.Contains((int)compressionCode));
         if (found is null)
@@ -43,9 +46,9 @@ public class DecoderRegistry
         return found;
     }
 
-    public async Task<byte[]> DecodeAsync(ImageFileDirectory fileDirectory, GeoTiffImage image, byte[] buffer, int predictor)
+    public async Task<byte[]> DecodeAsync(GeoTiffImage image, byte[] buffer, int predictor)
     {
-        GeoTiffDecoder? decoder = GetDecoder(fileDirectory);
+        GeoTiffDecoder? decoder = GetDecoder(image);
         return await decoder.Decode(buffer, image, predictor);
     }
 }

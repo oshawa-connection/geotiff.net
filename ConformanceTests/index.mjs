@@ -29,8 +29,7 @@ function serializeTags(fileDirectory) {
 
 async function produceStats(filePath) {
     const data = await promises.readFile(filePath);
-
-    // const data = fs.readFileSync('./tiffData/lat_lon_grid.tif');
+    
     const result = await fromArrayBuffer(data.buffer);
     /**
      * @type {import('./types/GeotiffDump').GeotiffDump}

@@ -56,7 +56,7 @@ class Program
 
             var found = knownTags.Where(d => d.IsArray is true);
 
-            if (found.Any(d => d.TagName == FieldTypes.ModelTransformation))
+            if (found.Any(d => d.TagName == TagFields.ModelTransformation))
             {
                 Console.WriteLine(file);
                 foreach (var arrTag in found)

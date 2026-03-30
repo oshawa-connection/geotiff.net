@@ -1,4 +1,5 @@
 using Geotiff.Exceptions;
+using System.ComponentModel;
 
 namespace Geotiff;
 
@@ -52,40 +53,62 @@ internal enum GeotiffFieldDataType
 
 public enum TagDataType
 {
-    BYTE,
-    ASCII,
-    SHORT,
-    LONG,
-    RATIONAL,
-    SBYTE,
+    [Description("Undefined")]
     UNDEFINED,
-    SSHORT,
-    SLONG,
-    SRATIONAL,
-    FLOAT,
+    [Description("short")]
+    SHORT,
+    [Description("sbyte")]
+    SBYTE,
+    [Description("byte")]
+    BYTE,
+    [Description("double")]
     DOUBLE,
-    IFD,
-    LONG8,
-    SLONG8,
-    IFD8,
-    BYTE_ARRAY,
+    [Description("float")]
+    FLOAT,
+    [Description("ushort")]
+    USHORT,
+    [Description("long")]
+    LONG,
+    [Description("ulong")]
+    ULONG,
+    [Description("uint")]
+    UINT,
+    [Description("int")]
+    INT,
+    [Description("Rational")]
+    RATIONAL,
+    [Description("SRational")]
+    SRATIONAL,
+    [Description("short[]")]
     SHORT_ARRAY,
-    LONG_ARRAY,
-    RATIONAL_ARRAY,
+    [Description("sbyte[]")]
     SBYTE_ARRAY,
-    SSHORT_ARRAY,
-    SLONG_ARRAY,
-    SRATIONAL_ARRAY,
-    FLOAT_ARRAY,
+    [Description("byte[]")]
+    BYTE_ARRAY,
+    [Description("double[]")]
     DOUBLE_ARRAY,
-    IFD_ARRAY,
-    LONG8_ARRAY,
-    SLONG8_ARRAY,
-    IFD8_ARRAY
+    [Description("float[]")]
+    FLOAT_ARRAY,
+    [Description("ushort[]")]
+    USHORT_ARRAY,
+    [Description("long[]")]
+    LONG_ARRAY,
+    [Description("ulong[]")]
+    ULONG_ARRAY,
+    [Description("uint[]")]
+    UINT_ARRAY,
+    [Description("int[]")]
+    INT_ARRAY,
+    [Description("Rational[]")]
+    RATIONAL_ARRAY,
+    [Description("SRational[]")]
+    SRATIONAL_ARRAY,
+    [Description("string")]
+    ASCII
 }
 
 
-public static class FieldTypes
+public static class TagFields
 {
     internal static Dictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
     {
@@ -135,10 +158,12 @@ public static class FieldTypes
     public static string FreeByteCounts = "FreeByteCounts";
     public static string GrayResponseCurve = "GrayResponseCurve";
     public static string PageNumber = "PageNumber";
+    public static string Predictor = "Predictor";
     public static string TransferFunction = "TransferFunction";
     public static string WhitePoint = "WhitePoint";
     public static string PrimaryChromacities = "PrimaryChromacities";
     public static string ColorMap = "ColorMap";
+    public static string Compression = "Compression";
     public static string HalftoneHints = "HalftoneHints";
     public static string DotRange = "DotRange";
     public static string SMinSampleValue = "SMinSampleValue";
@@ -238,7 +263,7 @@ public static class FieldTypes
         { 0x0109, "CellLength" },
         { 0x0108, "CellWidth" },
         { 0x0140, ColorMap },
-        { 0x0103, "Compression" },
+        { 0x0103, Compression },
         { 0x8298, "Copyright" },
         { 0x0132, "DateTime" },
         { 0x0152, ExtraSamples },
@@ -267,6 +292,7 @@ public static class FieldTypes
         { 0x0111, StripOffsets },
         { 0x00FF, "SubfileType" },
         { 0x0107, "Threshholding" },
+        // These are to do with DPI for printing. NOT spatial resolution.
         { 0x011A, "XResolution" },
         { 0x011B, "YResolution" },
 
@@ -284,7 +310,7 @@ public static class FieldTypes
         { 0x015B, JPEGTables },
         { 0x011D, "PageName" },
         { 0x0129, PageNumber },
-        { 0x013D, "Predictor" },
+        { 0x013D, Predictor },
         { 0x013F, PrimaryChromacities },
         { 0x0214, "ReferenceBlackWhite" },
         { 0x0153, SampleFormat },

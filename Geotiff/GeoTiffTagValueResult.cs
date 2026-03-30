@@ -1,15 +1,19 @@
 using Geotiff.Exceptions;
 using Rationals;
+using System.Text;
 
 namespace Geotiff;
 
 /// <summary>
-/// TODO: This class should be merged with the Tag class - this is a less user friendly version of that class that doesn't
-/// store tag field name
+/// This represents a Tag value that has been read but has no association with its parent Tag Id or mapped name.
+/// The reading of the value and the tag id itself is done as two steps.
+/// This could be merged with the Tag class, however, be sure to merge the logic for tag id mapping and
+/// value reading into the same method where both are available at the same time.
 /// </summary>
 internal class GeoTiffTagValueResult
 {
-    private byte[] _resultByte;
+    private byte[]? _resultAscii;
+    private byte[]? _resultByte;
     private sbyte[]? _resultSByte;
     private short[]? _resultInt16;
     private Int64[]? _resultInt64;
@@ -22,146 +26,172 @@ internal class GeoTiffTagValueResult
     private Rational[]? _resultRational;
     private int[]? _resultSRational;
 
+    /// <summary>
+    /// Remember that this refers to the dotnet type.
+    /// </summary>
+    public bool IsString => _resultAscii is not null;
     public bool IsByte => _resultByte is not null;
     public bool IsSByte => _resultSByte is not null;
-    public bool IsInt16 => _resultInt16 is not null;
-    
-    public bool IsInt64 => _resultInt64 is not null;
-    
-    public bool IsFloat64 => _resultFloat64 is not null;
-    public bool IsFloat32 => _resultFloat32 is not null;
-    public bool IsUint16 => _resultUInt16 is not null;
-    public bool IsUInt64 => _resultUInt64 != null;
-    public bool IsUInt32 => _resultUInt32 != null;
-    public bool IsInt32 => _resultInt32 != null; 
+    public bool IsShort => _resultInt16 is not null;
+    public bool IsLong => _resultInt64 is not null;
+    public bool IsDouble => _resultFloat64 is not null;
+    public bool IsFloat => _resultFloat32 is not null;
+    public bool IsUShort => _resultUInt16 is not null;
+    public bool IsULong => _resultUInt64 != null;
+    public bool IsUInt => _resultUInt32 != null;
+    public bool IsInt => _resultInt32 != null; 
     public bool IsRational => _resultRational != null;
     public bool IsSRational => _resultSRational != null;
     
+    public bool IsInteger =>
+        _resultSByte is not null
+        || _resultInt16 is not null  
+        || _resultInt32 is not null 
+        || _resultInt64 is not null 
+        || _resultByte is not null
+        || _resultUInt16 is not null
+        || _resultUInt32 is not null
+        || _resultUInt64 is not null;
+
+    public bool IsFloatingPoint =>
+        _resultFloat64 is not null 
+        || _resultFloat32 is not null 
+        || _resultRational is not null 
+        || _resultSRational is not null;
+
+
     public ulong[] GetUInt64Array() =>
-        _resultUInt64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt64", this.DataType.ToString());
+        _resultUInt64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt64", this.DataType);
     
     public ulong GetUInt64()
     {
         if (_resultUInt64 is null)
         {
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt64", this.DataType.ToString());
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt64", this.DataType);
         }
 
-        return _resultUInt64.First();
+        return _resultUInt64.Single();
     }
 
     public short[] GetInt16Array() =>
-        _resultInt16 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int16", this.DataType.ToString());
+        _resultInt16 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int16", this.DataType);
 
     public short GetInt16()
     {
         if (_resultInt16 is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int16", this.DataType.ToString());
-        return _resultInt16.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("short", this.DataType);
+        return _resultInt16.Single();
     }
 
+    public byte GetByte()
+    {
+        if (_resultByte is null)
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("byte", this.DataType);
+        return _resultByte.Single();
+    }
+    
     public byte[] GetByteArray() =>
-        _resultByte ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Byte", this.DataType.ToString());
+        _resultByte ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("byte", this.DataType);
     
     public sbyte[] GetSByteArray() =>
-        _resultSByte ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("SByte", this.DataType.ToString());
+        _resultSByte ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("sbyte[]", this.DataType);
 
     public sbyte GetSByte()
     {
         if (_resultSByte is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("SByte", this.DataType.ToString());
-        return _resultSByte.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("sbyte", this.DataType);
+        return _resultSByte.Single();
     }
 
     public long[] GetInt64Array() =>
-        _resultInt64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int64", this.DataType.ToString());
+        _resultInt64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("long[]", this.DataType);
 
     public long GetInt64()
     {
         if (_resultInt64 is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int64", this.DataType.ToString());
-        return _resultInt64.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("long", this.DataType);
+        return _resultInt64.Single();
     }
 
     public double[] GetFloat64Array() =>
-        _resultFloat64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Float64", this.DataType.ToString());
+        _resultFloat64 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("double[]", this.DataType);
 
     public double GetFloat64()
     {
         if (_resultFloat64 is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Float64", this.DataType.ToString());
-        return _resultFloat64.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("double", this.DataType);
+        return _resultFloat64.Single();
     }
 
     public float[] GetFloat32Array() =>
-        _resultFloat32 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Float32", this.DataType.ToString());
+        _resultFloat32 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("float[]", this.DataType);
 
     public float GetFloat32()
     {
         if (_resultFloat32 is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Float32", this.DataType.ToString());
-        return _resultFloat32.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("float", this.DataType);
+        return _resultFloat32.Single();
     }
 
     public ushort[] GetUInt16Array() =>
-        _resultUInt16 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt16", this.DataType.ToString());
+        _resultUInt16 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("ushort", this.DataType);
 
     public ushort GetUInt16()
     {
         if (_resultUInt16 is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt16", this.DataType.ToString());
-        return _resultUInt16.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("ushort", this.DataType);
+        return _resultUInt16.Single();
     }
 
     public uint[] GetUInt32Array() =>
-        _resultUInt32 ??  throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt32", this.DataType.ToString());
+        _resultUInt32 ??  throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("uint[]", this.DataType);
 
     public uint GetUInt32()
     {
         if (_resultUInt32 is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("UInt32", this.DataType.ToString());
-        return _resultUInt32.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("uint", this.DataType);
+        return _resultUInt32.Single();
     }
 
     public int[] GetInt32Array() =>
-        _resultInt32 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int32", this.DataType.ToString());
+        _resultInt32 ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("int[]", this.DataType);
 
     public int GetInt32()
     {
         if (_resultInt32 is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("Int32", this.DataType.ToString());
-        return _resultInt32.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes("int", this.DataType);
+        return _resultInt32.Single();
     }
 
     public Rational[] GetRationalArray() =>
-        _resultRational ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.RATIONAL.ToString(), this.DataType.ToString());
+        _resultRational ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.RATIONAL.ToString(), this.DataType);
 
     public Rational GetRational()
     {
         if (_resultRational is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.RATIONAL.ToString(), this.DataType.ToString());
-        return _resultRational.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.RATIONAL.ToString(), this.DataType);
+        return _resultRational.Single();
     }
 
     public int[] GetSRationalArray() =>
-        _resultSRational ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.SRATIONAL.ToString(), this.DataType.ToString());
+        _resultSRational ?? throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.SRATIONAL.ToString(), this.DataType);
 
     public int GetSRational()
     {
         if (_resultSRational is null)
-            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.SRATIONAL.ToString(), this.DataType.ToString());
-        return _resultSRational.First();
+            throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.SRATIONAL.ToString(), this.DataType);
+        return _resultSRational.Single();
     }
 
     public string GetString()
     {
-        if (this.IsByte)
+        if (this.IsString)
         {
-            return System.Text.Encoding.ASCII.GetString(_resultByte);
+            return System.Text.Encoding.ASCII.GetString(_resultAscii);
 
         }
         
-        throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.BYTE.ToString(), this.DataType.ToString());
+        throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.ASCII.ToString(), this.DataType);
     }
         
     
@@ -224,31 +254,35 @@ internal class GeoTiffTagValueResult
     {
         return new GeoTiffTagValueResult() { _resultByte = data };
     }
+
+    public static GeoTiffTagValueResult FromAscii(byte[] data)
+    {
+        return new GeoTiffTagValueResult() { _resultAscii = data };
+    }
     
-    [Obsolete]
     private Array GetList()
     {
-        if (IsFloat64 is true)
+        if (IsDouble is true)
         {
             return _resultFloat64;
         }
 
-        if (IsFloat32)
+        if (IsFloat)
         {
             return _resultFloat32;
         }
 
-        if (IsUInt64)
+        if (IsULong)
         {
             return _resultUInt64;
         }
 
-        if (IsUInt32)
+        if (IsUInt)
         {
             return _resultUInt32;
         }
 
-        if (IsUint16)
+        if (IsUShort)
         {
             return _resultUInt16;
         }
@@ -273,12 +307,12 @@ internal class GeoTiffTagValueResult
             return _resultSRational;
         }
 
-        if (IsInt64)
+        if (IsLong)
         {
             return _resultInt64;
         }
 
-        if (IsInt16)
+        if (IsShort)
         {
             return _resultInt16;
         }
@@ -306,27 +340,49 @@ internal class GeoTiffTagValueResult
     /// Note that strings are byte arrays.
     /// </summary>
     /// <exception cref="GeoTiffException"></exception>
-    public TagDataType DataType
+    private TagDataType DataType
     {
         get
         {
-            if (this.IsInt16) return TagDataType.SSHORT;
+            if (this.IsString) return TagDataType.ASCII;
+            if (this.IsShort) return TagDataType.SHORT;
             if (this.IsSByte) return TagDataType.SBYTE;
-            if (this.IsInt64) return TagDataType.SLONG8;
+            if (this.IsLong) return TagDataType.LONG;
             if (this.IsByte) return TagDataType.BYTE; 
-            if (this.IsFloat64) return TagDataType.DOUBLE;
-            if (this.IsFloat32) return TagDataType.FLOAT;
-            if (this.IsUint16) return TagDataType.SHORT;
-            if (this.IsUInt64) return TagDataType.LONG8;
-            if (this.IsUInt32) return TagDataType.LONG;
-            if (this.IsInt32) return TagDataType.SLONG;
+            if (this.IsDouble) return TagDataType.DOUBLE;
+            if (this.IsFloat) return TagDataType.FLOAT;
+            if (this.IsUShort) return TagDataType.USHORT;
+            if (this.IsInt) return TagDataType.LONG;
+            if (this.IsULong) return TagDataType.ULONG;
+            if (this.IsUInt) return TagDataType.UINT;
+            if (this.IsInt) return TagDataType.INT;
             if (this.IsRational) return TagDataType.RATIONAL;
             if (this.IsSRational) return TagDataType.SRATIONAL;
             
             throw new GeoTiffException("Unrecognised tag type");
         }
     }
-    
-    
+
+    public int Length => this.GetList().Length;
+
     private GeoTiffTagValueResult() { }
+
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        sb.Append(this.DataType);
+        var list = this.GetList();
+        if (list.Length > 1)
+        {
+            sb.Append("[]");
+            return sb.ToString();
+        }
+
+        sb.Append(" ");
+        
+        var firstElement = this.GetFirstElement();
+        sb.Append(firstElement);
+
+        return sb.ToString();
+    }
 }

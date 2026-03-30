@@ -13,10 +13,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Shouldly" Version="4.3.0"/>
-    </ItemGroup>
-
-    <ItemGroup>
       <Folder Include="trickyTiffData\" />
     </ItemGroup>
 
