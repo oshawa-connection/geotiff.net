@@ -1,10 +1,11 @@
 using Geotiff.Compression;
 using Geotiff.Exceptions;
+using Geotiff.Interfaces;
 using Geotiff.JavaScriptCompatibility;
 
 namespace Geotiff;
 
-public class GeoTiffImage
+public class GeoTiffImage : IGetTagable
 {
     protected internal readonly ImageFileDirectory FileDirectory;
     public readonly bool littleEndian;

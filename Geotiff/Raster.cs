@@ -1,4 +1,5 @@
 using Geotiff.Exceptions;
+using Geotiff.Interfaces;
 
 namespace Geotiff;
 
@@ -9,7 +10,7 @@ namespace Geotiff;
 /// <param name="width"></param>
 /// <param name="height"></param>
 /// <param name="parentImage"></param>
-public class Raster
+public class Raster : IGetTagable
 {
     public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, ulong width, ulong height, GeoTiffImage parentImage)
     {
@@ -35,7 +36,7 @@ public class Raster
     {
         get
         {
-            return this.SampleData.Count();    
+            return this.SampleData.Count();
         }
     }
     
@@ -71,5 +72,25 @@ public class Raster
         }
 
         return this.AffineTransformation.GetResolution();
+    }
+    
+    public IEnumerable<Tag> GetAllRawTags()
+    {
+        return this.ParentImage.GetAllRawTags();
+    }
+
+    public IEnumerable<Tag> GetAllKnownTags()
+    {
+        return this.ParentImage.GetAllKnownTags();
+    }
+
+    public Tag? GetTag(int id)
+    {
+        return this.ParentImage.GetTag(id);
+    }
+
+    public Tag? GetTag(string name)
+    {
+        return this.ParentImage.GetTag(name);
     }
 }
