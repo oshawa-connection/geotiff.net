@@ -738,10 +738,10 @@ public class GeoTiffImage : IGetTagable
 
         if (window is not null)
         {
-            imageWindow[0] = window.Left;
-            imageWindow[1] = window.Top;
-            imageWindow[2] = window.Right;
-            imageWindow[3] = window.Bottom;
+            imageWindow[0] = (ulong)window.Left;
+            imageWindow[1] = (ulong)window.Top;
+            imageWindow[2] = (ulong)window.Right;
+            imageWindow[3] = (ulong)window.Bottom;
         }
 
         if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
@@ -1230,10 +1230,10 @@ public class GeoTiffImage : IGetTagable
 
         var window = new ImagePixelWindow()
         {
-            Left = (uint)left, 
-            Right = (uint)right, 
-            Bottom = (uint)bottom, 
-            Top = (uint)top
+            Left = (int)left, 
+            Right = (int)right, 
+            Bottom = (int)bottom, 
+            Top = (int)top
         };
 
         return await ReadRasterAsync(window, sampleSelection, cancellationToken);
@@ -1263,10 +1263,10 @@ public class GeoTiffImage : IGetTagable
         
         return new ImagePixelWindow()
         {
-            Left = (uint)bottomLeft.X, 
-            Right = (uint)topRight.X, 
-            Bottom = (uint)bottomLeft.Y, 
-            Top = (uint)topRight.Y
+            Left = (int)bottomLeft.X, 
+            Right = (int)topRight.X, 
+            Bottom = (int)bottomLeft.Y, 
+            Top = (int)topRight.Y
         };
     }
 }

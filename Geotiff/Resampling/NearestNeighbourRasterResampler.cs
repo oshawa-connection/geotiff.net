@@ -36,7 +36,7 @@ public class NearestNeighbourRasterResampler : RasterResamplerBaseClass
          var sampleIndices = raster.ListSampleIndices();
          foreach (var sampleIndex in sampleIndices)
          {
-             var currentSample = raster.SampleAt(sampleIndex);
+             var currentSample = raster.GetSampleAt(sampleIndex);
              int[] arr;
              switch (currentSample.SampleType)
              {

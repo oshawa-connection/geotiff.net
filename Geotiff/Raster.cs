@@ -55,7 +55,7 @@ public class Raster : IGetTagable
     /// </summary>
     /// <param name="sampleIndex">This is the index within the parent GeoTiff.</param>
     /// <returns></returns>
-    public RasterSample SampleAt(int sampleIndex)
+    public RasterSample GetSampleAt(int sampleIndex)
     {
         if (this.ListSampleIndices().Contains(sampleIndex) is false)
         {

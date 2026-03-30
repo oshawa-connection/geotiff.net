@@ -15,7 +15,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
-        var result = readResult.SampleAt(0).Get2DIntArray();
+        var result = readResult.GetSampleAt(0).Get2DIntArray();
     }
     
     [TestMethod]
@@ -26,7 +26,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
-        var result = readResult.SampleAt(0).GetFloatArray();
+        var result = readResult.GetSampleAt(0).GetFloatArray();
         result.ShouldBe([1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4]);
     }
 
@@ -38,7 +38,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
-        var result = readResult.SampleAt(0).GetIntArray();
+        var result = readResult.GetSampleAt(0).GetIntArray();
         result.ShouldBe(new []{1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4});
     }
 
@@ -51,7 +51,7 @@ public class PredictorDecodingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
-        var result = readResult.SampleAt(0).GetShortArray();
+        var result = readResult.GetSampleAt(0).GetShortArray();
         result.ShouldBe([1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4]);
     }
 }

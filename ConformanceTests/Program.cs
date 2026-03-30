@@ -156,8 +156,8 @@ internal class Program
                  for (int i = 0; i < geotiffJsonDump.Images.Count; i++)
                  {
                      GeoTiffImage? csharpImage = await geotiff.GetImageAsync(i);
-                     GeotiffImageJsonInfo? resultImage = geotiffJsonDump.Images[i];
-                     foreach (KeyValuePair<string, JsonElement> jsonTag in resultImage.Tags)
+                     GeotiffImageJsonInfo? jsonDumpImage = geotiffJsonDump.Images[i];
+                     foreach (KeyValuePair<string, JsonElement> jsonTag in jsonDumpImage.Tags)
                      {
                          var csharpImageTag = csharpImage.GetTag(jsonTag.Key);
                          
@@ -177,13 +177,6 @@ internal class Program
                                          CompareRationalTags(jsonTag.Value, jsonTag.Key, csharpImage);
                                          break;
                                      }
-
-                                     // if (jsonTag.Key == "JPEGTables")
-                                     // {
-                                     //     Console.WriteLine("JPEGTables tag encountered; skipping");
-                                     //     return;
-                                     // }
-                                     
                                      
                                      JsonElement[]? array = jsonTag.Value.EnumerateArray().ToArray();
                                      CompareArrayTags(array, jsonTag.Key, csharpImage);
@@ -200,10 +193,10 @@ internal class Program
                      }
 
                      // Only compare standard tags; private tags aren't included in geotiff.js output.
-                     if (csharpImage.GetAllRawTags().Where(d => d.TagName is not null).Count() != resultImage.Tags.Count)
+                     if (csharpImage.GetAllRawTags().Where(d => d.TagName is not null).Count() != jsonDumpImage.Tags.Count)
                      {
                          var charpTagNames = csharpImage.GetAllRawTags();
-                         var resultImageTagNames = resultImage.Tags.Select(d => d.Key);
+                         var resultImageTagNames = jsonDumpImage.Tags.Select(d => d.Key);
 
                          foreach (var csharpname in charpTagNames)
                          {
@@ -221,12 +214,39 @@ internal class Program
                              }
                          }
                      }
-                     //ShouldBeWarning($"Tag Count on image {i};", csharpImage.GetAllRawTags().Count(),
-                       //  resultImage.Tags.Count);
+                     
+                     foreach (var jsonPixel in jsonDumpImage.Pixels)
+                     {
+                         var wnd = new ImagePixelWindow()
+                         {
+                             Top = jsonPixel.Y, 
+                             Bottom = jsonPixel.Y + 1, 
+                             Left = jsonPixel.X, 
+                             Right = jsonPixel.X + 1
+                         };
+                         
+                         var result = await csharpImage.ReadRasterAsync(wnd);
+                         for (var sampleIndex = 0; sampleIndex < result.NumberOfSamples; sampleIndex++)
+                         {
+                             var currentJsonSamplePixel = jsonPixel.BandInfo[sampleIndex];
+                             var csharpSample = result.GetSampleAt(sampleIndex);
+                             var doubleArray = csharpSample.GetAsDoubleArray();
+                             if (doubleArray.Length != 1)
+                             {
+                                 throw new Exception("Read result was longer than expected");
+                             }
+
+                             if (currentJsonSamplePixel != doubleArray[0])
+                             {
+                                 LogWarning($"Read result was {doubleArray[0]} when it should be {currentJsonSamplePixel}");
+                             }
+                         }
+                     }
                  }
              }
-             catch (AssertationException e)
+             catch (Exception e)
              {
+                 LogWarning(e.ToString());
              }
          }
      }

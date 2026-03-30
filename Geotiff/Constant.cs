@@ -292,6 +292,7 @@ public static class TagFields
         { 0x0111, StripOffsets },
         { 0x00FF, "SubfileType" },
         { 0x0107, "Threshholding" },
+        // These are to do with DPI for printing. NOT spatial resolution.
         { 0x011A, "XResolution" },
         { 0x011B, "YResolution" },
 

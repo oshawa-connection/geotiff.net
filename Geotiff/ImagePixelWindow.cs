@@ -5,8 +5,8 @@ namespace Geotiff;
 /// </summary>
 public class ImagePixelWindow
 {
-    public uint Left { get; set; }
-    public uint Bottom { get; set; }
-    public uint Right { get; set; }
-    public uint Top { get; set; }
+    public int Left { get; set; }
+    public int Bottom { get; set; }
+    public int Right { get; set; }
+    public int Top { get; set; }
 }

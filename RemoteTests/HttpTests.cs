@@ -26,7 +26,7 @@ public class HttpTests
         readResult.Width.ShouldBe((uint)((bbox.XMax - bbox.XMin) / res.X));
         readResult.Height.ShouldBe((uint) Math.Abs(((bbox.YMax - bbox.YMin) / res.Y)) + 1);
 
-        var sample1 = readResult.SampleAt(0);
+        var sample1 = readResult.GetSampleAt(0);
         var ushorts = sample1.GetByteArray();
     }
 
