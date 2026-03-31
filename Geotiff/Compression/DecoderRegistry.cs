@@ -14,7 +14,8 @@ public class DecoderRegistry
         new RawGeoTiffDecoder(), 
         new LZWGeoTiffDecoder(), 
         new PackBitsGeoTiffDecoder(),
-        new JpegGeoTiffDecoder()
+        // new JpegGeoTiffDecoder()
+        new JpegGeoTiffDecoder2()
     };
 
     /// <summary>

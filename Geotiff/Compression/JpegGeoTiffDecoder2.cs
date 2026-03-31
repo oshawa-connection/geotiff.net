@@ -1,8 +1,8 @@
-using BitMiracle.LibJpeg;
+using BitMiracle.LibJpeg.Classic;
 
 namespace Geotiff.Compression;
 
-public class JpegGeoTiffDecoder: GeoTiffDecoder
+public class JpegGeoTiffDecoder2 : GeoTiffDecoder
 {
     public override IEnumerable<int> codes => new[] { 7 };
     
@@ -41,16 +41,44 @@ public class JpegGeoTiffDecoder: GeoTiffDecoder
         inputStreamManipulated.Write(imageData, imageStart, imageData.Length - imageStart);
         inputStreamManipulated.Position = 0;
         
-        using var jpgImage = new JpegImage(inputStreamManipulated);
-        using var outStream = new MemoryStream();
+        jpeg_error_mgr errorManager = new jpeg_error_mgr();
+        jpeg_decompress_struct cinfo = new jpeg_decompress_struct(errorManager);
         
-        // Assume planarconfiguration == 1
-        for (var i = 0; i < jpgImage.Height; i++)
+        cinfo.jpeg_stdio_src(inputStreamManipulated);
+        cinfo.jpeg_read_header(true);
+        // TODO: base this off of photo interpretation, leave hard coded for now for testing.
+        cinfo.Jpeg_color_space = J_COLOR_SPACE.JCS_YCbCr; 
+        cinfo.Out_color_space = J_COLOR_SPACE.JCS_YCbCr;
+        cinfo.Do_fancy_upsampling = false;
+        cinfo.Do_block_smoothing = false;
+        cinfo.Dct_method = J_DCT_METHOD.JDCT_ISLOW;
+        cinfo.jpeg_start_decompress();
+        
+        int width = cinfo.Output_width;
+        
+        int components = cinfo.Num_components; // usually 3 (RGB)
+
+        int rowStride = width * components;
+        byte[] output = new byte[cinfo.Output_height * rowStride];
+
+        // Buffer for one scanline
+        byte[][] buffer = new byte[1][];
+        buffer[0] = new byte[rowStride];
+
+        int offset = 0;
+
+        while (cinfo.Output_scanline < cinfo.Output_height)
         {
-            var row = jpgImage.GetRow(i);
-            await outStream.WriteAsync(row.ToBytes());
+            cinfo.jpeg_read_scanlines(buffer, 1);
+
+            Buffer.BlockCopy(buffer[0], 0, output, offset, rowStride);
+            offset += rowStride;
         }
 
-        return outStream.ToArray();
+        cinfo.jpeg_finish_decompress();
+        cinfo.jpeg_destroy(); // important cleanup
+
+        return output;
+        
     }
 }

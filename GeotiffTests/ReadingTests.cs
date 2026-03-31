@@ -940,23 +940,30 @@ public class ReadingTests : GeoTiffTestBaseClass
     }
 
     [TestMethod]
-    public async Task TestRGBJPG()
+    public async Task TestYCbCrJPG()
     {
-        string jpgTiffPath = Path.Combine(GetDataFolderPath(), "test_10x10_rgb_jpeg.tif");
+        string jpgTiffPath = Path.Combine(GetDataFolderPath(), "test_10x10_ycbcr_jpeg.tif");
         await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
-
+        image.GetPlanarConfiguration().ShouldBe((ushort)1);
+        image.GetTag(TagFields.Compression).GetAsInt().ShouldBe(7);
+        image.GetTag("PhotometricInterpretation").GetAsInt().ShouldBe(6);
         var readResult = await image.ReadRasterAsync();
         readResult.NumberOfSamples.ShouldBe(3);
         var rSample = readResult.GetSampleAt(0);
         var gSample = readResult.GetSampleAt(1);
         var bSample = readResult.GetSampleAt(2);
         
-        rSample.GetByteArray().ShouldAllBe(d => d == 254);
-        gSample.GetByteArray().ShouldAllBe(d => d == 0);
-        bSample.GetByteArray().ShouldAllBe(d => d == 0);
+        // Y  = np.full((10, 10), 150, dtype=np.uint8)  # luminance (brightness)
+        // Cb = np.full((10, 10), 100, dtype=np.uint8)  # blue-difference chroma
+        //     Cr = np.full((10, 10), 200, dtype=np.uint8)  # red-difference chroma
+        
+        
+        rSample.GetByteArray().ShouldAllBe(d => d == 85);
+        gSample.GetByteArray().ShouldAllBe(d => d == 131);
+        bSample.GetByteArray().ShouldAllBe(d => d == 127);
     }
     
     
@@ -990,8 +997,9 @@ public class ReadingTests : GeoTiffTestBaseClass
         var origin = image.GetOrigin();
         
         var readResult = await image.ReadRasterAsync(ImagePixelWindow.FromColumnRow(9835,7944));
+        image.GetPlanarConfiguration().ShouldBe((ushort)1);
         // var readResult = await image.ReadRasterAsync(new ImagePixelWindow() {Bottom = 1, Left = 0, Right = 1, Top = 0});
-        
+        image.GetTag("PhotometricInterpretation").GetAsInt().ShouldBe(6);
         // var readResult = await image.ReadRasterAsync(new ImagePixelWindow() {Bottom = 8686, Left = 8685, Right = 8686, Top = 8685});
         readResult.NumberOfSamples.ShouldBe(3);
         var one = readResult.GetSampleAt(0).GetAsIntArray().First();
