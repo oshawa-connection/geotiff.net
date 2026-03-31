@@ -40,16 +40,6 @@ public class Tag
     public ulong[] GetULongArray() => this.Value.GetUInt64Array();
     public ulong GetULong()
     {
-        if (this.Value.IsUShort)
-        {
-            return this.Value.GetUInt16();
-        }
-
-        if (this.Value.IsUInt)
-        {
-            return this.Value.GetUInt32();    
-        }
-        
         return this.Value.GetUInt64();
     }
 
@@ -64,14 +54,6 @@ public class Tag
     
     public long GetLong()
     {
-        if (this.Value.IsShort)
-        {
-            return this.Value.GetInt16();
-        }
-        if (this.Value.IsUInt)
-        {
-            return this.Value.GetInt32();
-        }
         return this.Value.GetInt64();
     }
 
@@ -79,10 +61,6 @@ public class Tag
 
     public double GetDouble()
     {
-        if (this.Value.IsFloat)
-        {
-            return this.Value.GetFloat32();
-        }
         return this.Value.GetFloat64();  
     } 
     public float[] GetFloatArray()=> this.Value.GetFloat32Array();
@@ -93,25 +71,12 @@ public class Tag
 
     public uint GetUInt()
     {
-        if (this.Value.IsUShort)
-        {
-            return this.Value.GetUInt16();
-        }
         return this.Value.GetUInt32();    
     }
     public int[] GetIntArray()=> this.Value.GetInt32Array();
 
     public int GetInt()
     {
-        if (this.Value.IsUShort)
-        {
-            return this.Value.GetUInt16();
-        }
-        if (this.Value.IsShort)
-        {
-            return this.Value.GetInt16();
-        }
-        
         return this.Value.GetInt32();    
     }
     public Rational[] GetRationalArray()=> this.Value.GetRationalArray();

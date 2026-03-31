@@ -149,13 +149,17 @@ internal class Program
              Console.WriteLine($"Messages for {geotiffJsonDump.FileName}");
              GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
              int count = await geotiff.GetImageCountAsync();
-
              try
              {
                  ShouldBeWarning("ImageCount", count, geotiffJsonDump.Images.Count);
                  for (int i = 0; i < geotiffJsonDump.Images.Count; i++)
                  {
                      GeoTiffImage? csharpImage = await geotiff.GetImageAsync(i);
+                     var compression = csharpImage.GetTag(TagFields.Compression);
+                     if (compression is not null)
+                     {
+                         Console.WriteLine($"Compression for image {i}: {compression}");
+                     }
                      GeotiffImageJsonInfo? jsonDumpImage = geotiffJsonDump.Images[i];
                      foreach (KeyValuePair<string, JsonElement> jsonTag in jsonDumpImage.Tags)
                      {
@@ -226,6 +230,11 @@ internal class Program
                          };
                          
                          var result = await csharpImage.ReadRasterAsync(wnd);
+                         if (result.NumberOfSamples != jsonPixel.BandInfo.Count)
+                         {
+                             LogWarning($"Read result had {result.NumberOfSamples} bands when it should be {jsonPixel.BandInfo.Count}");    
+                         }
+                         
                          for (var sampleIndex = 0; sampleIndex < result.NumberOfSamples; sampleIndex++)
                          {
                              var currentJsonSamplePixel = jsonPixel.BandInfo[sampleIndex];

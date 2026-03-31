@@ -968,13 +968,37 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
-
+        image.GetTag(TagFields.Compression).GetUShort().ShouldBe((ushort)7);
         var readResult = await image.ReadRasterAsync();
         readResult.NumberOfSamples.ShouldBe(1);
         var rSample = readResult.GetSampleAt(0);
         
         
         rSample.GetByteArray().ShouldAllBe(d => d == 128);
+    }
+
+    [TestMethod]
+    public async Task TestTJPG()
+    {
+        string jpgTiffPath = "/Users/jamesfleming/RiderProjects/geotiff.net/ConformanceTests/tiffData/tjpeg.tif";
+        await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        image.GetTag(TagFields.Compression).GetUShort().ShouldBe((ushort)7);
+
+        var origin = image.GetOrigin();
+        
+        var readResult = await image.ReadRasterAsync(ImagePixelWindow.FromColumnRow(9835,7944));
+        // var readResult = await image.ReadRasterAsync(new ImagePixelWindow() {Bottom = 1, Left = 0, Right = 1, Top = 0});
+        
+        // var readResult = await image.ReadRasterAsync(new ImagePixelWindow() {Bottom = 8686, Left = 8685, Right = 8686, Top = 8685});
+        readResult.NumberOfSamples.ShouldBe(3);
+        var one = readResult.GetSampleAt(0).GetAsIntArray().First();
+        var two = readResult.GetSampleAt(1).GetAsIntArray().First();
+        var three = readResult.GetSampleAt(2).GetAsIntArray().First();
+        Console.WriteLine("HELLO");
+        // rSample.GetByteArray().ShouldAllBe(d => d == 128);
     }
     
     

@@ -1,6 +1,4 @@
 using BitMiracle.LibJpeg;
-using Geotiff.JavaScriptCompatibility;
-
 
 namespace Geotiff.Compression;
 
@@ -45,7 +43,6 @@ public class JpegGeoTiffDecoder: GeoTiffDecoder
         inputStreamManipulated.Position = 0;
         
         using var jpgImage = new JpegImage(inputStreamManipulated);
-
         using var outStream = new MemoryStream();
         
         // Assume planarconfiguration == 1
