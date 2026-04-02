@@ -47,8 +47,8 @@ public class JpegGeoTiffDecoder2 : GeoTiffDecoder
         cinfo.jpeg_stdio_src(inputStreamManipulated);
         cinfo.jpeg_read_header(true);
         // TODO: base this off of photo interpretation, leave hard coded for now for testing.
-        cinfo.Jpeg_color_space = J_COLOR_SPACE.JCS_YCbCr; 
-        cinfo.Out_color_space = J_COLOR_SPACE.JCS_YCbCr;
+        // cinfo.Jpeg_color_space = J_COLOR_SPACE.JCS_YCbCr;
+        cinfo.Out_color_space = cinfo.Jpeg_color_space;
         cinfo.Do_fancy_upsampling = false;
         cinfo.Do_block_smoothing = false;
         cinfo.Dct_method = J_DCT_METHOD.JDCT_ISLOW;
