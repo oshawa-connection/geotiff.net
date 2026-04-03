@@ -4,7 +4,6 @@ using Geotiff.JavaScriptCompatibility;
 namespace Geotiff.Compression;
 
 /// <summary>
-/// TODO: Allow users to override the default implementations.
 /// </summary>
 public class DecoderRegistry
 {
@@ -23,6 +22,18 @@ public class DecoderRegistry
     /// <param name="geoTiffDecoder"></param>
     public void AddDecoder(GeoTiffDecoder geoTiffDecoder)
     {
+        if (geoTiffDecoder == null)
+        {
+            throw new ArgumentNullException(nameof(geoTiffDecoder));
+        }
+
+        var newCodes = geoTiffDecoder.codes.ToHashSet();
+
+        // Remove any existing decoder that supports at least one of these codes
+        _register.RemoveAll(existing =>
+            existing.codes.Any(code => newCodes.Contains(code))
+        );
+
         _register.Add(geoTiffDecoder);
     }
 

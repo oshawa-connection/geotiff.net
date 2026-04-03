@@ -247,7 +247,7 @@ internal class Program
 
                              if (currentJsonSamplePixel != doubleArray[0])
                              {
-                                 LogWarning($"Read result was {doubleArray[0]} when it should be {currentJsonSamplePixel}");
+                                 LogWarning($"Read result for sample {sampleIndex} was {doubleArray[0]} when it should be {currentJsonSamplePixel}");
                              }
                          }
                      }
