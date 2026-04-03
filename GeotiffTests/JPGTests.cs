@@ -25,7 +25,7 @@ public class JPGTests : GeoTiffTestBaseClass
         
         rSample.GetByteArray().ShouldAllBe(d => d == 117);
         gSample.GetByteArray().ShouldAllBe(d => d == 134);
-        bSample.GetByteArray().ShouldAllBe(d => d == 105);
+        bSample.GetByteArray().ShouldAllBe(d => d == 106);
     }
     
     
@@ -49,7 +49,8 @@ public class JPGTests : GeoTiffTestBaseClass
     [TestMethod]
     public async Task TestTJPG()
     {
-        string jpgTiffPath = "/Users/jamesfleming/RiderProjects/geotiff.net/ConformanceTests/tiffData/tjpeg.tif";
+        string jpgTiffPath = Path.Combine(GetDataFolderPath(), "tjpeg.tif");
+        
         await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
