@@ -223,10 +223,10 @@ internal class Program
                      {
                          var wnd = new ImagePixelWindow()
                          {
-                             Top = jsonPixel.Y, 
-                             Bottom = jsonPixel.Y + 1, 
-                             Left = jsonPixel.X, 
-                             Right = jsonPixel.X + 1
+                             MaxRow = jsonPixel.Y + 1, 
+                             MinRow = jsonPixel.Y, 
+                             MinColumn = jsonPixel.X, 
+                             MaxColumn = jsonPixel.X + 1
                          };
                          
                          var result = await csharpImage.ReadRasterAsync(wnd);

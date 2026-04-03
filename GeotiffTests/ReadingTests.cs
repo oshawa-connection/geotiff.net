@@ -363,9 +363,9 @@ public class ReadingTests : GeoTiffTestBaseClass
         var xSample = readResult.GetSampleAt(1).Get2DIntArray();
         var ySample = readResult.GetSampleAt(0).Get2DIntArray();
         
-        for (int lon = (int)imagePixelWindow.Left - 1; lon < imagePixelWindow.Right - 1; lon++)
+        for (int lon = (int)imagePixelWindow.MinColumn - 1; lon < imagePixelWindow.MaxColumn - 1; lon++)
         {
-            for (int lat = (int)imagePixelWindow.Top - 1; lat < imagePixelWindow.Bottom - 1; lat++)
+            for (int lat = (int)imagePixelWindow.MaxRow - 1; lat < imagePixelWindow.MinRow - 1; lat++)
             {
                 var x = xSample[lon, lat];
                 var y = (double)ySample[lon, lat];
@@ -951,7 +951,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         
-        var readResult = await image.ReadRasterAsync(new ImagePixelWindow() {Bottom = 1, Left = 0, Right = 1, Top = 0});
+        var readResult = await image.ReadRasterAsync(new ImagePixelWindow() {MinRow = 0, MinColumn = 0, MaxColumn = 1, MaxRow = 1});
         readResult.NumberOfSamples.ShouldBe(1);
         var cyanSample = readResult.GetSampleAt(0);
 

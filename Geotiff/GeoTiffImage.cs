@@ -733,15 +733,14 @@ public class GeoTiffImage : IGetTagable
     /// <exception cref="InvalidTiffException"></exception>
     public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
-        // TODO: Replace with ImagePixelWindow
         ulong[] imageWindow = new ulong[] { 0, 0, Width, Height };
 
         if (window is not null)
         {
-            imageWindow[0] = (ulong)window.Left;
-            imageWindow[1] = (ulong)window.Top;
-            imageWindow[2] = (ulong)window.Right;
-            imageWindow[3] = (ulong)window.Bottom;
+            imageWindow[0] = (ulong)window.MinColumn;
+            imageWindow[1] = (ulong)window.MinRow;
+            imageWindow[2] = (ulong)window.MaxColumn;
+            imageWindow[3] = (ulong)window.MaxRow;
         }
 
         if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
@@ -1230,10 +1229,10 @@ public class GeoTiffImage : IGetTagable
 
         var window = new ImagePixelWindow()
         {
-            Left = (int)left, 
-            Right = (int)right, 
-            Bottom = (int)bottom, 
-            Top = (int)top
+            MinColumn = (int)left, 
+            MaxColumn = (int)right, 
+            MinRow = (int)top, 
+            MaxRow = (int)bottom
         };
 
         return await ReadRasterAsync(window, sampleSelection, cancellationToken);
@@ -1263,10 +1262,10 @@ public class GeoTiffImage : IGetTagable
         
         return new ImagePixelWindow()
         {
-            Left = (int)bottomLeft.X, 
-            Right = (int)topRight.X, 
-            Bottom = (int)bottomLeft.Y, 
-            Top = (int)topRight.Y
+            MinColumn = (int)bottomLeft.X, 
+            MaxColumn = (int)topRight.X, 
+            MinRow = (int)topRight.Y, 
+            MaxRow = (int)bottomLeft.Y 
         };
     }
 }
