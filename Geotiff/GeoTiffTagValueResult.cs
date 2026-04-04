@@ -317,6 +317,10 @@ internal class GeoTiffTagValueResult
             return _resultInt16;
         }
 
+        if (IsString)
+        {
+            return _resultAscii;
+        }
         throw new InvalidOperationException("No result array is set.");
     }
 
