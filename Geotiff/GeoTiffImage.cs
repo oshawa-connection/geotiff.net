@@ -7,7 +7,7 @@ namespace Geotiff;
 
 public class GeoTiffImage : IGetTagable
 {
-    protected internal readonly ImageFileDirectory FileDirectory;
+    public readonly ImageFileDirectory FileDirectory;
     public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
@@ -1196,9 +1196,27 @@ public class GeoTiffImage : IGetTagable
     /// Not part of GeoTiff.js
     /// </summary>
     /// <returns></returns>
-    public short? GetProjectionString()
+    public short? GetProjectionString()//should probably be called GetPredefinedCoordinateSystem
     {
-        return FileDirectory.GetGeoDirectoryValue<short?>("GeographicTypeGeoKey");
+        short? projectionStr = null;
+        short? ModelType = FileDirectory.GetGeoDirectoryValue<short?>("GTModelTypeGeoKey");
+      
+
+        if (ModelType == 1)//projected CS (i.e. EPSG_3857)
+        {
+            if (FileDirectory.GetGeoDirectoryValue<short?>("ProjectedCSTypeGeoKey") != null)
+                projectionStr = FileDirectory.GetGeoDirectoryValue<short?>("ProjectedCSTypeGeoKey");
+
+        }
+        else if (ModelType == 2)//geographic CS (i.e. EPSG_4326)
+        {
+            if (FileDirectory.GetGeoDirectoryValue<short?>("GeographicTypeGeoKey") != null)
+                projectionStr = FileDirectory.GetGeoDirectoryValue<short?>("GeographicTypeGeoKey");
+        }
+        else
+            throw new NotSupportedException("Unsupported CS model type");
+
+        return projectionStr;//null if CS is user-defined
     }
     
     /// <summary>
