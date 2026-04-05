@@ -3,6 +3,17 @@ using Geotiff.Exceptions;
 namespace Geotiff;
 
 /// <summary>
+/// TODO: Hardcode for now, but need to make this extensible.
+/// </summary>
+public enum MaskedGeoTiffStrategy
+{
+    EXTERNAL_MSK_FILE,
+    INTERNAL_ALPHA_BAND,
+    NO_DATA_VALUE
+}
+
+
+/// <summary>
 /// There are three cases that need to be handled here:
 /// 1. External .msk file.
 /// 2. Internal alpha band mask
@@ -11,16 +22,16 @@ namespace Geotiff;
 /// There is also potentially a 4th case
 /// "Specify a per-band NODATA value as part of a suggested encodingInfo extension to the RangeType DataRecord fields (which also addresses the scale factor and offset)"
 /// But I haven't seen it used.
-///
-/// 
-/// TODO: add static method to do this from single dataset GeoTIFF with internal mask band
 /// </summary>
+/// This does not inherit from GeoTiff; they are almost totally different.
 public class MaskedGeoTiffReader
 {
+    private MaskedGeoTiffStrategy _strategy;
     private readonly MultiGeoTiff multiGeoTiff;
     private MaskedGeoTiffReader(MultiGeoTiff multiGeoTiff)
     {
         this.multiGeoTiff = multiGeoTiff;
+        this._strategy = MaskedGeoTiffStrategy.EXTERNAL_MSK_FILE;
     }
     
     /// <summary>
@@ -50,20 +61,6 @@ public class MaskedGeoTiffReader
         return new MaskedGeoTiffReader(multiGeoTiff);
     }
 
-    public async Task<MaskBandGeoTiffReadResult<T>> ReadMaskedRasters<T>(ImagePixelWindow? window = null, CancellationToken? cancellationToken = null) where T : struct
-    {
-        throw new NotImplementedException();
-        // var mainImage = await multiGeoTiff.GetImageAsync();
-        // var maskImage = await multiGeoTiff.GetImageAsync(1);
-        //
-        // var mainReadResult = await mainImage.ReadRastersAsync<T>(window, cancellationToken);
-        // var maskedReadResult = await maskImage.ReadRastersAsync<byte>(window, cancellationToken);
-        //
-        // return new MaskBandGeoTIFFReadResult<T>(
-        //     maskedReadResult.GetSampleResultAt(0)._doubleData, 
-        //     mainReadResult.SampleData, 
-        //     maskedReadResult.Width, 
-        //     maskedReadResult.Height, 
-        //     mainImage);
-    }
+    
+    
 }
