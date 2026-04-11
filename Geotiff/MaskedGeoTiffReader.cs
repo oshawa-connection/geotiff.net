@@ -5,7 +5,7 @@ namespace Geotiff;
 /// <summary>
 /// TODO: Hardcode for now, but need to make this extensible.
 /// </summary>
-public enum MaskedGeoTiffStrategy
+internal enum MaskedGeoTiffStrategy
 {
     EXTERNAL_MSK_FILE,
     INTERNAL_ALPHA_BAND,
@@ -26,6 +26,7 @@ public enum MaskedGeoTiffStrategy
 /// This does not inherit from GeoTiff; they are almost totally different.
 public class MaskedGeoTiffReader
 {
+    public const byte EXTERNAL_MASK_YES_DATA_VALUE = 255;
     private MaskedGeoTiffStrategy _strategy;
     private readonly MultiGeoTiff multiGeoTiff;
     private MaskedGeoTiffReader(MultiGeoTiff multiGeoTiff)
@@ -51,7 +52,15 @@ public class MaskedGeoTiffReader
 
         var mainImage = await multiGeoTiff.GetImageAsync();
         var maskImage = await multiGeoTiff.GetImageAsync(1);
-        // TODO: check type of mask band here - should be byte. Double check this from GDAL.
+        
+        // There are a number of checks we could do here - however, we want to keep this incredibly flexible for future.
+        // E.g. don't check the number of samples; it should be 1 but if there are more just ignore them.
+
+        var maskSampleType = maskImage.GetSampleType(0);
+        if (maskSampleType != GeotiffSampleDataType.UInt8)
+        {
+            throw new InvalidMaskedGeoTiffException("Masked raster mask image sample should be a byte type");
+        }
         
         if (mainImage.Height != maskImage.Height || mainImage.Width != maskImage.Width)
         {
@@ -61,6 +70,28 @@ public class MaskedGeoTiffReader
         return new MaskedGeoTiffReader(multiGeoTiff);
     }
 
-    
-    
+    public async Task<MaskedRaster> ReadMaskedRasterBoundingBoxAsync(BoundingBox boundingBox,
+        IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
+    {
+        var mainImage = await multiGeoTiff.GetImageAsync();
+        var maskImage = await multiGeoTiff.GetImageAsync(1);
+
+        var mainImageReadResult = await mainImage.ReadRasterBoundingBoxAsync(boundingBox, sampleSelection, cancellationToken);
+        // Mask image doesn't always contain affine
+        var pixelWindow = mainImage.BoundingBoxToPixelWindow(boundingBox);
+        var maskImageReadResult = await maskImage.ReadRasterAsync(pixelWindow, sampleSelection, cancellationToken);
+        return new MaskedRaster(mainImageReadResult, maskImageReadResult, null, 0, 0, this);
+    }
+
+
+    public async Task<MaskedRaster> ReadMaskedRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        var mainImage = await multiGeoTiff.GetImageAsync();
+        var maskImage = await multiGeoTiff.GetImageAsync(1);
+
+        var mainImageReadResult = await mainImage.ReadRasterAsync(window, sampleSelection, cancellationToken);
+        var maskImageReadResult = await maskImage.ReadRasterAsync(window, sampleSelection, cancellationToken);
+        return new MaskedRaster(mainImageReadResult, maskImageReadResult, null, 0, 0, this);
+    }
 }
