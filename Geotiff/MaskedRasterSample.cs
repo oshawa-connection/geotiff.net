@@ -17,7 +17,7 @@ public class MaskedRasterSample
         var maskedSampleDoubleArray = this.maskedSample.GetByteArray();
 
         return mainImageDoubleArray
-            .Zip(maskedSampleDoubleArray, (a, b) => new MaskedSampleValue<double>(a, b != MaskedGeoTiffReader.EXTERNAL_MASK_YES_DATA_VALUE))
+            .Zip(maskedSampleDoubleArray, (a, b) => new MaskedSampleValue<double>(a, b != MaskedGeoTiffReader.EXTERNAL_MASK_YES_DATA_VALUE && b != MaskedGeoTiffReader.INTERNAL_MASK_YES_DATA_VALUE))
             .ToArray();
     }
 }
