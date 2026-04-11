@@ -7,11 +7,11 @@ namespace Geotiff;
 
 public class GeoTiffImage : IGetTagable
 {
-    protected internal readonly ImageFileDirectory FileDirectory;
+    public readonly ImageFileDirectory FileDirectory;
     public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
-    private readonly Dictionary<ulong, byte[]>? tiles;
+    private readonly Dictionary<ulong, byte[]>? tileCache;
     private readonly bool isTiled;
     private readonly ushort planarConfiguration;
     private ulong[]? StripOffsetsCached;
@@ -28,7 +28,7 @@ public class GeoTiffImage : IGetTagable
     {
         this.FileDirectory = fileDirectory;
         this.littleEndian = littleEndian;
-        tiles = cache ? new Dictionary<ulong, byte[]>() : null;
+        tileCache = cache ? new Dictionary<ulong, byte[]>() : null;
 
         isTiled = fileDirectory.TagDictionary.ContainsKey("StripOffsets") is false;
         var planarConfigurationTag = GetTag(TagFields.PlanarConfiguration);
@@ -288,6 +288,11 @@ public class GeoTiffImage : IGetTagable
         return null;
     }
 
+    public int GetNumberOfSamples()
+    {
+        return this.SamplesPerPixel;
+    }
+    
     /// <summary>
     /// 
     /// </summary>
@@ -1110,7 +1115,7 @@ public class GeoTiffImage : IGetTagable
 
         Func<Task<byte[]>> request;
         byte[] finalData;
-        if (tiles == null || tiles.ContainsKey(index) is false)
+        if (tileCache == null || tileCache.ContainsKey(index) is false)
         {
             var predictor = this.GetPredictor();
             // resolve each request by potentially applying array normalization
@@ -1122,6 +1127,27 @@ public class GeoTiffImage : IGetTagable
                 
                 if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
                 {
+                    if (bitsForCurrentSample == 1)
+                    {
+                        byte[] output = new byte[data.Length * 8];
+
+                        for (var j = 0; j < output.Length; j++)
+                        {
+                            output[j] = 66;
+                        }
+                        
+                        int index = 0;
+
+                        foreach (byte b in data)
+                        {
+                            for (int i = 7; i >= 0; i--) // MSB → LSB
+                            {
+                                output[index++] = (byte)((b >> i) & 1);
+                            }
+                        }
+
+                        return output;
+                    }
                     throw new NotSupportedException("Data types that require normalization are not supported by this library.");
                 }
 
@@ -1129,15 +1155,15 @@ public class GeoTiffImage : IGetTagable
             };
             finalData = await request();
             // set the cache
-            if (tiles != null)
+            if (tileCache != null)
             {
-                tiles[index] = finalData;
+                tileCache[index] = finalData;
             }
         }
         else
         {
             // get from the cache
-            finalData = tiles[index];
+            finalData = tileCache[index];
         }
 
         // cache the tile request
