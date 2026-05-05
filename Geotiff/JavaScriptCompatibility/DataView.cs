@@ -98,7 +98,7 @@ internal class DataView
             }
             else
             {
-                // Subnormal → normalize
+                // Subnormal -> normalize
                 while ((mant & 0x0400) == 0)
                 {
                     mant <<= 1;

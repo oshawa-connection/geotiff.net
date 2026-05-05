@@ -310,7 +310,7 @@ public class GeoTiffImage : IGetTagable
         }
     }
     
-    public ushort GetBitsForSample(int sampleIndex = 0)
+    public ushort GetBitsForSample(int sampleIndex)
     {
         ushort[] bitsPerSample = GetTag(TagFields.BitsPerSample).GetUShortArray();
         return bitsPerSample[sampleIndex];
@@ -417,10 +417,10 @@ public class GeoTiffImage : IGetTagable
 
     
     /// <summary>
-    /// Returns the width of each tile.
+    /// Returns the width of each tile or strip
     /// </summary>
     /// <returns>The width of each tile</returns>
-    public ulong GetTileWidth()
+    public ulong GetTileOrStripWidth()
     {
         var tileWidthTag = GetTag(TagFields.TileWidth);
         if (tileWidthTag is not null)
@@ -435,7 +435,7 @@ public class GeoTiffImage : IGetTagable
     /// Returns the height of each tile or strip
     /// </summary>
     /// <returns>The height of each tile</returns>
-    public ulong GetTileHeight()
+    public ulong GetTileOrStripHeight()
     {
         if (isTiled)
         {
@@ -775,8 +775,8 @@ public class GeoTiffImage : IGetTagable
             var sampleDataType = SampleDataTypeForSample(samples.ElementAt(i));
             valueArrays[samples.ElementAt(i)] = new RasterSample(imageWindowWidth, imageWindowHeight, this, sampleDataType, (int)numPixels);
         }
-        var tileWidth = GetTileWidth();
-        var tileHeight = GetTileHeight();
+        var tileWidth = GetTileOrStripWidth();
+        var tileHeight = GetTileOrStripHeight();
         var imageWidth = Width;
         var imageHeight = Height;
         ulong minXTile = (ulong)Math.Max(Math.Floor((double)imageWindow[0] / (double)tileWidth), 0);
@@ -1057,8 +1057,8 @@ public class GeoTiffImage : IGetTagable
     private async Task<TileOrStripResult> GetTileOrStripAsync(ulong x, ulong y, int sample, DecoderRegistry poolOrDecoder,
         CancellationToken? signal)
     {
-        ulong numTilesPerRow = (ulong)Math.Ceiling((double)Width / (double)GetTileWidth());
-        ulong numTilesPerCol = (ulong)Math.Ceiling((double)Height / (double)GetTileHeight());
+        ulong numTilesPerRow = (ulong)Math.Ceiling((double)Width / (double)GetTileOrStripWidth());
+        ulong numTilesPerCol = (ulong)Math.Ceiling((double)Height / (double)GetTileOrStripHeight());
         ulong index = 0;
         var sampleToUse = 0;
         if (planarConfiguration == 1)
@@ -1086,7 +1086,7 @@ public class GeoTiffImage : IGetTagable
 
         if (byteCount == 0)
         {
-            ulong nPixels = GetBlockHeight(y) * GetTileWidth();
+            ulong nPixels = GetBlockHeight(y) * GetTileOrStripWidth();
             ulong bytesPerPixel = planarConfiguration == 2
                 ? GetSampleByteSize(sampleToUse)
                 : GetNumberOfBytesPerPixel();
@@ -1110,7 +1110,7 @@ public class GeoTiffImage : IGetTagable
             return new TileOrStripResult { x = x, y = y, data = data};
         }
 
-        byte[] slice =
+        byte[] sliceBytes =
             (await source.FetchAsync(new List<Slice>() { new(offset, byteCount) }, signal)).First();
 
         Func<Task<byte[]>> request;
@@ -1122,33 +1122,49 @@ public class GeoTiffImage : IGetTagable
             request = async () =>
             {
                 int sampleFormat = GetSampleFormat();
-                uint bitsForCurrentSample = GetBitsForSample(); // TODO: pass sample index here; works right now because most tiffs only contain one sample type. 
-                byte[] data = await poolOrDecoder.DecodeAsync(this, slice, predictor);
+                uint bitsForCurrentSample = GetBitsForSample(sampleToUse); 
+                byte[] data = await poolOrDecoder.DecodeAsync(this, sliceBytes, predictor);
                 
                 if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
                 {
                     if (bitsForCurrentSample == 1)
                     {
-                        byte[] output = new byte[data.Length * 8];
+                        int NearestMultipleCeil(int value, int multiple) => ((value + multiple - 1) / multiple) * multiple;
 
-                        for (var j = 0; j < output.Length; j++)
-                        {
-                            output[j] = 66;
-                        }
+                        // Bits are arranged by row. However, they are byte-padded, so e.g. if your image width
+                        // is 50, you'll have something like this:
+                        //  11111111 11111111 11111111 11111111 11111111 11111111 11000000 row 1
+                        //  11111111 11111111 11111111 11111111 11111111 11111111 11000000 row 2 
+                        // with 50 valid bits + 6 padding bits for byte alignment
                         
-                        int index = 0;
+                        var bitsPerRow = NearestMultipleCeil((int)Width, 8);
+                        var nRows = data.Length * 8 / bitsPerRow; // doesn't have to be GetTileOrStripWidth(), could be less if it's an end strip
+                        
+                        byte[] output = new byte[(int)Width * nRows];
+                        
+                        int outputIndex = 0;
+                        int rowBitIndex = 0;
 
                         foreach (byte b in data)
                         {
-                            for (int i = 7; i >= 0; i--) // MSB → LSB
+                            for (int n = 7; n >= 0; n--) // MSB → LSB
                             {
-                                output[index++] = (byte)((b >> i) & 1);
+                                if (rowBitIndex < (int)Width)
+                                {
+                                    output[outputIndex++] = (byte)((b >> n) & 1); // get nth bit from a byte
+                                }
+                                
+                                rowBitIndex++;
+                                if (rowBitIndex >= bitsPerRow)
+                                {
+                                    rowBitIndex = 0;
+                                }
                             }
                         }
 
                         return output;
                     }
-                    throw new NotSupportedException("Data types that require normalization are not supported by this library.");
+                    throw new NotSupportedException($"Only bit data normalization is supported. SampleFormat is {sampleFormat}, bitsForCurrentSample is {(int)bitsForCurrentSample}");
                 }
 
                 return data;
@@ -1186,18 +1202,18 @@ public class GeoTiffImage : IGetTagable
 
     public ulong GetBlockWidth()
     {
-        return GetTileWidth();
+        return GetTileOrStripWidth();
     }
 
     public ulong GetBlockHeight(ulong y)
     {
-        if (isTiled || (y + 1) * GetTileHeight() <= Height)
+        if (isTiled || (y + 1) * GetTileOrStripHeight() <= Height)
         {
-            return GetTileHeight();
+            return GetTileOrStripHeight();
         }
         else
         {
-            return Height - (y * GetTileHeight());
+            return Height - (y * GetTileOrStripHeight());
         }
     }
 

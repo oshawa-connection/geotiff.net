@@ -46,14 +46,22 @@ public class MaskedReadingTests : GeoTiffTestBaseClass
         await using var mainStream = File.OpenRead(tifPath);
         var file = await GeoTiff.FromStreamAsync(mainStream);
         
-        var image1 = await file.GetImageAsync();
+        var image2 = await file.GetImageAsync(1);
+        var maskRead = await image2.ReadRasterAsync();
 
         // var maskImage = await file.GetImageAsync(1);
         // var maskResult = await maskImage.ReadRasterAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 25, MaxColumn = 50});
+        var maskedReader = await MaskedGeoTiffReader.FromInternalMaskGeoTiffAsync(file);
+        var wholeReadResult = await maskedReader.ReadMaskedRasterAsync();
+        
+        var maskedCount = wholeReadResult.GetSampleAt(0).GetAsDoubleArray().Where(d => d.IsMasked == true).Count();
+        var notMaskedCount = wholeReadResult.GetSampleAt(0).GetAsDoubleArray().Where(d => d.IsMasked == false).Count();
+
+        var x = wholeReadResult.GetSampleAt(0).GetAs2DDoubleArray();
         
         Console.WriteLine("HELLO");
         // var s = maskImage.GetSampleType();
-        var maskedReader = await MaskedGeoTiffReader.FromInternalMaskGeoTiffAsync(file);
+        
         var rightReadResult = await maskedReader.ReadMaskedRasterAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 25, MaxColumn = 50});
 
         // var rightSample = rightReadResult.GetSampleAt(0);
@@ -62,7 +70,7 @@ public class MaskedReadingTests : GeoTiffTestBaseClass
         
         
         var leftReadResult = await maskedReader.ReadMaskedRasterAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 0, MaxColumn = 24});
-
+        var ttt = leftReadResult.GetSampleAt(0).GetAs2DDoubleArray();
         var leftSample = leftReadResult.GetSampleAt(0);
         var leftPixelArray = leftSample.GetAsDoubleArray();
         leftPixelArray.ShouldAllBe(d => d.IsMasked == false);

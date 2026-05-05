@@ -847,8 +847,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var height = image.Height;
         var width = image.Width;
         
-        var tileWidth = image.GetTileWidth();
-        var tileHeight = image.GetTileHeight();
+        var tileWidth = image.GetTileOrStripWidth();
+        var tileHeight = image.GetTileOrStripHeight();
         var readResult = await image.ReadRasterAsync();
     }
 
@@ -865,8 +865,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var height = image.Height;
         var width = image.Width;
         
-        var tileWidth = image.GetTileWidth();
-        var tileHeight = image.GetTileHeight();
+        var tileWidth = image.GetTileOrStripWidth();
+        var tileHeight = image.GetTileOrStripHeight();
         var readResult = await image.ReadRasterAsync();
         var firstSample = readResult.GetSampleAt(0);
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.Float16);
@@ -886,8 +886,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var height = image.Height;
         var width = image.Width;
         
-        var tileWidth = image.GetTileWidth();
-        var tileHeight = image.GetTileHeight();
+        var tileWidth = image.GetTileOrStripWidth();
+        var tileHeight = image.GetTileOrStripHeight();
         var readResult = await image.ReadRasterAsync();
         var firstSample = readResult.GetSampleAt(0);
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.Int16);
@@ -907,8 +907,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var height = image.Height;
         var width = image.Width;
         
-        var tileWidth = image.GetTileWidth();
-        var tileHeight = image.GetTileHeight();
+        var tileWidth = image.GetTileOrStripWidth();
+        var tileHeight = image.GetTileOrStripHeight();
         var readResult = await image.ReadRasterAsync();
         var firstSample = readResult.GetSampleAt(0);
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.UInt16);
