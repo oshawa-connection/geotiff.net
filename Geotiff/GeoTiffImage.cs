@@ -1129,6 +1129,7 @@ public class GeoTiffImage : IGetTagable
                 {
                     if (bitsForCurrentSample == 1)
                     {
+                        // The space needed to store your bits, rounded up to the nearest 8 bits.
                         int NearestMultipleCeil(int value, int multiple) => ((value + multiple - 1) / multiple) * multiple;
 
                         // Bits are arranged by row. However, they are byte-padded, so e.g. if your image width

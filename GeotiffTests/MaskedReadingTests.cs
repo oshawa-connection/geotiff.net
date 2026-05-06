@@ -39,47 +39,27 @@ public class MaskedReadingTests : GeoTiffTestBaseClass
     }
 
 
+    /// <summary>
+    /// This is a tif where the left half is valid, and the right half is masked off.
+    /// TODO: Might be good to create another, more explicit test where we read bit raster data. 
+    /// </summary>
     [TestMethod]
     public async Task InternalMaskFileReading()
     {
         var tifPath = Path.Combine(GetDataFolderPath(), "internal_masked_image.tif");
         await using var mainStream = File.OpenRead(tifPath);
         var file = await GeoTiff.FromStreamAsync(mainStream);
-        
-        var image2 = await file.GetImageAsync(1);
-        var maskRead = await image2.ReadRasterAsync();
-
-        // var maskImage = await file.GetImageAsync(1);
-        // var maskResult = await maskImage.ReadRasterAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 25, MaxColumn = 50});
         var maskedReader = await MaskedGeoTiffReader.FromInternalMaskGeoTiffAsync(file);
-        var wholeReadResult = await maskedReader.ReadMaskedRasterAsync();
-        
-        var maskedCount = wholeReadResult.GetSampleAt(0).GetAsDoubleArray().Where(d => d.IsMasked == true).Count();
-        var notMaskedCount = wholeReadResult.GetSampleAt(0).GetAsDoubleArray().Where(d => d.IsMasked == false).Count();
-
-        var x = wholeReadResult.GetSampleAt(0).GetAs2DDoubleArray();
-        
-        Console.WriteLine("HELLO");
-        // var s = maskImage.GetSampleType();
-        
-        var rightReadResult = await maskedReader.ReadMaskedRasterAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 25, MaxColumn = 50});
-
-        // var rightSample = rightReadResult.GetSampleAt(0);
-        // var rightPixelArray = rightSample.GetAsDoubleArray();
-        // rightPixelArray.ShouldAllBe(d => d.IsMasked == true);
-        
         
         var leftReadResult = await maskedReader.ReadMaskedRasterAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 0, MaxColumn = 24});
-        var ttt = leftReadResult.GetSampleAt(0).GetAs2DDoubleArray();
         var leftSample = leftReadResult.GetSampleAt(0);
         var leftPixelArray = leftSample.GetAsDoubleArray();
         leftPixelArray.ShouldAllBe(d => d.IsMasked == false);
         
+        var rightReadResult = await maskedReader.ReadMaskedRasterAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 25, MaxColumn = 50});
         
-        // var rightReadResult = await masked.ReadMaskedRasterAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 25, MaxColumn = 50});
-        //
-        // var rightSample = rightReadResult.GetSampleAt(0);
-        // var rightPixelArray = rightSample.GetAsDoubleArray();
-        // rightPixelArray.ShouldAllBe(d => d.IsMasked == true);
+        var rightSample = rightReadResult.GetSampleAt(0);
+        var rightPixelArray = rightSample.GetAsDoubleArray();
+        rightPixelArray.ShouldAllBe(d => d.IsMasked == true);
     }
 }

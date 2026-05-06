@@ -20,7 +20,7 @@ profile = {
 
 # Create mask
 mask = np.zeros((height, width), dtype=np.uint8)
-# mask[:, :25] = 1  # left half valid
+mask[:, :25] = 1  # left half valid
 
 # Enable internal mask
 with rasterio.Env(GDAL_TIFF_INTERNAL_MASK=True):
