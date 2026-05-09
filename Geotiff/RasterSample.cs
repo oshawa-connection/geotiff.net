@@ -9,18 +9,18 @@ public class RasterSample
 {
     public ulong Height { get; set; }
     public ulong Width { get; set; }
-    private double[]? Float64Result { get; set; }
-    private float[]? Float32Result { get; set; }
-    private float[]? Float16Result { get; set; }
-    private int[]? IntResult { get; set; }
-    private uint[]? UInt32Result { get; set; }
-    private ushort[]? UInt16Result { get; set; }
-    private short[]? Int16Result { get; set; }
-    private ulong[]? UInt64Result { get; set; }
-    private long[]? Int64Result { get; set; }
-    private byte[]? UInt8Result { get; set; }
-    private sbyte[]? Int8Result { get; set; }
-    private readonly GeoTiffImage ParentImage;
+    protected double[]? Float64Result { get; set; }
+    protected float[]? Float32Result { get; set; }
+    protected float[]? Float16Result { get; set; }
+    protected int[]? IntResult { get; set; }
+    protected uint[]? UInt32Result { get; set; }
+    protected ushort[]? UInt16Result { get; set; }
+    protected short[]? Int16Result { get; set; }
+    protected ulong[]? UInt64Result { get; set; }
+    protected long[]? Int64Result { get; set; }
+    protected byte[]? UInt8Result { get; set; }
+    protected sbyte[]? Int8Result { get; set; }
+    protected readonly GeoTiffImage ParentImage;
     public readonly GeotiffSampleDataType SampleType;
 
 

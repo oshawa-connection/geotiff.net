@@ -13,8 +13,8 @@ public abstract class GeoTiffDecoder
         var decoded = await this.DecodeBlockAsync(buffer, image);
         
         if (predictor != 1) {
-            var tileWidth = image.GetTileWidth();
-            var tileHeight = image.GetTileHeight();
+            var tileWidth = image.GetTileOrStripWidth();
+            var tileHeight = image.GetTileOrStripHeight();
             var bitsPerSample = image.BitsPerSample;
             var planarConfiguration = image.GetPlanarConfiguration();
             return ApplyPredictor(decoded, (int)tileWidth, (int)tileHeight, predictor, bitsPerSample, planarConfiguration);

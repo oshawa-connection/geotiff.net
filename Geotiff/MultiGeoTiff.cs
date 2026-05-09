@@ -11,7 +11,7 @@ public class MultiGeoTiff : GeoTiff
     private readonly GeoTiff mainFile;
     private readonly IEnumerable<GeoTiff> sidecarFileSources;
     private IEnumerable<int>? imageCounts;
-    public MultiGeoTiff(GeoTiff mainFile, IEnumerable<GeoTiff> sidecarFileSources,  bool isLittleEndian, bool isBigTiff, ulong firstIFDOffset) : base(mainFile.Source, isLittleEndian,isBigTiff,firstIFDOffset)
+    public MultiGeoTiff(GeoTiff mainFile, IEnumerable<GeoTiff> sidecarFileSources) : base(mainFile.Source, mainFile.IsLittleEndian,mainFile.IsBifTIFF,mainFile.FirstIFDOffset)
     {
         this.mainFile = mainFile;
         this.sidecarFileSources = sidecarFileSources;
@@ -23,7 +23,7 @@ public class MultiGeoTiff : GeoTiff
         var x = otherStreams.Select(async d => await GeoTiff.FromStreamAsync(d));
         var r = await Task.WhenAll(x);
 
-        return new MultiGeoTiff(mainTiff, r, mainTiff.IsLittleEndian, mainTiff.IsBifTIFF, mainTiff.FirstIFDOffset);
+        return new MultiGeoTiff(mainTiff, r);
     }
     
     private async Task ParseFileDirectoriesForAllFiles()

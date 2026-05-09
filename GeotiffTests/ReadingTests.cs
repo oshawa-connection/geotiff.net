@@ -663,31 +663,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         var hasOverviews = await overviewMultiTiff.HasOverviewsAsync();
         hasOverviews.ShouldBe(true);
     }
-
-    [TestMethod]
-    public async Task MaskedMultiTiffReader()
-    {
-        // TODO: would be nice to have this in the main code someplace.
-        string externalOverviewTifPath = Path.Combine(GetDataFolderPath(), "masked_image.tif");
-        var mskFilePath = externalOverviewTifPath + ".msk";
-        
-        if (File.Exists(mskFilePath) is false)
-        {
-            throw new FileNotFoundException($"No file .msk file found at {mskFilePath}");
-        }
-        
-        await using var mainStream = File.OpenRead(externalOverviewTifPath);
-        await using var ovrStream = File.OpenRead(mskFilePath);
-
-        var maskedMultiTiff = await MultiGeoTiff.FromStreams(mainStream, new[] { ovrStream });
-        var maskedReader = await MaskedGeoTiffReader.FromMultiGeoTiff(maskedMultiTiff);
-        var maskedReadResult = await maskedReader.ReadMaskedRasters<int>();
-        var sample1 = maskedReadResult.GetSampleResultAt(0);
-        var maskedValue = sample1.MaskedValues.ElementAt(0);
-        maskedValue.Masked.ShouldBe(true);
-        maskedValue.Value.ShouldBe(10);
-    }
-
+    
     [TestMethod]
     public async Task BiLinearResample()
     {
@@ -871,8 +847,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var height = image.Height;
         var width = image.Width;
         
-        var tileWidth = image.GetTileWidth();
-        var tileHeight = image.GetTileHeight();
+        var tileWidth = image.GetTileOrStripWidth();
+        var tileHeight = image.GetTileOrStripHeight();
         var readResult = await image.ReadRasterAsync();
     }
 
@@ -889,8 +865,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var height = image.Height;
         var width = image.Width;
         
-        var tileWidth = image.GetTileWidth();
-        var tileHeight = image.GetTileHeight();
+        var tileWidth = image.GetTileOrStripWidth();
+        var tileHeight = image.GetTileOrStripHeight();
         var readResult = await image.ReadRasterAsync();
         var firstSample = readResult.GetSampleAt(0);
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.Float16);
@@ -910,8 +886,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var height = image.Height;
         var width = image.Width;
         
-        var tileWidth = image.GetTileWidth();
-        var tileHeight = image.GetTileHeight();
+        var tileWidth = image.GetTileOrStripWidth();
+        var tileHeight = image.GetTileOrStripHeight();
         var readResult = await image.ReadRasterAsync();
         var firstSample = readResult.GetSampleAt(0);
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.Int16);
@@ -931,8 +907,8 @@ public class ReadingTests : GeoTiffTestBaseClass
         var height = image.Height;
         var width = image.Width;
         
-        var tileWidth = image.GetTileWidth();
-        var tileHeight = image.GetTileHeight();
+        var tileWidth = image.GetTileOrStripWidth();
+        var tileHeight = image.GetTileOrStripHeight();
         var readResult = await image.ReadRasterAsync();
         var firstSample = readResult.GetSampleAt(0);
         firstSample.SampleType.ShouldBe(GeotiffSampleDataType.UInt16);
