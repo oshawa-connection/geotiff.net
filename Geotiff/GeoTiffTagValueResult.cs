@@ -12,6 +12,7 @@ namespace Geotiff;
 /// </summary>
 internal class GeoTiffTagValueResult
 {
+    private string _resultString;
     private byte[]? _resultAscii;
     private byte[]? _resultByte;
     private sbyte[]? _resultSByte;
@@ -29,7 +30,7 @@ internal class GeoTiffTagValueResult
     /// <summary>
     /// Remember that this refers to the dotnet type.
     /// </summary>
-    public bool IsString => _resultAscii is not null;
+    public bool IsString => _resultAscii is not null || _resultString is not null;
     public bool IsByte => _resultByte is not null;
     public bool IsSByte => _resultSByte is not null;
     public bool IsShort => _resultInt16 is not null;
@@ -187,8 +188,11 @@ internal class GeoTiffTagValueResult
     {
         if (this.IsString)
         {
-            return System.Text.Encoding.ASCII.GetString(_resultAscii);
-
+            if (_resultAscii is not null)
+            {
+                return System.Text.Encoding.ASCII.GetString(_resultAscii);
+            }
+            return this._resultString;
         }
         
         throw GeoTiffTagInvalidOperationException.FromExceptedActualTypes(TagDataType.ASCII.ToString(), this.DataType);
@@ -258,6 +262,11 @@ internal class GeoTiffTagValueResult
     public static GeoTiffTagValueResult FromAscii(byte[] data)
     {
         return new GeoTiffTagValueResult() { _resultAscii = data };
+    }
+    
+    public static GeoTiffTagValueResult FromString(string data)
+    {
+        return new GeoTiffTagValueResult() { _resultString = data };
     }
     
     private Array GetList()

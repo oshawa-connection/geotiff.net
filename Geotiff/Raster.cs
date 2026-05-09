@@ -103,4 +103,9 @@ public class Raster : IGetTagable
     {
         return this.GetTag(id) is not null;
     }
+    
+    public Tag GetGeoTag(string name)
+    {
+        return this.ParentImage.GetGeoTag(name);
+    }
 }
