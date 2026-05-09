@@ -2,6 +2,7 @@ using Geotiff.Compression;
 using Geotiff.Exceptions;
 using Geotiff.Interfaces;
 using Geotiff.JavaScriptCompatibility;
+using System.Xml.Linq;
 
 namespace Geotiff;
 
@@ -160,6 +161,28 @@ public class GeoTiffImage : IGetTagable
     public Tag GetGeoTag(string name)
     {
         return this.FileDirectory.GetGeoTag(name);
+    }
+
+    /// <summary>
+    /// Returns null if GDAL_METADATA tag is not set.
+    /// Will throw if there are duplicated entries.
+    /// </summary>
+    /// <returns></returns>
+    public Dictionary<string, string>? GetGDALMetadataAsDictionary()
+    {
+        var gdalMetadataTag = this.GetTag("GDAL_METADATA");
+        if (gdalMetadataTag is null)
+        {
+            return null;
+        }
+        
+        var s = gdalMetadataTag.GetString();
+        
+        XDocument doc = XDocument.Parse(s);
+
+        return doc.Descendants("Item")
+            .Select(d => new KeyValuePair<string, string>(d.FirstAttribute.Value, d.Value))
+            .ToDictionary(x => x.Key, x => x.Value);
     }
 
     /// <summary>
@@ -847,7 +870,7 @@ public class GeoTiffImage : IGetTagable
                             cancellationToken);
                     }
 
-                    Task<bool> promise = getPromise.Then<TileOrStripResult, bool>(sample,(tile, si) =>
+                    Task<bool> promise = getPromise.JSThen<TileOrStripResult, bool>(sample,(tile, si) =>
                     {
                         byte[] buffer = tile.data;
                         
@@ -858,9 +881,9 @@ public class GeoTiffImage : IGetTagable
                         ulong lastLine = firstLine + blockHeight;
                         ulong lastCol = (tile.x + 1) * tileWidth;
 
-                        ulong ymax = JSMath.Min(blockHeight, blockHeight - (lastLine - imageWindow[3]),
+                        ulong ymax = JSMath.JSMin(blockHeight, blockHeight - (lastLine - imageWindow[3]),
                             imageHeight - firstLine);
-                        ulong xmax = JSMath.Min((ulong)tileWidth, (ulong)(tileWidth - (lastCol - imageWindow[2])),
+                        ulong xmax = JSMath.JSMin((ulong)tileWidth, (ulong)(tileWidth - (lastCol - imageWindow[2])),
                             (ulong)(imageWidth - firstCol));
 
                         ulong startY = 0;

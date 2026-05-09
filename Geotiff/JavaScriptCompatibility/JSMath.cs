@@ -5,7 +5,7 @@ namespace Geotiff.JavaScriptCompatibility;
 /// </summary>
 internal static class JSMath
 {
-    public static T Min<T>(params T[] values)
+    public static T JSMin<T>(params T[] values)
     {
         return Enumerable.Min(values);
     }

@@ -219,6 +219,10 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         doc.Descendants("Item").Skip(1).First().FirstAttribute.Value.ShouldBe("string_tag");
         doc.Descendants("Item").Skip(1).First().Value.ShouldBe("This is a custom tag value");
+
+        var dict = image.GetGDALMetadataAsDictionary();
+        dict["DESCRIPTION"].ShouldBe("HELLO WORLD");
+        dict["string_tag"].ShouldBe("This is a custom tag value");
     }
     
     
