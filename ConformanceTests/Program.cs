@@ -1,6 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Nodes;
-using ConformanceTests.Exceptions;
 using Geotiff;
 using Rationals;
 
@@ -11,7 +9,7 @@ internal class Program
      private static string GetDataFolderPath()
      {
          // Start from the directory where the test assembly is located
-         string? dir = AppContext.BaseDirectory;
+         string dir = AppContext.BaseDirectory;
 
          // Walk up until we find the project root (i.e., contains .csproj or known marker)
          while (!Directory.GetFiles(dir, "*.csproj").Any())
