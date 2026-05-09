@@ -1239,9 +1239,35 @@ public class GeoTiffImage : IGetTagable
     /// Not part of GeoTiff.js
     /// </summary>
     /// <returns></returns>
-    public short? GetProjectionString()
+    public short? GetModelCRS(out short? verticalModelCRS)
     {
-        return FileDirectory.GetGeoDirectoryValue<short?>("GeographicTypeGeoKey");
+        short? modelCRS = null;
+        verticalModelCRS = null;
+        short? ModelType = FileDirectory.GetGeoDirectoryValue<short?>("GTModelTypeGeoKey");//mandatory
+      
+        if (ModelType == 1)//projected CS
+        {
+            if (FileDirectory.GetGeoDirectoryValue<short?>("ProjectedCSTypeGeoKey") != null)//GeoTIFF v1.0
+                modelCRS = FileDirectory.GetGeoDirectoryValue<short?>("ProjectedCSTypeGeoKey");
+            else if (FileDirectory.GetGeoDirectoryValue<short?>("ProjectedCRSGeoKey") != null)//GeoTIFF v1.1
+                modelCRS = FileDirectory.GetGeoDirectoryValue<short?>("ProjectedCRSGeoKey");
+        }
+        else if (ModelType == 2)//geographic CS
+        {
+            if (FileDirectory.GetGeoDirectoryValue<short?>("GeographicTypeGeoKey") != null)//GeoTIFF v1.0
+                modelCRS = FileDirectory.GetGeoDirectoryValue<short?>("GeographicTypeGeoKey");
+            else if (FileDirectory.GetGeoDirectoryValue<short?>("GeodeticCRSGeoKey") != null)//GeoTIFF v1.1
+                modelCRS = FileDirectory.GetGeoDirectoryValue<short?>("GeodeticCRSGeoKey");
+        }
+        else
+            throw new NotSupportedException("Unsupported CS model type");
+
+        if (FileDirectory.GetGeoDirectoryValue<short?>("VerticalCSTypeGeoKey") != null)//GeoTIFF v1.0
+            verticalModelCRS = FileDirectory.GetGeoDirectoryValue<short?>("VerticalCSTypeGeoKey");
+        else if (FileDirectory.GetGeoDirectoryValue<short?>("VerticalGeoKey") != null)//GeoTIFF v1.1
+            verticalModelCRS = FileDirectory.GetGeoDirectoryValue<short?>("VerticalGeoKey");
+
+        return modelCRS;
     }
     
     /// <summary>
