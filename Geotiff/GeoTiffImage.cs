@@ -488,10 +488,9 @@ public class GeoTiffImage : IGetTagable
 
 
     /// <summary>
-    /// TODO: Check type here, could be ushort
     /// </summary>
     /// <returns></returns>
-    private int GetSampleFormat(int sampleIndex = 0)
+    private ushort GetSampleFormat(int sampleIndex = 0)
     {
         var sampleFormatTag = GetTag(TagFields.SampleFormat);
         if (sampleFormatTag is null)

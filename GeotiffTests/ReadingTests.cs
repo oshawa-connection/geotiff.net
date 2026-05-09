@@ -83,8 +83,16 @@ public class ReadingTests : GeoTiffTestBaseClass
         resolution.X.ShouldBe(0.08333333333333333d);
         resolution.Y.ShouldBe(-0.08333333333333333d);
         resolution.Z.ShouldBe(0d);
-        
-        var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
+
+        // foreach (var imageIter in await geotiff.GetAllImagesAsync())
+        // {
+        //     var readResultIter = await imageIter.ReadRasterAsync();
+        // }
+
+        GeoTiffImage? image1 = await geotiff.GetImageAsync(7);
+        var x = image.GetPredictor();
+        var y = image1.GetPredictor();
+        var readResult = await image1.ReadRasterAsync(cancellationToken: cts.Token);
         readResult.NumberOfSamples.ShouldBe(4);
         var doubleArray = readResult.GetSampleAt(0).GetAs2DDoubleArray();
         Console.WriteLine(doubleArray[0,0]);

@@ -17,7 +17,7 @@ public abstract class GeoTiffDecoder
             var tileHeight = image.GetTileOrStripHeight();
             var bitsPerSample = image.BitsPerSample;
             var planarConfiguration = image.GetPlanarConfiguration();
-            return ApplyPredictor(decoded, (int)tileWidth, (int)tileHeight, predictor, bitsPerSample, planarConfiguration);
+            return ApplyPredictor(decoded, (int)tileWidth, (int)tileHeight, predictor, bitsPerSample, planarConfiguration, image);
         }
         return decoded;
     }
@@ -135,11 +135,15 @@ public abstract class GeoTiffDecoder
     private Span<byte> SpanSlice(byte[] buffer, int start, int length)
     {
         Span<byte> bytes = buffer;
+        if (start + length > bytes.Length)
+        {
+            throw new Exception();
+        }
         return bytes.Slice(start: start, length: length);
     }
     
     
-   private byte[] ApplyPredictor(byte[] block,int tileWidth, int tileHeight, int predictor, ushort[] bitsPerSample, int planarConfiguration)
+   private byte[] ApplyPredictor(byte[] block,int tileWidth, int tileHeight, int predictor, ushort[] bitsPerSample, int planarConfiguration, GeoTiffImage image)
    {
        var width = tileWidth;
        
@@ -182,7 +186,12 @@ public abstract class GeoTiffDecoder
           }
         } else if (predictor == 3) { // horizontal floating point
             var row = SpanSlice(block, i * stride * width * bytesPerSample, stride * width * bytesPerSample);
-            // Todo check sample datatype; if its not a float then throw
+            var sampleType = image.GetSampleType();
+            if (sampleType != GeotiffSampleDataType.Float16 && sampleType != GeotiffSampleDataType.Float32 && sampleType != GeotiffSampleDataType.Float64)
+            {
+                throw new InvalidGeoTiffException("Predictor of 3 is not supported for non-floating point data");
+            }
+            
             decodeRowFloatingPoint(row, stride, bytesPerSample);
         }
       }

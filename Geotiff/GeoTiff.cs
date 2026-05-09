@@ -5,7 +5,7 @@ using Geotiff.RemoteClients;
 namespace Geotiff;
 
 /// <summary>
-/// TODO: implement ReadRaster method here, selecting best image for the user. A nice to have.
+/// 
 /// </summary>
 public class GeoTiff
 {
@@ -435,5 +435,15 @@ public class GeoTiff
         return new GeoTiffImage(
             ifd, IsLittleEndian, false, Source
         );
+    }
+
+    public async Task<IEnumerable<GeoTiffImage>> GetAllImagesAsync()
+    {
+        var imageCount = await GetImageCountAsync();
+
+        var tasks = Enumerable.Range(0, imageCount)
+            .Select(i => GetImageAsync(i));
+
+        return await Task.WhenAll(tasks);
     }
 }
