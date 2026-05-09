@@ -339,7 +339,7 @@ public class GeoTiff
 
     private SparseList<ImageFileDirectory> ImageFileDirectories = new();
     
-    protected internal async Task<ImageFileDirectory> RequestIFDAsync(int index)
+    protected internal async Task<ImageFileDirectory?> RequestIFDAsync(int index)
     {
         if (ImageFileDirectories[index] is not null)
         {
@@ -356,7 +356,7 @@ public class GeoTiff
         ImageFileDirectory? currentIFD = ImageFileDirectories[index - 1];
         if (currentIFD.NextIFDByteOffset == 0)
         {
-            throw new GeoTiffImageIndexError(index);
+            return null;
         }
 
         ImageFileDirectory? result2 = await ParseFileDirectoryAtAsync(currentIFD.NextIFDByteOffset);
@@ -405,20 +405,14 @@ public class GeoTiff
         bool hasNext = true;
         while (hasNext)
         {
-            try
-            {
-                await RequestIFDAsync(index);
-                ++index;
-            }
-            catch (GeoTiffImageIndexError e) // TODO: bad, using exception for control flow. Diverge from geotiff.js here.
+            var result = await RequestIFDAsync(index);
+            if (result is null)
             {
                 hasNext = false;
                 this.finalImageCount = index;
+                break;
             }
-            catch
-            {
-                throw;
-            }
+            ++index;
         }
         
         return index;
