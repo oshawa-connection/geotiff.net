@@ -62,4 +62,19 @@ public class MaskedReadingTests : GeoTiffTestBaseClass
         var rightPixelArray = rightSample.GetAsDoubleArray();
         rightPixelArray.ShouldAllBe(d => d.IsMasked == true);
     }
+
+
+    [TestMethod]
+    public async Task NoDataReading()
+    {
+        var tifPath = Path.Combine(GetDataFolderPath(), "no_data_outline_float32.tif");
+        await using var mainStream = File.OpenRead(tifPath);
+        var file = await GeoTiff.FromStreamAsync(mainStream);
+        var image = await file.GetImageAsync(0);
+        // Console.WriteLine(image.GDAL_NODATA);
+        var maskedReader = await MaskedGeoTiffReader.FromNoDataGeotiffAsync(file);
+        var readResult = await maskedReader.ReadMaskedRasterAsync();
+        
+        readResult.GetSampleAt(0).GetAs2DDoubleArray()[0,0].IsMasked.ShouldBe(true);
+    }
 }
