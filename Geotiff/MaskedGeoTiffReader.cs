@@ -102,18 +102,18 @@ public class MaskedGeoTiffReader
         return new MaskedGeoTiffReader(multiGeoTiff, MaskedGeoTiffStrategy.EXTERNAL_MSK_FILE);
     }
 
-    // public async Task<MaskedRaster> ReadMaskedRasterBoundingBoxAsync(BoundingBox boundingBox,
-    //     IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
-    // {
-    //     var mainImage = await multiGeoTiff.GetImageAsync();
-    //     var maskImage = await multiGeoTiff.GetImageAsync(1);
-    //
-    //     var mainImageReadResult = await mainImage.ReadRasterBoundingBoxAsync(boundingBox, sampleSelection, cancellationToken);
-    //     // Mask image doesn't always contain affine
-    //     var pixelWindow = mainImage.BoundingBoxToPixelWindow(boundingBox);
-    //     var maskImageReadResult = await maskImage.ReadRasterAsync(pixelWindow, sampleSelection, cancellationToken);
-    //     return new MaskedRaster(mainImageReadResult, maskImageReadResult, null, 0, 0, this);
-    // }
+    public async Task<MaskedRaster> ReadMaskedRasterBoundingBoxAsync(BoundingBox boundingBox,
+        IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
+    {
+        var mainImage = await multiGeoTiff.GetImageAsync();
+        var maskImage = await multiGeoTiff.GetImageAsync(1);
+    
+        var mainImageReadResult = await mainImage.ReadRasterBoundingBoxAsync(boundingBox, sampleSelection, cancellationToken);
+        // Mask image doesn't always contain affine
+        var pixelWindow = mainImage.BoundingBoxToPixelWindow(boundingBox);
+        var maskImageReadResult = await maskImage.ReadRasterAsync(pixelWindow, sampleSelection, cancellationToken);
+        return new MaskedRaster(mainImageReadResult, maskImageReadResult, null, 0, 0, this);
+    }
 
 
     public async Task<MaskedRaster> ReadMaskedRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null,
