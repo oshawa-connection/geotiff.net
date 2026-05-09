@@ -42,7 +42,7 @@ public class GeoTiff
         }
         else
         {
-            throw new InvalidTiffException("Unrecognised Tiff BOM marker");
+            throw new InvalidGeoTiffException("Unrecognised Tiff BOM marker");
         }
 
         return isLittleEndian;
@@ -63,10 +63,10 @@ public class GeoTiff
         
         var offsetByteSize = dv.GetUint16(4, isLittleEndian);
         if (offsetByteSize != 8) {
-            throw new InvalidTiffException("Unsupported offset byte-size.");
+            throw new InvalidGeoTiffException("Unsupported offset byte-size.");
         }
 
-        throw new InvalidTiffException("Invalid tiff magic number.");
+        throw new InvalidGeoTiffException("Invalid tiff magic number.");
     }
     
     private static ulong GetFirstIFDOffset(DataView dv, bool isLittleEndian, bool isBigTiff)

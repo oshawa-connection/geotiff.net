@@ -45,7 +45,7 @@ public class GeoTiffImage : IGetTagable
 
         if (this.planarConfiguration != 1 && this.planarConfiguration != 2)
         {
-            throw new InvalidTiffException("Invalid planar configuration.");
+            throw new InvalidGeoTiffException("Invalid planar configuration.");
         }
 
         this.source = source;
@@ -594,7 +594,7 @@ public class GeoTiffImage : IGetTagable
                 break;
         }
         
-        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
+        throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
     }
     
     /// <summary>
@@ -651,7 +651,7 @@ public class GeoTiffImage : IGetTagable
                 break;
         }
 
-        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
+        throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
     }
 
 
@@ -706,7 +706,7 @@ public class GeoTiffImage : IGetTagable
                 break;
         }
 
-        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
+        throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
     }
     
     private Array GetArrayForSample(int sampleIndex, byte[] buffer)
@@ -743,7 +743,7 @@ public class GeoTiffImage : IGetTagable
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="GeoTiffException"></exception>
-    /// <exception cref="InvalidTiffException"></exception>
+    /// <exception cref="InvalidGeoTiffException"></exception>
     public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
     {
         ulong[] imageWindow = new ulong[] { 0, 0, Width, Height };
@@ -960,12 +960,12 @@ public class GeoTiffImage : IGetTagable
                                                 myArray.SetDouble(read2, (int)windowCoordinate);
                                                 break;
                                             default:
-                                                throw new InvalidTiffException("Unsupported data format/bitsPerSample");
+                                                throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
                                         }
 
                                         break;
                                     default:
-                                        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
+                                        throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
                                 }
                             }
                         }
@@ -1050,7 +1050,7 @@ public class GeoTiffImage : IGetTagable
                 break;
         }
 
-        throw new InvalidTiffException("Unsupported data format/bitsPerSample");
+        throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
     }
     
     /// <summary>
@@ -1244,17 +1244,22 @@ public class GeoTiffImage : IGetTagable
     
     
     /// <summary>
-    /// Experimental.
+    /// Experimental. Returns null if the CRS is not set. 
     /// </summary>
     /// <returns></returns>
     public CoordinateReferenceSystemInfo? GetCoordinateReferenceSystemInfo()
     {
         var crsInfo = new CoordinateReferenceSystemInfo();
-        crsInfo.ModelType = FileDirectory.GetGeoTag("GTModelTypeGeoKey").GetUShort(); // mandatory tag. TODO: handle tag not being set
+        var modelTypeTag = FileDirectory.GetGeoTag("GTModelTypeGeoKey");
+        if (modelTypeTag == null)
+        {
+            return null;
+        }
+        crsInfo.ModelType = modelTypeTag.GetUShort();
 
         if (crsInfo.ModelType == 0)
         {
-            return crsInfo;
+            return null; // undefined
         }
         
         if (crsInfo.ModelType == 1)//projected CS
