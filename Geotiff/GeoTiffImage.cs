@@ -7,7 +7,7 @@ namespace Geotiff;
 
 public class GeoTiffImage : IGetTagable
 {
-    public readonly ImageFileDirectory FileDirectory;
+    private readonly ImageFileDirectory FileDirectory;
     public readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;

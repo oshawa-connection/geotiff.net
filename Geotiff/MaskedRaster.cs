@@ -28,9 +28,8 @@ public class MaskedRaster
     {
         if (this._strategy == MaskedGeoTiffStrategy.INTERNAL_MASK)
         {
-            // +1 here because the first sample is the mask band TODO: check this 
-            var mainSample = this.mainRaster.GetSampleAt(index + 1);
-            var maskedSample = this.mainRaster.GetSampleAt(0);
+            var mainSample = this.mainRaster.GetSampleAt(index);
+            var maskedSample = this.maskRaster.GetSampleAt(0);
             return new MaskedRasterSample(mainSample, maskedSample, this._strategy);
         } 
         if (this._strategy == MaskedGeoTiffStrategy.EXTERNAL_MSK_FILE)
