@@ -1,11 +1,11 @@
-using Geotiff.Exceptions;
+using Geotiff.Interfaces;
 
 namespace Geotiff;
 
 /// <summary>
 /// This class needs to be kept public to allow users to override methods when creating child classes. 
 /// </summary>
-public class ImageFileDirectory 
+public class ImageFileDirectory
 {
     /// <summary>
     /// Mapping of tag names to values.
@@ -21,48 +21,18 @@ public class ImageFileDirectory
     /// <summary>
     /// Mapping of geo key names to values.
     /// </summary>
-    public Dictionary<string, object> GeoKeyDirectory { get; }
+    public Dictionary<string, Tag>? GeoKeyDirectory { get; }
 
     /// <summary>
     /// Byte offset to the next IFD (Image File Directory).
     /// </summary>
     public int NextIFDByteOffset { get; }
-
-    /// <summary>
-    /// Creates an ImageFileDirectory.
-    /// </summary>
-    /// <param name="tagDictionary">Mapping tag names to values.</param>
-    /// <param name="rawFileDirectory">Raw file directory, mapping tag IDs to values.</param>
-    /// <param name="geoKeyDirectory">Geo key directory, mapping geo key names to values.</param>
-    /// <param name="nextIFDByteOffset">Byte offset to the next IFD.</param>
-    public ImageFileDirectory(
-        Dictionary<string, Tag> tagDictionary,
-        Dictionary<int, Tag> rawFileDirectory,
-        Dictionary<string, object> geoKeyDirectory,
-        int nextIFDByteOffset)
-    {
-        TagDictionary = tagDictionary;
-        RawFileDirectory = rawFileDirectory;
-        GeoKeyDirectory = geoKeyDirectory;
-        NextIFDByteOffset = nextIFDByteOffset;
-    }
     
-    public T GetGeoDirectoryValue<T>(string key)
+    public Tag? GetGeoTag(string key)
     {
-        if (GeoKeyDirectory.TryGetValue(key, out object obj))
-        {
-            Type? targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-            if (obj == null)
-            {
-                return default!; 
-            }
-            object? converted = Convert.ChangeType(obj, targetType);
-            return (T)converted;
-        }
-
-        return default!;
+        var found = GeoKeyDirectory.TryGetValue(key, out Tag? tag);
+        return found ? tag : null;
     }
-
     
     /// <summary>
     /// Returns null if the tag is not found in the ImageFileDirectory.
@@ -85,5 +55,24 @@ public class ImageFileDirectory
     {
         var found = RawFileDirectory.TryGetValue(id, out Tag? tag);
         return found ? tag : null;
+    }
+    
+    /// <summary>
+    /// Creates an ImageFileDirectory.
+    /// </summary>
+    /// <param name="tagDictionary">Mapping tag names to values.</param>
+    /// <param name="rawFileDirectory">Raw file directory, mapping tag IDs to values.</param>
+    /// <param name="geoKeyDirectory">Geo key directory, mapping geo key names to values.</param>
+    /// <param name="nextIFDByteOffset">Byte offset to the next IFD.</param>
+    public ImageFileDirectory(
+        Dictionary<string, Tag> tagDictionary,
+        Dictionary<int, Tag> rawFileDirectory,
+        Dictionary<string, Tag> geoKeyDirectory,
+        int nextIFDByteOffset)
+    {
+        TagDictionary = tagDictionary;
+        RawFileDirectory = rawFileDirectory;
+        GeoKeyDirectory = geoKeyDirectory;
+        NextIFDByteOffset = nextIFDByteOffset;
     }
 }

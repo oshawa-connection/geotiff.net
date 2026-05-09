@@ -27,4 +27,6 @@ public interface IGetTagable
 
     public bool HasTag(string name);
     public bool HasTag(int id);
+
+    public Tag? GetGeoTag(string name);
 }

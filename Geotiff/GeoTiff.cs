@@ -42,7 +42,7 @@ public class GeoTiff
         }
         else
         {
-            throw new InvalidTiffException("Unrecognised Tiff BOM marker");
+            throw new InvalidGeoTiffException("Unrecognised Tiff BOM marker");
         }
 
         return isLittleEndian;
@@ -63,10 +63,10 @@ public class GeoTiff
         
         var offsetByteSize = dv.GetUint16(4, isLittleEndian);
         if (offsetByteSize != 8) {
-            throw new InvalidTiffException("Unsupported offset byte-size.");
+            throw new InvalidGeoTiffException("Unsupported offset byte-size.");
         }
 
-        throw new InvalidTiffException("Invalid tiff magic number.");
+        throw new InvalidGeoTiffException("Invalid tiff magic number.");
     }
     
     private static ulong GetFirstIFDOffset(DataView dv, bool isLittleEndian, bool isBigTiff)
@@ -197,35 +197,33 @@ public class GeoTiff
     }
 
 
-    private Dictionary<string, object>? ParseGeoKeyDirectory(Dictionary<string, Tag> fileDirectory)
+    private Dictionary<string, Tag> ParseGeoKeyDirectory(Dictionary<string, Tag> fileDirectory)
     {
-        bool rawGeoKeyDirectoryResult = fileDirectory.TryGetValue("GeoKeyDirectory", out Tag rawGeoKeyDirectoryObj);
+        Dictionary<string, Tag> geoKeyDirectory = new();
+        bool rawGeoKeyDirectoryResult = fileDirectory.TryGetValue(TagFields.GeoKeyDirectory, out Tag rawGeoKeyDirectoryObj);
         
         if (!rawGeoKeyDirectoryResult)
         {
-            return null;
+            return geoKeyDirectory;
         }
         
         ushort[] rawGeoKeyDirectory = rawGeoKeyDirectoryObj.GetUShortArray();
-
-        //TODO: This probably needs a dedicated class for it rather than a JS style object.
-        Dictionary<string, object> geoKeyDirectory = new();
+        
         for (int i = 4; i <= rawGeoKeyDirectory[3] * 4; i += 4)
         {
-            string key = TagFields.GeoKeyNames.GetByKey(rawGeoKeyDirectory[i]);
-            // string key = FieldTypes.GeoKeyNames[rawGeoKeyDirectory[i]];
-            // TODO: try find a tif where this is 0. Not clear what value it should be, perhaps undefined in JS means array isn't set?
+            ushort keyId = rawGeoKeyDirectory[i];
+            string key = TagFields.GeoKeyNames.GetByKey(keyId);
+            
             string? location = rawGeoKeyDirectory[i + 1] != 0
                 ? TagFields.FieldTags.GetByKey(rawGeoKeyDirectory[i + 1])
                 : null;
             ushort count = rawGeoKeyDirectory[i + 2];
             ushort offset = rawGeoKeyDirectory[i + 3];
-
-            object valueToSet = null;
-            geoKeyDirectory[key] = valueToSet;
+            
+            Tag? valueToSet = null;
             if (location is null)
             {
-                geoKeyDirectory[key] = offset;
+                valueToSet = new Tag((int)keyId, key, GeoTiffTagValueResult.FromUInt16(new[] { offset }), false);
             }
             else
             {
@@ -238,16 +236,11 @@ public class GeoTiff
                 
                 if (value.DataType == TagDataType.ASCII)
                 {
-                    valueToSet = value.GetString().JSSubString(offset, offset + count - 1);
+                    valueToSet = new Tag((int)keyId, key, GeoTiffTagValueResult.FromString(value.GetString().JSSubString(offset, offset + count - 1)), false); // TODO: Introduce methods to set tag value
                 }
                 else if (value.IsArray)
                 {
-                    // value = value.subarray(offset, offset + count);
-                    if (count == 1)
-                    {
-                        valueToSet = value.GetAsDoubleArray().First(); // TODO: with explicit mapping, read the exact numeric type and store in a class
-                        // value = ((List<object>)value).First();
-                    }
+                    valueToSet = value;
                 }
                 else
                 {
@@ -331,7 +324,7 @@ public class GeoTiff
             }
         }
 
-        Dictionary<string, object>? geoKeyDirectory = ParseGeoKeyDirectory(fileDirectory);
+        Dictionary<string, Tag>? geoKeyDirectory = ParseGeoKeyDirectory(fileDirectory);
         int nextIFDByteOffset = dataSlice.ReadOffset(
             offset + offsetSize + (entrySize * numDirEntries)
         );
