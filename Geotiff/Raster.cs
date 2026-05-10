@@ -12,14 +12,17 @@ namespace Geotiff;
 /// <param name="parentImage"></param>
 public class Raster : IGetTagable
 {
-    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, ulong width, ulong height, GeoTiffImage parentImage)
+    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, ulong width, ulong height, GeoTiffImage parentImage, ulong? tilesCovered = null)
     {
         this.SampleData = sampleData;
         this.AffineTransformation = affine;
         this.Height = height;
         this.Width = width;
         this.ParentImage = parentImage;
+        this.TilesCovered = tilesCovered;
     }
+
+    public ulong? TilesCovered = null;
     public AffineTransformation? AffineTransformation { get; set; }
     public ulong Height { get; set; }
     public ulong Width { get; set; }

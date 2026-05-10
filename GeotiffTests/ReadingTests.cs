@@ -375,9 +375,9 @@ public class ReadingTests : GeoTiffTestBaseClass
         var xSample = readResult.GetSampleAt(1).Get2DIntArray();
         var ySample = readResult.GetSampleAt(0).Get2DIntArray();
         
-        for (int lon = (int)imagePixelWindow.MinColumn - 1; lon < imagePixelWindow.MaxColumn - 1; lon++)
+        for (int lon = (int)imagePixelWindow.MinColumn - 1; (ulong)lon < imagePixelWindow.MaxColumn - 1; lon++)
         {
-            for (int lat = (int)imagePixelWindow.MaxRow - 1; lat < imagePixelWindow.MinRow - 1; lat++)
+            for (int lat = (int)imagePixelWindow.MaxRow - 1; (ulong)lat < imagePixelWindow.MinRow - 1; lat++)
             {
                 var x = xSample[lon, lat];
                 var y = (double)ySample[lon, lat];
@@ -862,6 +862,23 @@ public class ReadingTests : GeoTiffTestBaseClass
         var tileWidth = image.GetTileOrStripWidth();
         var tileHeight = image.GetTileOrStripHeight();
         var readResult = await image.ReadRasterAsync();
+    }
+    
+    
+    [TestMethod]
+    public async Task TestBigTiffBlockAlignedReads()
+    {
+        string bigTiffPath = Path.Combine("/home/james/Documents/temp/geotiff/bigger_cog.tif");
+        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        
+        foreach (var blockWindow in image.GetBlockImagePixelWindows())
+        {
+            var read = await image.ReadRasterAsync(blockWindow);
+            read.TilesCovered.ShouldBe((ulong)1);
+        }
     }
 
 

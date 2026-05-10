@@ -756,7 +756,6 @@ public class GeoTiffImage : IGetTagable
         return await this.ReadRasterAsync(window, sampleSelection, cancellationToken);
     }
     
-
     /// <summary>
     /// 
     /// </summary>
@@ -772,10 +771,7 @@ public class GeoTiffImage : IGetTagable
 
         if (window is not null)
         {
-            imageWindow[0] = (ulong)window.MinColumn;
-            imageWindow[1] = (ulong)window.MinRow;
-            imageWindow[2] = (ulong)window.MaxColumn;
-            imageWindow[3] = (ulong)window.MaxRow;
+            imageWindow = window.ToArray();
         }
 
         if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
@@ -805,20 +801,20 @@ public class GeoTiffImage : IGetTagable
             var sampleDataType = SampleDataTypeForSample(samples.ElementAt(i));
             valueArrays[samples.ElementAt(i)] = new RasterSample(imageWindowWidth, imageWindowHeight, this, sampleDataType, (int)numPixels);
         }
+
+        var blockInfo = GetBlockInfo(imageWindow);
+        
         var tileWidth = GetTileOrStripWidth();
         var tileHeight = GetTileOrStripHeight();
+        
         var imageWidth = Width;
         var imageHeight = Height;
-        ulong minXTile = (ulong)Math.Max(Math.Floor((double)imageWindow[0] / (double)tileWidth), 0);
-        ulong maxXTile = (ulong)Math.Min(
-            Math.Ceiling((double)imageWindow[2] / (double)tileWidth),
-            Math.Ceiling((double)imageWidth / tileWidth)
-        );
-        ulong minYTile = (ulong)Math.Max(Math.Floor((double)imageWindow[1] / (double)tileHeight), 0);
-        ulong maxYTile = (ulong)Math.Min(
-            Math.Ceiling((double)imageWindow[3] / (double)tileHeight),
-            Math.Ceiling((double)imageHeight / (double)tileHeight)
-        );
+        
+        ulong minXTile = blockInfo.MinXTile;
+        ulong maxXTile = blockInfo.MaxXTile;
+        ulong minYTile = blockInfo.MinYTile;
+        ulong maxYTile = blockInfo.MaxYTile;
+        
         var windowWidth = imageWindow[2] - imageWindow[0];
 
         ulong bytesPerPixel = GetNumberOfBytesPerPixel();
@@ -1001,7 +997,81 @@ public class GeoTiffImage : IGetTagable
 
         await Task.WhenAll(promises);
         
-        return new Raster(valueArrays, this.GetOrCalculateAffineTransformation(), imageWindowWidth, imageWindowHeight, this);
+        return new Raster(valueArrays, this.GetOrCalculateAffineTransformation(), imageWindowWidth, imageWindowHeight, this, (maxYTile - minYTile) * (maxXTile - minXTile));
+    }
+
+
+    private GeoTiffBlockInfo GetBlockInfo(ulong[]? imageWindow = null)
+    {
+        if (imageWindow == null)
+        {
+            imageWindow = new ulong[] { 0, 0, Width, Height };
+        }
+        
+        var tileWidth = GetTileOrStripWidth();
+        var tileHeight = GetTileOrStripHeight();
+        var imageWidth = Width;
+        var imageHeight = Height;
+        ulong minXTile = (ulong)Math.Max(Math.Floor((double)imageWindow[0] / (double)tileWidth), 0);
+        ulong maxXTile = (ulong)Math.Min(
+            Math.Ceiling((double)imageWindow[2] / (double)tileWidth),
+            Math.Ceiling((double)imageWidth / tileWidth)
+        );
+        ulong minYTile = (ulong)Math.Max(Math.Floor((double)imageWindow[1] / (double)tileHeight), 0);
+        ulong maxYTile = (ulong)Math.Min(
+            Math.Ceiling((double)imageWindow[3] / (double)tileHeight),
+            Math.Ceiling((double)imageHeight / (double)tileHeight)
+        );
+        return new GeoTiffBlockInfo()
+        {
+            MinXTile = minXTile, MaxXTile = maxXTile, MinYTile = minYTile, MaxYTile = maxYTile
+        };
+    }
+
+    public IEnumerable<ImagePixelWindow> GetBlockImagePixelWindows(ImagePixelWindow imageWindow = null)
+    {
+        if (imageWindow == null)
+        {
+            imageWindow = ImagePixelWindow.FromArray(new ulong[] { 0, 0, Width, Height });
+        }
+
+        var blockInfo = GetBlockInfo(imageWindow.ToArray());
+
+        var tileWidth = GetTileOrStripWidth();
+        var tileHeight = GetTileOrStripHeight();
+
+        for (ulong yTile = blockInfo.MinYTile; yTile < blockInfo.MaxYTile; yTile++)
+        {
+            for (ulong xTile = blockInfo.MinXTile; xTile < blockInfo.MaxXTile; xTile++)
+            {
+                // Tile bounds in image space
+                ulong xMin = xTile * tileWidth;
+                ulong yMin = yTile * tileHeight;
+
+                ulong xMax = Math.Min(xMin + tileWidth, Width);
+                ulong yMax = Math.Min(yMin + tileHeight, Height);
+                var arr = imageWindow.ToArray();
+                // Intersect with requested image window
+                ulong winXMin = Math.Max(xMin, arr[0]);
+                ulong winYMin = Math.Max(yMin, arr[1]);
+
+                ulong winXMax = Math.Min(xMax, arr[2]);
+                ulong winYMax = Math.Min(yMax, arr[3]);
+
+                // Skip empty intersections
+                if (winXMax <= winXMin || winYMax <= winYMin)
+                {
+                    continue;
+                }
+
+                yield return ImagePixelWindow.FromArray([
+                    winXMin,
+                    winYMin,
+                    winXMax,
+                    winYMax
+                ]);
+            }
+        }
     }
     
     private int sum(IEnumerable<ushort> array, int start, int end) {
@@ -1078,13 +1148,13 @@ public class GeoTiffImage : IGetTagable
     /// <summary>
     /// Returns the decoded strip or tile.
     /// </summary>
-    /// <param name="x"></param>
-    /// <param name="y"></param>
+    /// <param name="blockX"></param>
+    /// <param name="blockY"></param>
     /// <param name="sample"></param>
     /// <param name="poolOrDecoder"></param>
     /// <param name="signal"></param>
     /// <returns></returns>
-    private async Task<TileOrStripResult> GetTileOrStripAsync(ulong x, ulong y, int sample, DecoderRegistry poolOrDecoder,
+    private async Task<TileOrStripResult> GetTileOrStripAsync(ulong blockX, ulong blockY, int sample, DecoderRegistry poolOrDecoder,
         CancellationToken? signal)
     {
         ulong numTilesPerRow = (ulong)Math.Ceiling((double)Width / (double)GetTileOrStripWidth());
@@ -1093,12 +1163,12 @@ public class GeoTiffImage : IGetTagable
         var sampleToUse = 0;
         if (planarConfiguration == 1)
         {
-            index = (y * numTilesPerRow) + x;
+            index = (blockY * numTilesPerRow) + blockX;
         }
         else if (planarConfiguration == 2)
         {
             sampleToUse = sample;
-            index = ((ulong)sampleToUse * numTilesPerRow * numTilesPerCol) + (y * numTilesPerRow) + x;
+            index = ((ulong)sampleToUse * numTilesPerRow * numTilesPerCol) + (blockY * numTilesPerRow) + blockX;
         }
 
         ulong offset;
@@ -1116,16 +1186,19 @@ public class GeoTiffImage : IGetTagable
 
         if (byteCount == 0)
         {
-            ulong nPixels = GetBlockHeight(y) * GetTileOrStripWidth();
+            ulong nPixels = GetBlockHeight(blockY) * GetTileOrStripWidth();
             ulong bytesPerPixel = planarConfiguration == 2
                 ? GetSampleByteSize(sampleToUse)
                 : GetNumberOfBytesPerPixel();
             
             var data = new byte[nPixels * bytesPerPixel];
+            // TODO: remove use of Array
             Array view = GetArrayForSample(sampleToUse, data);
 
             int valueToFill = 0;
-            int? temp = GetGDALNoData();
+            
+            
+            int? temp = GetGDALNoData(); // TODO: Do not fill this with an int
             if (temp is not null)
             {
                 valueToFill = (int)temp;
@@ -1137,7 +1210,7 @@ public class GeoTiffImage : IGetTagable
                 view.SetValue(valueToFill, i);
             }
 
-            return new TileOrStripResult { x = x, y = y, data = data};
+            return new TileOrStripResult { x = blockX, y = blockY, data = data};
         }
 
         byte[] sliceBytes =
@@ -1214,7 +1287,7 @@ public class GeoTiffImage : IGetTagable
         }
 
         // cache the tile request
-        return new TileOrStripResult() { x = x, y = y, data = finalData};
+        return new TileOrStripResult() { x = blockX, y = blockY, data = finalData};
     }
 
     private bool NeedsNormalization(int format, int bitsPerSample)
@@ -1236,7 +1309,7 @@ public class GeoTiffImage : IGetTagable
         return GetTileOrStripWidth();
     }
 
-    public ulong GetBlockHeight(ulong y)
+    private ulong GetBlockHeight(ulong y)
     {
         if (isTiled || (y + 1) * GetTileOrStripHeight() <= Height)
         {
@@ -1247,12 +1320,13 @@ public class GeoTiffImage : IGetTagable
             return Height - (y * GetTileOrStripHeight());
         }
     }
-
-
+    
+    
     /// <summary>
-    /// 
+    /// TODO: remove
     /// </summary>
     /// <returns></returns>
+    [Obsolete]
     private int? GetGDALNoData()
     {
         if (GDAL_NODATA == null)
@@ -1373,10 +1447,10 @@ public class GeoTiffImage : IGetTagable
 
         var window = new ImagePixelWindow()
         {
-            MinColumn = (int)left, 
-            MaxColumn = (int)right, 
-            MinRow = (int)top, 
-            MaxRow = (int)bottom
+            MinColumn = (ulong)left, 
+            MaxColumn = (ulong)right, 
+            MinRow = (ulong)top, 
+            MaxRow = (ulong)bottom
         };
 
         return await ReadRasterAsync(window, sampleSelection, cancellationToken);
@@ -1406,10 +1480,10 @@ public class GeoTiffImage : IGetTagable
         
         return new ImagePixelWindow()
         {
-            MinColumn = (int)bottomLeft.X, 
-            MaxColumn = (int)topRight.X, 
-            MinRow = (int)topRight.Y, 
-            MaxRow = (int)bottomLeft.Y 
+            MinColumn = (ulong)bottomLeft.X, 
+            MaxColumn = (ulong)topRight.X, 
+            MinRow = (ulong)topRight.Y, 
+            MaxRow = (ulong)bottomLeft.Y 
         };
     }
 }

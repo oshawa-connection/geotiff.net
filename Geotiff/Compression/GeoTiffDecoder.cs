@@ -135,10 +135,6 @@ public abstract class GeoTiffDecoder
     private Span<byte> SpanSlice(byte[] buffer, int start, int length)
     {
         Span<byte> bytes = buffer;
-        if (start + length > bytes.Length)
-        {
-            throw new Exception();
-        }
         return bytes.Slice(start: start, length: length);
     }
     
