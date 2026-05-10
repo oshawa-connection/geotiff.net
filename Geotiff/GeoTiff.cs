@@ -5,7 +5,7 @@ using Geotiff.RemoteClients;
 namespace Geotiff;
 
 /// <summary>
-/// 
+/// hello world
 /// </summary>
 public class GeoTiff
 {
@@ -19,7 +19,7 @@ public class GeoTiff
     protected internal int? finalImageCount = null;
     public bool IsBifTIFF => _bigTiff; 
     
-    public GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
+    protected GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
     {
         this.Source = source;
         this.IsLittleEndian = isLittleEndian;

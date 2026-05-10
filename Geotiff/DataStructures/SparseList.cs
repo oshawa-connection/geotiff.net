@@ -2,8 +2,10 @@ using System.Collections;
 
 namespace Geotiff;
 
-using System.Collections.Generic;
-
+/// <summary>
+/// Store sample read results here to preserve their indices when no all samples are selected. 
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class SparseList<T> : IEnumerable<T>
 {
     private readonly Dictionary<int, T> _dict = new();

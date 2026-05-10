@@ -2,7 +2,7 @@ namespace Geotiff;
 
 
 /// <summary>
-/// Experimental.
+/// Experimental. Contains some basic coordinate reference system information.
 /// </summary>
 public class CoordinateReferenceSystemInfo
 {

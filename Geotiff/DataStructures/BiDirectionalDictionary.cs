@@ -2,6 +2,11 @@ using System.Collections;
 
 namespace Geotiff;
 
+/// <summary>
+/// Used to map 
+/// </summary>
+/// <typeparam name="TKey"></typeparam>
+/// <typeparam name="TValue"></typeparam>
 public class BiDirectionalDictionary<TKey, TValue> : IEnumerable where TKey : notnull
 {
     private readonly Dictionary<TKey, TValue> _forward = new();

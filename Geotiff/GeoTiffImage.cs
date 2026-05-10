@@ -6,11 +6,15 @@ using System.Xml.Linq;
 
 namespace Geotiff;
 
+/// <summary>
+/// A GeoTiff comprises multiple GeoTiffImage's (called sub-datasets). Most of the time, there is just one sub-dataset.
+///  
+/// </summary>
 public class GeoTiffImage : IGetTagable
 {
     private readonly ImageFileDirectory FileDirectory;
     
-    public readonly bool littleEndian;
+    private readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
     private readonly Dictionary<ulong, byte[]>? tileCache;
@@ -52,7 +56,12 @@ public class GeoTiffImage : IGetTagable
         this.source = source;
         var _ = this.JpegTables;// Populate this to cache it before decoding starts
     }
-
+    
+    /// <summary>
+    /// Checks the ModelTiepoint is set and valid. According to spec: The ModelTiepointTag SHALL have type = DOUBLE
+    /// and The ModelTiepointTag SHALL have 6 values for each of the tiepoints
+    /// </summary>
+    /// <returns></returns>
     public bool HasValidTiePoints()
     {
         var tiePoint = FileDirectory.GetTag(TagFields.ModelTiepoint);
@@ -77,8 +86,8 @@ public class GeoTiffImage : IGetTagable
     }
 
     /// <summary>
-    /// Can use this before checking for origin or boundingbox to prevent exceptions
-    /// Very useful reference http://geotiff.maptools.org/spec/geotiff2.6.html
+    /// 
+    /// 
     /// </summary>
     /// <returns></returns>
     public bool HasAffineTransformation()
@@ -87,6 +96,7 @@ public class GeoTiffImage : IGetTagable
     }
 
     /// <summary>
+    /// Derives origin from either the affine transformation or from tiepoints.
     /// Returns null if there is no affine transformation set
     /// </summary>
     /// <returns></returns>
@@ -111,6 +121,11 @@ public class GeoTiffImage : IGetTagable
         return null;
     }
     
+    /// <summary>
+    /// Lists all standard, extended and GDAL tags known to this library, as well as custom tags
+    /// without names known to this library.
+    /// </summary>
+    /// <returns></returns>
     public IEnumerable<Tag> GetAllRawTags()
     {
         return this.FileDirectory.RawFileDirectory.Values;
@@ -186,7 +201,7 @@ public class GeoTiffImage : IGetTagable
     }
 
     /// <summary>
-    /// 
+    /// Get the width of the image in pixels
     /// </summary>
     /// <returns></returns>
     public ulong Width
@@ -199,7 +214,7 @@ public class GeoTiffImage : IGetTagable
     }
 
     /// <summary>
-    /// 
+    /// Get the height of the image in pixels
     /// </summary>
     /// <returns></returns>
     public ulong Height
@@ -319,13 +334,17 @@ public class GeoTiffImage : IGetTagable
         return null;
     }
 
+    /// <summary>
+    /// Get the number of samples (aka channels or bands) from the image.
+    /// </summary>
+    /// <returns></returns>
     public int GetNumberOfSamples()
     {
         return this.SamplesPerPixel;
     }
     
     /// <summary>
-    /// 
+    /// The number of samples stored per pixel.
     /// </summary>
     /// <returns></returns>
     public ushort SamplesPerPixel
@@ -341,12 +360,20 @@ public class GeoTiffImage : IGetTagable
         }
     }
     
+    /// <summary>
+    /// Helper method over BitsPerSample tag; see BitsPerSample property.
+    /// </summary>
+    /// <param name="sampleIndex"></param>
+    /// <returns></returns>
     public ushort GetBitsForSample(int sampleIndex)
     {
         ushort[] bitsPerSample = GetTag(TagFields.BitsPerSample).GetUShortArray();
         return bitsPerSample[sampleIndex];
     }
     
+    /// <summary>
+    /// Getter that is cached for performance reasons.
+    /// </summary>
     public ushort[] BitsPerSample
     {
         get
@@ -363,6 +390,10 @@ public class GeoTiffImage : IGetTagable
     }
     
     private ushort[]? sampleFormatCached = null;
+    
+    /// <summary>
+    /// Getter that is cached for performance reasons.
+    /// </summary>
     public ushort[]? SampleFormat
     {
         get
@@ -380,6 +411,10 @@ public class GeoTiffImage : IGetTagable
         }
     }
     
+    /// <summary>
+    /// Getter that is cached for performance reasons.
+    /// These bytes are inserted into the buffer before decoding of JPEG encoded data.
+    /// </summary>
     public byte[]? JpegTables
     {
         get
@@ -399,6 +434,9 @@ public class GeoTiffImage : IGetTagable
         }
     }
     
+    /// <summary>
+    /// Returns the raw string value of GDAL_NODATA tag, or null if it is not set. 
+    /// </summary>
     public string? GDAL_NODATA
     {
         get
@@ -412,6 +450,13 @@ public class GeoTiffImage : IGetTagable
         }
     }
     
+    /// <summary>
+    /// Arrangement of band data.
+    /// Either 1 (for pixel/contiguous/ interleaving) or 2 (chunky/ band/ separate).
+    /// E.g. for a 3 band RGB tif with planarconfiguration 1, data will be arranged like this within a pixel: RGB RGB
+    /// Whereas for planarconfiguration 2, it will be arranged: RR GG BB 
+    /// </summary>
+    /// <returns></returns>
     public ushort GetPlanarConfiguration()
     {
         return this.planarConfiguration;
@@ -485,11 +530,7 @@ public class GeoTiffImage : IGetTagable
 
         return imageHeight;// file has only one tile/ strip.
     }
-
-
-    /// <summary>
-    /// </summary>
-    /// <returns></returns>
+    
     private ushort GetSampleFormat(int sampleIndex = 0)
     {
         var sampleFormatTag = GetTag(TagFields.SampleFormat);
@@ -500,6 +541,10 @@ public class GeoTiffImage : IGetTagable
         return sampleFormatTag.GetUShortArray()[sampleIndex];
     }
 
+    /// <summary>
+    /// Used during decompression. Valid values are 1, 2, or 3.
+    /// </summary>
+    /// <returns></returns>
     public ushort GetPredictor()
     {
         var predictor = this.GetTag(TagFields.Predictor);
@@ -511,8 +556,12 @@ public class GeoTiffImage : IGetTagable
         return predictor.GetUShort();
     }
     
-    
-    public ulong[] GetTileOffsets()
+    /// <summary>
+    /// Read TileOffsets tag. Result is cached for performance reasons.
+    /// KEEP THIS PRIVATE FOR NOW. For larger tifs, we won't want to read the entire tag into memory at once.
+    /// </summary>
+    /// <returns></returns>
+    private ulong[] GetTileOffsets()
     {
         if (TileOffsetsCached is not null)
         {
@@ -524,7 +573,11 @@ public class GeoTiffImage : IGetTagable
         return TileOffsetsCached;
     }
     
-    public ulong[] GetTileByteCounts()
+    /// <summary>
+    /// KEEP THIS PRIVATE FOR NOW. For larger tifs, we won't want to read the entire tag into memory at once.
+    /// </summary>
+    /// <returns></returns>
+    private ulong[] GetTileByteCounts()
     {
         if (TileByteCountsCached is not null)
         {
@@ -538,10 +591,11 @@ public class GeoTiffImage : IGetTagable
     
     
     /// <summary>
-    /// StripOffsets can be either a ushort or a ulong so make sure to cast it. 
+    /// StripOffsets can be either a ushort or a ulong so make sure to cast it.
+    /// KEEP THIS PRIVATE FOR NOW. For larger tifs, we won't want to read the entire tag into memory at once.
     /// </summary>
     /// <returns></returns>
-    public ulong[] GetStripOffsets()
+    private ulong[] GetStripOffsets()
     {
         if (StripOffsetsCached is not null)
         {
@@ -553,7 +607,11 @@ public class GeoTiffImage : IGetTagable
         return StripOffsetsCached;
     }
 
-    public ulong[] GetStripByteCounts()
+    /// <summary>
+    /// KEEP THIS PRIVATE FOR NOW. For larger tifs, we won't want to read the entire tag into memory at once.
+    /// </summary>
+    /// <returns></returns>
+    private ulong[] GetStripByteCounts()
     {
         if (StripByteCountsCached is not null)
         {
@@ -1436,11 +1494,11 @@ public class GeoTiffImage : IGetTagable
         }
         
         var pixelOrigin = affine.ModelToPixel(x, y);
-        // If the user passed a low x, we want to be close to the origin.
+        // If the user passed a low x, we want to be close to the X origin.
         double left = pixelOrigin.X;
         double right = left + 1; 
 
-        // if the user passed a low y, be far away from the origin.
+        // if the user passed a low y, be far away from the Y origin.
 
         double top = pixelOrigin.Y;
         double bottom = top + 1; 
@@ -1457,7 +1515,9 @@ public class GeoTiffImage : IGetTagable
     }
     
     /// <summary>
-    /// 
+    /// Use the affine transformation to transform a bounding box in model space to pixel space.
+    /// This assumes that your bounding box is in the same CRS as the dataset.
+    /// Returns null if the affine transformation is not set. 
     /// </summary>
     /// <returns></returns>
     public ImagePixelWindow? BoundingBoxToPixelWindow(BoundingBox bbox)
