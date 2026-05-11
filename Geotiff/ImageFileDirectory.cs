@@ -26,7 +26,7 @@ public class ImageFileDirectory
     /// <summary>
     /// Byte offset to the next IFD (Image File Directory).
     /// </summary>
-    public int NextIFDByteOffset { get; }
+    public ulong NextIFDByteOffset { get; }
     
     public Tag? GetGeoTag(string key)
     {
@@ -68,7 +68,7 @@ public class ImageFileDirectory
         Dictionary<string, Tag> tagDictionary,
         Dictionary<int, Tag> rawFileDirectory,
         Dictionary<string, Tag> geoKeyDirectory,
-        int nextIFDByteOffset)
+        ulong nextIFDByteOffset)
     {
         TagDictionary = tagDictionary;
         RawFileDirectory = rawFileDirectory;
