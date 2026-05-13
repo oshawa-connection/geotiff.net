@@ -27,8 +27,8 @@ public class MultiGeoTiff : GeoTiff
     
     private async Task ParseFileDirectoriesForAllFiles()
     {
-        var tasks2 = this.sidecarFileSources.Select(d => d.ParseFileDirectoryAtAsync((int)d.FirstIFDOffset));
-        var tasks3 = tasks2.Append(this.mainFile.ParseFileDirectoryAtAsync((int)this.mainFile.FirstIFDOffset));
+        var tasks2 = this.sidecarFileSources.Select(d => d.ParseFileDirectoryAtAsync(d.FirstIFDOffset));
+        var tasks3 = tasks2.Append(this.mainFile.ParseFileDirectoryAtAsync(this.mainFile.FirstIFDOffset));
 
         await Task.WhenAll(tasks3);
     }

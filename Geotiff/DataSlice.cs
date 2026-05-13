@@ -8,11 +8,11 @@ internal class DataSlice
 {
     private readonly byte[] _arrayBuffer;
     private readonly DataView _dataView;
-    private readonly int _sliceOffset;
+    private readonly ulong _sliceOffset;
     private readonly bool _littleEndian;
     private readonly bool _bigTiff;
 
-    public DataSlice(byte[] arrayBuffer, int sliceOffset, bool littleEndian, bool bigTiff)
+    public DataSlice(byte[] arrayBuffer, ulong sliceOffset, bool littleEndian, bool bigTiff)
     {
         _dataView = new DataView(arrayBuffer);
         _sliceOffset = sliceOffset;
@@ -20,9 +20,9 @@ internal class DataSlice
         _bigTiff = bigTiff;
     }
 
-    public long SliceOffset => _sliceOffset;
+    public ulong SliceOffset => _sliceOffset;
 
-    public long SliceTop => _sliceOffset + _dataView.Length;
+    public ulong SliceTop => _sliceOffset + (ulong)_dataView.Length;
 
     public bool LittleEndian => _littleEndian;
 
@@ -30,33 +30,33 @@ internal class DataSlice
 
     public byte[] Buffer => _arrayBuffer;
 
-    public bool Covers(int offset, int length)
+    public bool Covers(ulong offset, ulong length)
     {
         return _sliceOffset <= offset && SliceTop >= offset + length;
     }
 
-    public byte ReadByte(int offset)
+    public byte ReadByte(ulong offset)
     {
-        return _dataView.GetUint8(offset - _sliceOffset);
+        return _dataView.GetUint8((int)(offset - _sliceOffset));
     }
 
-    public sbyte ReadSByte(int offset)
+    public sbyte ReadSByte(ulong offset)
     {
-        return _dataView.GetInt8(offset - _sliceOffset);
+        return _dataView.GetInt8((int)(offset - _sliceOffset));
     }
 
-    public float ReadFloat32(int offset)
+    public float ReadFloat32(ulong offset)
     {
-        return _dataView.GetFloat32(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetFloat32((int)(offset - _sliceOffset), LittleEndian);
     }
 
 
-    public double ReadFloat64(int offset)
+    public double ReadFloat64(ulong offset)
     {
-        return _dataView.GetFloat64(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetFloat64((int)(offset - _sliceOffset), LittleEndian);
     }
 
-    public Rational ReadRational(int offset)
+    public Rational ReadRational(ulong offset)
     {
         uint numer = ReadUInt32(offset);
         uint denom = ReadUInt32(offset + 4);
@@ -64,27 +64,27 @@ internal class DataSlice
         return new Rational(numer, denom);
     }
 
-    public ushort ReadUInt16(int offset)
+    public ushort ReadUInt16(ulong offset)
     {
-        return _dataView.GetUint16(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetUint16((int)(offset - _sliceOffset), LittleEndian);
     }
 
-    public uint ReadUInt32(int offset)
+    public uint ReadUInt32(ulong offset)
     {
-        return _dataView.GetUint32(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetUint32((int)(offset - _sliceOffset), LittleEndian);
     }
 
-    public int ReadInt32(int offset)
+    public int ReadInt32(ulong offset)
     {
-        return _dataView.GetInt32(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetInt32((int)(offset - _sliceOffset), LittleEndian);
     }
 
-    public short ReadInt16(int offset)
+    public short ReadInt16(ulong offset)
     {
-        return _dataView.GetInt16(offset - _sliceOffset, LittleEndian);
+        return _dataView.GetInt16((int)(offset - _sliceOffset), LittleEndian);
     }
     
-    public ulong ReadUInt64(int offset)
+    public ulong ReadUInt64(ulong offset)
     {
         // TODO: this is the way its done for JS purposes; is there no built in dotnet equivalent that's more efficient?
         // They read two 32bit uints then combine them.
@@ -116,15 +116,16 @@ internal class DataSlice
     /// </summary>
     /// <param name="offset"></param>
     /// <returns></returns>
-    public long ReadInt64(int offset)
+    public long ReadInt64(ulong offset)
     {
         long value = 0;
-        bool isNegative = (_dataView.GetUint8(offset + (_littleEndian ? 7 : 0)) & 0x80) > 0;
+        int relOffset = (int)(offset - _sliceOffset);
+        bool isNegative = (_dataView.GetUint8(relOffset + (_littleEndian ? 7 : 0)) & 0x80) > 0;
         bool carrying = true;
 
         for (int i = 0; i < 8; i++)
         {
-            int index = (int)(offset + (_littleEndian ? i : 7 - i));
+            int index = relOffset + (_littleEndian ? i : 7 - i);
             byte b = _dataView.GetUint8(index);
             if (isNegative)
             {
@@ -153,24 +154,24 @@ internal class DataSlice
         return value;
     }
 
-    public int ReadOffset(int offset)
+    public ulong ReadOffset(ulong offset)
     {
-        return _bigTiff ? (int)ReadUInt64(offset) : (int)ReadUInt32(offset);
+        return _bigTiff ? ReadUInt64(offset) : ReadUInt32(offset);
     }
 
-    public T[] ReadAll<T>(Func<int, T> a, int count, int offset, int fieldTypeLength)
+    public T[] ReadAll<T>(Func<ulong, T> a, int count, ulong offset, int fieldTypeLength)
     {
         var values = new T[count];
         for (int i = 0; i < count; ++i)
         {
-            values[i] = a(offset + (i * fieldTypeLength));
+            values[i] = a(offset + (ulong)(i * fieldTypeLength));
         }
 
         return values;
     }
 
 
-    public GeoTiffTagValueResult GetValues(ushort fieldType, int count, int offset)
+    public GeoTiffTagValueResult GetValues(ushort fieldType, int count, ulong offset)
     {
         GeoTiffTagValueResult finalResult;
 
