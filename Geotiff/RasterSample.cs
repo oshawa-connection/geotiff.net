@@ -100,6 +100,12 @@ public class RasterSample
             case GeotiffSampleDataType.Int16:
                 this.Int16Result = new short[size];
                 break;
+            case GeotiffSampleDataType.Int32:
+                this.IntResult = new int[size];
+                break;
+            case GeotiffSampleDataType.Int64:
+                this.Int64Result = new long[size];
+                break;
             case GeotiffSampleDataType.UInt16:
                 this.UInt16Result = new ushort[size];
                 break;
@@ -109,9 +115,7 @@ public class RasterSample
             case GeotiffSampleDataType.UInt64:
                 this.UInt64Result = new ulong[size];
                 break;
-            case GeotiffSampleDataType.Int32:
-                this.IntResult = new int[size];
-                break;
+
             case GeotiffSampleDataType.Float16:
                 this.Float16Result = new float[size];
                 break;
@@ -122,7 +126,7 @@ public class RasterSample
                 this.Float64Result = new double[size];
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(sampleType), sampleType, null);
+                throw new ArgumentOutOfRangeException(sampleType.ToString(), sampleType, null);
         }
     }
 

@@ -845,30 +845,12 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         ex.ShouldNotBeNull();
     }
-
-
-    [TestMethod]
-    public async Task TestBigTiff()
-    {
-        string bigTiffPath = Path.Combine("/home/james/Documents/temp/geotiff/bigger_cog.tif");
-        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
-        
-        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
-        var image = await geotiff.GetImageAsync();
-
-        var height = image.Height;
-        var width = image.Width;
-        
-        var tileWidth = image.GetTileOrStripWidth();
-        var tileHeight = image.GetTileOrStripHeight();
-        var readResult = await image.ReadRasterAsync();
-    }
-    
     
     [TestMethod]
     public async Task TestBigTiffBlockAlignedReads()
     {
-        string bigTiffPath = Path.Combine("/home/james/Documents/temp/geotiff/bigger_cog.tif");
+        string bigTiffPath = Path.Combine(GetDataFolderPath(), "big_int64_4gb.tif");
+        // string bigTiffPath = Path.Combine("/home/james/Documents/temp/geotiff/bigger_cog.tif");
         await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
@@ -885,8 +867,8 @@ public class ReadingTests : GeoTiffTestBaseClass
     [TestMethod]
     public async Task TestFloat16()
     {
-        string bigTiffPath = Path.Combine(GetDataFolderPath(), "float16_10x10.tif");
-        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
+        string tiffPath = Path.Combine(GetDataFolderPath(), "float16_10x10.tif");
+        await using var fsSource = new FileStream(tiffPath, FileMode.Open, FileAccess.Read);
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();

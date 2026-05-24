@@ -632,17 +632,16 @@ public class GeoTiffImage : IGetTagable
         switch (format)
         {
             case 1: // unsigned integer data
-                if (bitsPerSample <= 8)
+                switch (bitsPerSample)
                 {
-                    return GeotiffSampleDataType.UInt8;
-                }
-                else if (bitsPerSample <= 16)
-                {
-                    return GeotiffSampleDataType.UInt16;
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return GeotiffSampleDataType.UInt32;
+                    case <= 8: // Could be 1-bit sample
+                        return GeotiffSampleDataType.UInt8;
+                    case 16:
+                        return GeotiffSampleDataType.UInt16;
+                    case 32:
+                        return GeotiffSampleDataType.UInt32;
+                    case 64:
+                        return GeotiffSampleDataType.UInt64;
                 }
 
                 break;
@@ -655,6 +654,8 @@ public class GeoTiffImage : IGetTagable
                         return GeotiffSampleDataType.Int16;
                     case 32:
                         return GeotiffSampleDataType.Int32;
+                    case 64:
+                        return GeotiffSampleDataType.Int64;
                 }
 
                 break;
@@ -1350,7 +1351,7 @@ public class GeoTiffImage : IGetTagable
 
     private bool NeedsNormalization(int format, int bitsPerSample)
     {
-        if ((format == 1 || format == 2) && bitsPerSample <= 32 && bitsPerSample % 8 == 0)
+        if ((format == 1 || format == 2) && bitsPerSample <= 64 && bitsPerSample % 8 == 0)
         {
             return false;
         }
