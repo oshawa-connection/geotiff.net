@@ -850,7 +850,6 @@ public class ReadingTests : GeoTiffTestBaseClass
     public async Task TestBigTiffBlockAlignedReads()
     {
         string bigTiffPath = Path.Combine(GetDataFolderPath(), "big_int64_4gb.tif");
-        // string bigTiffPath = Path.Combine("/home/james/Documents/temp/geotiff/bigger_cog.tif");
         await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
@@ -860,6 +859,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         {
             var read = await image.ReadRasterAsync(blockWindow);
             read.TilesCovered.ShouldBe((ulong)1);
+            read.GetSampleAt(0).GetInt64Array().ShouldAllBe(d => (d == Int64.MaxValue));
         }
     }
 

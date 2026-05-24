@@ -853,12 +853,12 @@ public class GeoTiffImage : IGetTagable
             samples = sampleSelection.ToArray();
         }
         
-        SparseList<RasterSample> valueArrays = new();
+        SparseList<RasterSample> rasterSamples = new();
         
         for (int i = 0; i < samples.Count(); ++i)
         {
             var sampleDataType = SampleDataTypeForSample(samples.ElementAt(i));
-            valueArrays[samples.ElementAt(i)] = new RasterSample(imageWindowWidth, imageWindowHeight, this, sampleDataType, (int)numPixels);
+            rasterSamples[samples.ElementAt(i)] = new RasterSample(imageWindowWidth, imageWindowHeight, this, sampleDataType, (int)numPixels);
         }
 
         var blockInfo = GetBlockInfo(imageWindow);
@@ -972,7 +972,7 @@ public class GeoTiffImage : IGetTagable
                                 
                                 ushort bitsPerSample = GetBitsForSample(si);
 
-                                var myArray = valueArrays[si];
+                                var currentSample = rasterSamples[si];
                                 var dv = dataView;
                                 
                                 switch (format)
@@ -981,20 +981,29 @@ public class GeoTiffImage : IGetTagable
                                         if (bitsPerSample <= 8)
                                         {
                                             var read = dv.GetUint8((int)pixelOffset + srcSampleOffsets[si]);
-                                            myArray.SetUInt8(read, (int)windowCoordinate);
+                                            currentSample.SetUInt8(read, (int)windowCoordinate);
                                         }
                                         else if (bitsPerSample <= 16)
                                         {
                                             var read = dv.GetUint16((int)pixelOffset + srcSampleOffsets[si],
                                                 littleEndian);
-                                            myArray.SetUInt16(read, (int)windowCoordinate);
+                                            currentSample.SetUInt16(read, (int)windowCoordinate);
                                         }
                                         else if (bitsPerSample <= 32)
                                         {
                                             var read = dv.GetUint32((int)pixelOffset + srcSampleOffsets[si],
                                                 littleEndian);
-                                            myArray.SetUInt32(read, (int)windowCoordinate);
-                                            // return (dv, offset, endianNess) => dv.GetUint32((int)offset, endianNess);
+                                            currentSample.SetUInt32(read, (int)windowCoordinate);
+                                        }
+                                        else if (bitsPerSample <= 64)
+                                        {
+                                            var read = dv.GetUint64((int)pixelOffset + srcSampleOffsets[si],
+                                                littleEndian);
+                                            currentSample.SetUInt64(read, (int)windowCoordinate);
+                                        }
+                                        else
+                                        {
+                                            throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
                                         }
 
                                         break;
@@ -1002,19 +1011,26 @@ public class GeoTiffImage : IGetTagable
                                         if (bitsPerSample <= 8)
                                         {
                                             var read = dv.GetInt8((int)pixelOffset + srcSampleOffsets[si]);
-                                            myArray.SetInt8(read, (int)windowCoordinate);
-                                            // return (dv, offset, endianNess) => dv.GetInt8((int)offset);
+                                            currentSample.SetInt8(read, (int)windowCoordinate);
                                         }
                                         else if (bitsPerSample <= 16)
                                         {
                                             var read = dv.GetInt16((int)pixelOffset + srcSampleOffsets[si], littleEndian);
-                                            myArray.SetInt16(read, (int)windowCoordinate);
-                                            // return (dv, offset, endianNess) => dv.GetInt16((int)offset, endianNess);
+                                            currentSample.SetInt16(read, (int)windowCoordinate);
                                         }
                                         else if (bitsPerSample <= 32)
                                         {
                                             var read = dv.GetInt32((int)pixelOffset + srcSampleOffsets[si], littleEndian);
-                                            myArray.SetInt32(read, (int)windowCoordinate);
+                                            currentSample.SetInt32(read, (int)windowCoordinate);
+                                        }
+                                        else if (bitsPerSample <= 64)
+                                        {
+                                            var read = dv.GetInt64((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                            currentSample.SetInt64(read, (int)windowCoordinate);
+                                        }
+                                        else
+                                        {
+                                            throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
                                         }
 
                                         break;
@@ -1024,17 +1040,17 @@ public class GeoTiffImage : IGetTagable
                                             case 16: 
                                                 var read0 = dv.GetFloat16((int)pixelOffset +
                                                                           srcSampleOffsets[si], littleEndian);
-                                                myArray.SetFloat16(read0, (int)windowCoordinate);
+                                                currentSample.SetFloat16(read0, (int)windowCoordinate);
                                                 break;
                                             case 32:
                                                 var read1 = dv.GetFloat32((int)pixelOffset +
                                                                           srcSampleOffsets[si], littleEndian);
-                                                myArray.SetFloat32(read1, (int)windowCoordinate);
+                                                currentSample.SetFloat32(read1, (int)windowCoordinate);
                                                 break;
                                             case 64:
                                                 var read2 = dv.GetFloat64((int)pixelOffset +
                                                                           srcSampleOffsets[si], littleEndian);
-                                                myArray.SetDouble(read2, (int)windowCoordinate);
+                                                currentSample.SetDouble(read2, (int)windowCoordinate);
                                                 break;
                                             default:
                                                 throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
@@ -1056,7 +1072,7 @@ public class GeoTiffImage : IGetTagable
 
         await Task.WhenAll(promises);
         
-        return new Raster(valueArrays, this.GetOrCalculateAffineTransformation(), imageWindowWidth, imageWindowHeight, this, (maxYTile - minYTile) * (maxXTile - minXTile));
+        return new Raster(rasterSamples, this.GetOrCalculateAffineTransformation(), imageWindowWidth, imageWindowHeight, this, (maxYTile - minYTile) * (maxXTile - minXTile));
     }
 
 

@@ -300,7 +300,32 @@ internal class DataView
 
     public void SetInt32(int offset, int value, bool isLittleEndian = false)
     {
-        CheckType(GeotiffSampleDataType.UInt32, false);
+        CheckType(GeotiffSampleDataType.Int32, false);
+        byte[]? x = BitConverter.GetBytes(value);
+        if (isLittleEndian is false)
+        {
+            x = x.Reverse().ToArray();
+        }
+
+        SetByteRange(offset, x);
+    }
+    
+    public long GetInt64(int offset, bool isLittleEndian = false)
+    {
+        CheckType(GeotiffSampleDataType.Int64, true);
+        byte[]? x = stream.Skip(offset).Take(8).ToArray();
+
+        if (isLittleEndian is false)
+        {
+            x = x.Reverse().ToArray();
+        }
+
+        return BitConverter.ToInt64(x);
+    }
+
+    public void SetInt64(int offset, long value, bool isLittleEndian = false)
+    {
+        CheckType(GeotiffSampleDataType.Int64, false);
         byte[]? x = BitConverter.GetBytes(value);
         if (isLittleEndian is false)
         {

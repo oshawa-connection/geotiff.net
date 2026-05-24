@@ -1,5 +1,9 @@
 import struct
-f = open("end_ifd_bigtiff_geotiff.tif", "wb")
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
+f = open(outdir / "end_ifd_bigtiff_geotiff.tif", "wb")
 # =========================================================
 # BIGTIFF HEADER
 # =========================================================
@@ -145,4 +149,3 @@ f.write(struct.pack('<Q', 0))
 f.seek(8)
 f.write(struct.pack('<Q', ifd_offset))
 f.close()
-print("Wrote end_ifd_bigtiff_geotiff.tif")
