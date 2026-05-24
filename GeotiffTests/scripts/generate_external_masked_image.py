@@ -3,6 +3,10 @@ import rasterio
 from rasterio.enums import Compression
 from rasterio.transform import from_origin
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 width = 50
 height = 50
 data = np.ones((height, width), dtype=np.int32)
@@ -23,8 +27,6 @@ mask = np.zeros((height, width), dtype=np.uint8)
 mask[:, :25] = 1  # left half valid
 
 # Write the raster with mask
-with rasterio.open('masked_image.tif', 'w', **profile) as dst:
+with rasterio.open(outdir / 'masked_image.tif', 'w', **profile) as dst:
     dst.write(data, 1)
     dst.write_mask(mask * 255)  # rasterio expects mask as 0 (masked) or 255 (valid)
-
-print("Wrote masked_image.tif")

@@ -2,6 +2,10 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_origin
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Create the 5x5 array (dtype = double / float64)
 data = np.array([
     [1,  1,  1,  1, 1],
@@ -19,7 +23,7 @@ output_file = "output.tif"
 
 # Create GeoTIFF
 with rasterio.open(
-    output_file,
+    outdir / output_file,
     "w",
     driver="GTiff",
     height=data.shape[0],

@@ -2,8 +2,12 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_bounds
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Output file
-output_path = "two_band_int32.tif"
+output_path = outdir / "two_band_int32.tif"
 
 # Raster dimensions
 width = 50

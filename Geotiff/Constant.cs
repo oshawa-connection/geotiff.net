@@ -5,8 +5,8 @@ namespace Geotiff;
 
 public static class Constant
 {
-    public const ushort BOMLittleEndian = 0x4949;
-    public const ushort BOMBigEndian = 0x4D4D;
+    public const ushort BOMLittleEndian = 0x4949; // Intel order II
+    public const ushort BOMBigEndian = 0x4D4D; // Motorola order MM
     public const ushort LittleTifMagicValue = 42;
     public const ushort BigTifMagicValue = 43;
     public const int WGS84_EPSG_CODE = 4326;

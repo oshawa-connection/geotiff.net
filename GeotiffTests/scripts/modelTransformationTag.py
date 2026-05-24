@@ -2,6 +2,10 @@ import numpy as np
 import rasterio
 from rasterio.transform import Affine
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 width = 50
 height = 50
 res = 1.0
@@ -13,7 +17,7 @@ transform = Affine(res, 0, 0,
 data = np.zeros((height, width), dtype=np.float32)
 
 with rasterio.open(
-    "model_transform.tif",
+    outdir / "model_transform.tif",
     "w",
     driver="GTiff",
     width=width,

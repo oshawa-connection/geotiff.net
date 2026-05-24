@@ -2,11 +2,15 @@ import rasterio
 from rasterio.enums import Compression
 import numpy as np
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Define raster properties
 width, height = 100, 100
 count = 2
 dtype = 'int32'
-filename = 'int32_2band.tif'
+filename = outdir / 'int32_2band.tif'
 
 # Create data arrays
 band1 = np.ones((height, width), dtype=np.int32)

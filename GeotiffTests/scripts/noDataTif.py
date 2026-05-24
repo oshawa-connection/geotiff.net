@@ -2,8 +2,12 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_origin
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Output file path
-output_tif = "no_data_outline_float32.tif"
+output_tif = outdir / "no_data_outline_float32.tif"
 
 # Raster dimensions
 width = 10

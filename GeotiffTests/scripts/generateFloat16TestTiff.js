@@ -1,3 +1,9 @@
+/*
+This is done in JS because rasterio does not support 16 bit floats. 
+Could use the python struct module.  
+*/
+
+
 import fs from "fs";
 import GeoTIFF, { writeArrayBuffer } from "geotiff";
 

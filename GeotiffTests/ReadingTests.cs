@@ -107,7 +107,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         //
         int count = await geotiff.GetImageCountAsync();
-        count.ShouldBe(1);
+        count.ShouldBe(2);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);

@@ -3,6 +3,10 @@ import rasterio
 from rasterio.transform import from_origin
 from rasterio.crs import CRS
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 width = 50               # columns: longitudes 0 .. 50
 height = 50              # rows: latitudes 50 .. 0 (north -> south)
 pixel_size = 1           # 1 degree
@@ -21,9 +25,7 @@ profile = {
     "tiled": False
 }
 
-with rasterio.open("bands_100.tif", "w", **profile) as dst:
+with rasterio.open(outdir / "bands_100.tif", "w", **profile) as dst:
     for i in range(0,100):
         arr = np.full((height, width), i+1, dtype=np.int32)
         dst.write(arr, i+1)
-
-print("Wrote bands_100.tif")

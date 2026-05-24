@@ -2,6 +2,10 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_origin
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # First 5x5 array
 band1 = np.array([
     [1,  1,  1,  1, 1],
@@ -27,7 +31,7 @@ transform = from_origin(0, 5, 1, 1)
 output_file = "two_band_planar_separate.tif"
 
 with rasterio.open(
-    output_file,
+    outdir / output_file,
     "w",
     driver="GTiff",
     height=5,
@@ -42,5 +46,3 @@ with rasterio.open(
 ) as dst:
     dst.write(band1, 1)
     dst.write(band2, 2)
-
-print(f"GeoTIFF written to {output_file}")

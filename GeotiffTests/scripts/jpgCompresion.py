@@ -2,6 +2,10 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_origin
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Create a simple 10x10 image in YCbCr space
 # Choose constant non-zero values for all bands
 Y  = np.full((10, 10), 85, dtype=np.uint8)  # luminance (brightness)
@@ -17,7 +21,7 @@ transform = from_origin(0, 10, 1, 1)
 output_file = "test_10x10_ycbcr_jpeg.tif"
 
 with rasterio.open(
-    output_file,
+    outdir / output_file,
     "w",
     driver="GTiff",
     height=10,
