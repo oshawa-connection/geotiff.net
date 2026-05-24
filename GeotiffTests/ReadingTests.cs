@@ -862,6 +862,28 @@ public class ReadingTests : GeoTiffTestBaseClass
             read.GetSampleAt(0).GetInt64Array().ShouldAllBe(d => (d == Int64.MaxValue));
         }
     }
+    
+    [TestMethod]
+    public async Task TestBigTiffBlockIFDAtEnd()
+    {
+        string bigTiffPath = Path.Combine(GetDataFolderPath(), "big_single_strip_4gb_bigtiff.tif");
+        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        
+        // data is written as a single strip so not yet supported as .net arrays have int32.max values tops.
+        // foreach (var blockWindow in image.GetBlockImagePixelWindows())
+        // {
+        //     // var read = await image.ReadRasterAsync(blockWindow);
+        //     // read.TilesCovered.ShouldBe((ulong)1);
+        //     // read.GetSampleAt(0).GetInt64Array().ShouldAllBe(d => (d == 0));
+        // }
+        
+        // Simple test; 
+        image.Width.ShouldBe((ulong)10);
+        image.Height.ShouldBe((ulong)10);
+    }
 
 
     [TestMethod]
