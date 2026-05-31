@@ -348,7 +348,7 @@ public class GeoTiff
 
         if (index == 0)
         {
-            ImageFileDirectory? result = await ParseFileDirectoryAtAsync(FirstIFDOffset);// TODO: this is a narrowing conversion
+            ImageFileDirectory? result = await ParseFileDirectoryAtAsync(FirstIFDOffset);
             ImageFileDirectories.Add(index, result);
             return result;
         }

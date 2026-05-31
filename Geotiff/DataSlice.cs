@@ -86,72 +86,18 @@ internal class DataSlice
     
     public ulong ReadUInt64(ulong offset)
     {
-        // TODO: this is the way its done for JS purposes; is there no built in dotnet equivalent that's more efficient?
-        // They read two 32bit uints then combine them.
-        uint left = ReadUInt32(offset); 
-        uint right = ReadUInt32(offset + 4);
-        ulong combined;
-
-        if (LittleEndian)
-        {
-            combined = (ulong)left + ((ulong)right << 32);
-        }
-        else
-        {
-            combined = ((ulong)left << 32) + right;
-        }
-
-        if (combined > long.MaxValue)
-        {
-            throw new InvalidOperationException(
-                $"{combined} exceeds MAX_SAFE_INTEGER. " +
-                "Precision may be lost. Please report if you get this message to https://github.com/geotiffjs/geotiff.js/issues");
-        }
-
-        return combined;
+        return _dataView.GetUInt64(
+            (int)(offset - _sliceOffset),
+            LittleEndian
+        );
     }
-
-    /// <summary>
-    /// adapted from https://stackoverflow.com/a/55338384/8060591
-    /// </summary>
-    /// <param name="offset"></param>
-    /// <returns></returns>
+    
     public long ReadInt64(ulong offset)
     {
-        long value = 0;
-        int relOffset = (int)(offset - _sliceOffset);
-        bool isNegative = (_dataView.GetUInt8(relOffset + (_littleEndian ? 7 : 0)) & 0x80) > 0;
-        bool carrying = true;
-
-        for (int i = 0; i < 8; i++)
-        {
-            int index = relOffset + (_littleEndian ? i : 7 - i);
-            byte b = _dataView.GetUInt8(index);
-            if (isNegative)
-            {
-                if (carrying)
-                {
-                    if (b != 0x00)
-                    {
-                        b = (byte)(~(b - 1) & 0xff);
-                        carrying = false;
-                    }
-                }
-                else
-                {
-                    b = (byte)(~b & 0xff);
-                }
-            }
-
-            value += (long)b << (8 * i);
-        }
-
-        if (isNegative)
-        {
-            value = -value;
-        }
-
-        return value;
+        return _dataView.GetInt64(
+            (int)(offset - _sliceOffset),
+            LittleEndian
+        );
     }
 
     public ulong ReadOffset(ulong offset)
