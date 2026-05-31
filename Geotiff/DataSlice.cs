@@ -37,7 +37,7 @@ internal class DataSlice
 
     public byte ReadByte(ulong offset)
     {
-        return _dataView.GetUint8((int)(offset - _sliceOffset));
+        return _dataView.GetUInt8((int)(offset - _sliceOffset));
     }
 
     public sbyte ReadSByte(ulong offset)
@@ -66,12 +66,12 @@ internal class DataSlice
 
     public ushort ReadUInt16(ulong offset)
     {
-        return _dataView.GetUint16((int)(offset - _sliceOffset), LittleEndian);
+        return _dataView.GetUInt16((int)(offset - _sliceOffset), LittleEndian);
     }
 
     public uint ReadUInt32(ulong offset)
     {
-        return _dataView.GetUint32((int)(offset - _sliceOffset), LittleEndian);
+        return _dataView.GetUInt32((int)(offset - _sliceOffset), LittleEndian);
     }
 
     public int ReadInt32(ulong offset)
@@ -120,13 +120,13 @@ internal class DataSlice
     {
         long value = 0;
         int relOffset = (int)(offset - _sliceOffset);
-        bool isNegative = (_dataView.GetUint8(relOffset + (_littleEndian ? 7 : 0)) & 0x80) > 0;
+        bool isNegative = (_dataView.GetUInt8(relOffset + (_littleEndian ? 7 : 0)) & 0x80) > 0;
         bool carrying = true;
 
         for (int i = 0; i < 8; i++)
         {
             int index = relOffset + (_littleEndian ? i : 7 - i);
-            byte b = _dataView.GetUint8(index);
+            byte b = _dataView.GetUInt8(index);
             if (isNegative)
             {
                 if (carrying)

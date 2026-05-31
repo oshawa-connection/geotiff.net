@@ -30,7 +30,7 @@ public class GeoTiff
     
     private static bool GetBomMarker(DataView dv)
     {
-        ushort value = dv.GetUint16(0, true);
+        ushort value = dv.GetUInt16(0, true);
         bool isLittleEndian = false;
         if (value == Constant.BOMLittleEndian)
         {
@@ -50,7 +50,7 @@ public class GeoTiff
 
     private static bool GetBigTiffMarker(DataView dv, bool isLittleEndian)
     {
-        ushort isBigTiffValue = dv.GetUint16(2, isLittleEndian);
+        ushort isBigTiffValue = dv.GetUInt16(2, isLittleEndian);
         if (isBigTiffValue == 42)
         {
             return false;
@@ -61,7 +61,7 @@ public class GeoTiff
             return true;
         }
         
-        var offsetByteSize = dv.GetUint16(4, isLittleEndian);
+        var offsetByteSize = dv.GetUInt16(4, isLittleEndian);
         if (offsetByteSize != 8) {
             throw new InvalidGeoTiffException("Unsupported offset byte-size.");
         }
@@ -73,8 +73,8 @@ public class GeoTiff
     {
         // This is used to 
         return isBigTiff
-            ? dv.GetUint64(8, isLittleEndian)
-            : dv.GetUint32(4, isLittleEndian);
+            ? dv.GetUInt64(8, isLittleEndian)
+            : dv.GetUInt32(4, isLittleEndian);
     }
     
     public static async Task<GeoTiff> FromRemoteClientAsync(IGeoTiffRemoteClient client)
@@ -169,7 +169,7 @@ public class GeoTiff
         
         byte[]? arr = buffer.ToArray();
         var dv = new DataView(arr);
-        ushort value = dv.GetUint16(0, true);
+        ushort value = dv.GetUInt16(0, true);
         bool isLittleEndian = GetBomMarker(dv);
 
         bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);

@@ -940,24 +940,24 @@ public class GeoTiffImage : IGetTagable
                                     case 1: // unsigned integer data
                                         if (bitsPerSample <= 8)
                                         {
-                                            var read = dv.GetUint8((int)pixelOffset + srcSampleOffsets[si]);
+                                            var read = dv.GetUInt8((int)pixelOffset + srcSampleOffsets[si]);
                                             currentSample.SetUInt8(read, (int)windowCoordinate);
                                         }
                                         else if (bitsPerSample <= 16)
                                         {
-                                            var read = dv.GetUint16((int)pixelOffset + srcSampleOffsets[si],
+                                            var read = dv.GetUInt16((int)pixelOffset + srcSampleOffsets[si],
                                                 littleEndian);
                                             currentSample.SetUInt16(read, (int)windowCoordinate);
                                         }
                                         else if (bitsPerSample <= 32)
                                         {
-                                            var read = dv.GetUint32((int)pixelOffset + srcSampleOffsets[si],
+                                            var read = dv.GetUInt32((int)pixelOffset + srcSampleOffsets[si],
                                                 littleEndian);
                                             currentSample.SetUInt32(read, (int)windowCoordinate);
                                         }
                                         else if (bitsPerSample <= 64)
                                         {
-                                            var read = dv.GetUint64((int)pixelOffset + srcSampleOffsets[si],
+                                            var read = dv.GetUInt64((int)pixelOffset + srcSampleOffsets[si],
                                                 littleEndian);
                                             currentSample.SetUInt64(read, (int)windowCoordinate);
                                         }
@@ -1234,8 +1234,7 @@ public class GeoTiffImage : IGetTagable
             {
                 valueToFill = int.Parse(gdalNoData);
             }
-
-            // TODO: Note that this will not actually set the values of the underlying ArrayBuffer.
+            
             for (int i = 0; i < view.Length; i++)
             {
                 view.SetValue(valueToFill, i);
