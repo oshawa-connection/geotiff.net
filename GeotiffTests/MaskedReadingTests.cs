@@ -71,6 +71,7 @@ public class MaskedReadingTests : GeoTiffTestBaseClass
         await using var mainStream = File.OpenRead(tifPath);
         var file = await GeoTiff.FromStreamAsync(mainStream);
         var image = await file.GetImageAsync(0);
+        var sampleType = image.GetSampleType();
         // Console.WriteLine(image.GDAL_NODATA);
         var maskedReader = await MaskedGeoTiffReader.FromNoDataGeotiffAsync(file);
         var readResult = await maskedReader.ReadMaskedRasterAsync();

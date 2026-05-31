@@ -1,71 +1,271 @@
+using System.Buffers.Binary;
 using Geotiff.Exceptions;
 
 namespace Geotiff.JavaScriptCompatibility;
 
 internal class DataView
 {
-    private readonly byte[] stream;
-    public readonly GeotiffSampleDataType? type;
-    public bool IsTyped => type != null;
+    private readonly byte[] _buffer;
+    public readonly GeotiffSampleDataType? Type;
 
-    public DataView(byte[] stream, GeotiffSampleDataType? type = null)
+    public DataView(byte[] buffer, GeotiffSampleDataType? type = null)
     {
-        this.type = type;
-        this.stream = stream;
-    }
-
-    public DataView(int size, GeotiffSampleDataType? type = null) : this(new byte[size], type) { }
-
-    /// <summary>
-    /// TODO: Check if the ctor is necessary, and if so, if a datatype can be defined.
-    /// </summary>
-    /// <param name="buffer"></param>
-    public DataView(byte[] buffer)
-    {
-        stream = buffer;
+        _buffer = buffer;
+        Type = type;
     }
     
+    public Span<byte> Span => _buffer;
+    public ReadOnlySpan<byte> ReadOnlySpan => _buffer;
 
-    public byte[] ToArrayBuffer()
-    {
-        return stream;
-    }
-    
-    public int Length => stream.Length;
-    
-    private void SetByteRange(int offset, byte[] bytes)
-    {
-        for (int i = 0; i < bytes.Length; i++)
-        {
-            stream[offset + i] = bytes[i];
-        }
-    }
+    public int Length => _buffer.Length;
 
-    private void CheckType(GeotiffSampleDataType type, bool read)
+    private void CheckType(GeotiffSampleDataType expected, bool read)
     {
-        if (this.type == null)
-        {
+        if (Type is null)
             return;
-        }
 
-        if (this.type != type)
+        if (Type != expected)
         {
-            string? op = read ? "read" : "write";
-            throw new GeoTiffException($"Invalid operation, trying to {op} a {type} on an array of type {this.type}");
+            string op = read ? "read" : "write";
+            throw new GeoTiffException(
+                $"Invalid operation, trying to {op} a {expected} on an array of type {Type}"
+            );
         }
     }
-    /// <summary>
-    /// Because we are targeting .netstandard2.1, Half datatype is not supported. Read 2 bytes then convert to float32
-    /// </summary>
-    /// <param name="offset"></param>
-    /// <param name="isLittleEndian"></param>
-    /// <returns></returns>
-    /// <exception cref="GeoTiffException"></exception>
+
+    private static bool IsLittleEndian(bool? isLittleEndian)
+        => isLittleEndian ?? BitConverter.IsLittleEndian;
+
+    private static Span<byte> Slice(byte[] buffer, int offset, int size)
+        => buffer.AsSpan(offset, size);
+    
+    public short GetInt16(int offset, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Int16, true);
+
+        var span = ReadOnlySpan.Slice(offset, 2);
+
+        return IsLittleEndian(littleEndian)
+            ? BinaryPrimitives.ReadInt16LittleEndian(span)
+            : BinaryPrimitives.ReadInt16BigEndian(span);
+    }
+
+    public void SetInt16(int offset, short value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Int16, false);
+
+        var span = Span.Slice(offset, 2);
+
+        if (IsLittleEndian(littleEndian))
+        {
+            BinaryPrimitives.WriteInt16LittleEndian(span, value);
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt16BigEndian(span, value);
+        }
+    }
+    
+    public ushort GetUInt16(int offset, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.UInt16, true);
+
+        var span = ReadOnlySpan.Slice(offset, 2);
+
+        return IsLittleEndian(littleEndian)
+            ? BinaryPrimitives.ReadUInt16LittleEndian(span)
+            : BinaryPrimitives.ReadUInt16BigEndian(span);
+    }
+    
+    public void SetUInt16(int offset, ushort value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.UInt16, false);
+
+        var span = Span.Slice(offset, 2);
+
+        if (IsLittleEndian(littleEndian))
+        {
+            BinaryPrimitives.WriteUInt16LittleEndian(span, value);
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(span, value);
+        }
+    }
+    
+    public int GetInt32(int offset, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Int32, true);
+
+        var span = ReadOnlySpan.Slice(offset, 4);
+
+        return IsLittleEndian(littleEndian)
+            ? BinaryPrimitives.ReadInt32LittleEndian(span)
+            : BinaryPrimitives.ReadInt32BigEndian(span);
+    }
+
+    public void SetInt32(int offset, int value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Int32, false);
+
+        var span = Span.Slice(offset, 4);
+
+        if (IsLittleEndian(littleEndian))
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(span, value);
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt32BigEndian(span, value);
+        }
+    }
+    
+    public uint GetUInt32(int offset, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.UInt32, true);
+
+        var span = ReadOnlySpan.Slice(offset, 4);
+
+        return IsLittleEndian(littleEndian)
+            ? BinaryPrimitives.ReadUInt32LittleEndian(span)
+            : BinaryPrimitives.ReadUInt32BigEndian(span);
+    }
+
+    public void SetUInt32(int offset, uint value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.UInt32, false);
+
+        var span = Span.Slice(offset, 4);
+
+        if (IsLittleEndian(littleEndian))
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(span, value);
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt32BigEndian(span, value);
+        }
+    }
+
+    public long GetInt64(int offset, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Int64, true);
+
+        var span = ReadOnlySpan.Slice(offset, 8);
+
+        return IsLittleEndian(littleEndian)
+            ? BinaryPrimitives.ReadInt64LittleEndian(span)
+            : BinaryPrimitives.ReadInt64BigEndian(span);
+    }
+
+    public void SetInt64(int offset, long value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Int64, false);
+
+        var span = Span.Slice(offset, 8);
+
+        if (IsLittleEndian(littleEndian))
+        {
+            BinaryPrimitives.WriteInt64LittleEndian(span, value);
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt64BigEndian(span, value);
+        }
+    }
+    
+    public ulong GetUInt64(int offset, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.UInt64, true);
+
+        var span = ReadOnlySpan.Slice(offset, 8);
+
+        return IsLittleEndian(littleEndian)
+            ? BinaryPrimitives.ReadUInt64LittleEndian(span)
+            : BinaryPrimitives.ReadUInt64BigEndian(span);
+    }
+    
+    public void SetUInt64(int offset, ulong value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.UInt64, false);
+
+        var span = Span.Slice(offset, 8);
+
+        if (IsLittleEndian(littleEndian))
+        {
+            BinaryPrimitives.WriteUInt64LittleEndian(span, value);
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt64BigEndian(span, value);
+        }
+    }
+
+    
+    public double GetFloat64(int offset, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Float64, true);
+
+        var span = ReadOnlySpan.Slice(offset, 8);
+
+        long bits = IsLittleEndian(littleEndian)
+            ? BinaryPrimitives.ReadInt64LittleEndian(span)
+            : BinaryPrimitives.ReadInt64BigEndian(span);
+
+        return BitConverter.Int64BitsToDouble(bits);
+    }
+
+    public void SetFloat64(int offset, double value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Float64, false);
+
+        var span = Span.Slice(offset, 8);
+        long bits = BitConverter.DoubleToInt64Bits(value);
+
+        if (IsLittleEndian(littleEndian))
+        {
+            BinaryPrimitives.WriteInt64LittleEndian(span, bits);
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt64BigEndian(span, bits);
+        }
+    }
+    
+
+    public float GetFloat32(int offset, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Float32, true);
+
+        var span = ReadOnlySpan.Slice(offset, 4);
+
+        int bits = IsLittleEndian(littleEndian)
+            ? BinaryPrimitives.ReadInt32LittleEndian(span)
+            : BinaryPrimitives.ReadInt32BigEndian(span);
+
+        return BitConverter.Int32BitsToSingle(bits);
+    }
+
+    public void SetFloat32(int offset, float value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.Float32, false);
+
+        var span = Span.Slice(offset, 4);
+
+        int bits = BitConverter.SingleToInt32Bits(value);
+
+        if (IsLittleEndian(littleEndian))
+            BinaryPrimitives.WriteInt32LittleEndian(span, bits);
+        else
+            BinaryPrimitives.WriteInt32BigEndian(span, bits);
+    }
+
+
     public float GetFloat16(int offset, bool isLittleEndian = false)
     {
         CheckType(GeotiffSampleDataType.Float16, true);
 
-        byte[]? x = stream.Skip(offset).Take(2).ToArray();
+        byte[]? x = _buffer.Skip(offset).Take(2).ToArray();
         if (x.Length < 2)
         {
             throw new GeoTiffException("Not enough bytes in stream");
@@ -130,195 +330,160 @@ internal class DataView
         return BitConverter.Int32BitsToSingle((int)f);
     }
     
-    public float GetFloat32(int offset, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.Float32, true);
-        byte[]? x = stream.Skip(offset).Take(4).ToArray();
-        if (x.Count() < 4)
-        {
-            throw new GeoTiffException("Not enough bytes in stream");
-        }
-
-        if (isLittleEndian is false)
-        {
-            x = x.Reverse().ToArray();
-        }
-
-        return BitConverter.ToSingle(x);
-    }
-    
-    public void SetFloat32(int byteOffset, float value, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.Float32, false);
-        byte[]? x = BitConverter.GetBytes(value);
-        if (isLittleEndian is false)
-        {
-            x = x.Reverse().ToArray();
-        }
-
-        SetByteRange(byteOffset, x);
-    }
-    
-    public double GetFloat64(int offset, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.Float64, true);
-        byte[]? x = stream.Skip(offset).Take(8).ToArray();
-        if (x.Count() < 8)
-        {
-            throw new GeoTiffException("Not enough bytes in stream");
-        }
-
-        if (isLittleEndian is false)
-        {
-            x = x.Reverse().ToArray();
-        }
-
-        return BitConverter.ToDouble(x);
-    }
-
-    public void SetFloat64(int offset, double value, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.Float64, false);
-        byte[]? x = BitConverter.GetBytes(value);
-        if (isLittleEndian is false)
-        {
-            x = x.Reverse().ToArray();
-        }
-
-        SetByteRange(offset, x);
-    }
-
-    private byte[] Read16(int offset, bool isLittleEndian = false)
-    {
-        byte[]? x = stream.Skip(offset).Take(2).ToArray();
-        if (x.Count() < 2)
-        {
-            throw new GeoTiffException("Not enough bytes in stream");
-        }
-
-        if (isLittleEndian is false)
-        {
-            x = x.Reverse().ToArray();
-        }
-
-        return x;
-    }
-
-    public short GetInt16(int offset, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.Int16, true);
-        byte[]? x = Read16(offset, isLittleEndian);
-
-        return BitConverter.ToInt16(x);
-    }
-    
-
-    public ushort GetUint16(int offset, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.UInt16, true);
-        byte[]? x = Read16(offset, isLittleEndian);
-        return BitConverter.ToUInt16(x);
-    }
-
-    public byte GetUint8(int offset)
+    public byte GetUInt8(int offset)
     {
         CheckType(GeotiffSampleDataType.UInt8, true);
-        return stream[offset];
+        return _buffer[offset];
     }
 
-    public void SetUint8(int offset, byte value)
+    public void SetUInt8(int offset, byte value)
     {
         CheckType(GeotiffSampleDataType.UInt8, false);
-        stream[offset] = value;
+        _buffer[offset] = value;
     }
-
 
     public sbyte GetInt8(int offset)
     {
         CheckType(GeotiffSampleDataType.Int8, true);
-        return (sbyte)stream.Skip(offset).First();
+        return unchecked((sbyte)_buffer[offset]);
     }
 
-    public void Setint8(int offset, byte value)
+    public void SetInt8(int offset, sbyte value)
     {
         CheckType(GeotiffSampleDataType.Int8, false);
-        stream[offset] = value;
+        _buffer[offset] = unchecked((byte)value);
     }
 
 
-    public uint GetUint32(int offset, bool isLittleEndian = false)
+    /// <summary>
+    /// Used pretty much only for GDAL no data + sparse 
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="sampleDataType"></param>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public void FillValue(string value, GeotiffSampleDataType sampleDataType)
     {
-        CheckType(GeotiffSampleDataType.UInt32, true);
-        byte[]? x = stream.Skip(offset).Take(4).ToArray();
-
-        if (isLittleEndian is false)
+        if (string.IsNullOrWhiteSpace(value))
         {
-            x = x.Reverse().ToArray();
+            throw new ArgumentException("Value cannot be null or empty.", nameof(value));
         }
-
-        return BitConverter.ToUInt32(x);
-    }
-
-    public void SetUint32(int offset, uint value, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.UInt32, false);
-        byte[]? x = BitConverter.GetBytes(value);
-        if (isLittleEndian is false)
+        
+        switch (sampleDataType)
         {
-            x = x.Reverse().ToArray();
+            case GeotiffSampleDataType.Int8:
+            {
+                sbyte v = sbyte.Parse(value);
+
+                for (int i = 0; i < Length; i++)
+                    SetInt8(i, v);
+
+                break;
+            }
+
+            case GeotiffSampleDataType.UInt8:
+            {
+                byte v = byte.Parse(value);
+
+                for (int i = 0; i < Length; i++)
+                {
+                    SetUInt8(i, v);
+                }
+                
+                break;
+            }
+
+            case GeotiffSampleDataType.Int16:
+            {
+                short v = short.Parse(value);
+
+                for (int i = 0; i <= Length - 2; i += 2)
+                {
+                    SetInt16(i, v);
+                }
+
+                break;
+            }
+
+            case GeotiffSampleDataType.UInt16:
+            {
+                ushort v = ushort.Parse(value);
+
+                for (int i = 0; i <= Length - 2; i += 2)
+                {
+                    SetUInt16(i, v);
+                }
+
+                break;
+            }
+
+            case GeotiffSampleDataType.Int32:
+            {
+                int v = int.Parse(value);
+
+                for (int i = 0; i <= Length - 4; i += 4)
+                {
+                    SetInt32(i, v);
+                }
+
+                break;
+            }
+
+            case GeotiffSampleDataType.UInt32:
+            {
+                uint v = uint.Parse(value);
+
+                for (int i = 0; i <= Length - 4; i += 4)
+                    SetUInt32(i, v);
+
+                break;
+            }
+
+            case GeotiffSampleDataType.Int64:
+            {
+                long v = long.Parse(value);
+
+                for (int i = 0; i <= Length - 8; i += 8)
+                    SetInt64(i, v);
+
+                break;
+            }
+
+            case GeotiffSampleDataType.UInt64:
+            {
+                ulong v = ulong.Parse(value);
+
+                for (int i = 0; i <= Length - 8; i += 8)
+                {
+                    SetUInt64(i, v);
+                }
+                    
+
+                break;
+            }
+
+            case GeotiffSampleDataType.Float32:
+            {
+                float v = float.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+
+                for (int i = 0; i <= Length - 4; i += 4)
+                    SetFloat32(i, v);
+
+                break;
+            }
+
+            case GeotiffSampleDataType.Float64:
+            {
+                double v = double.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+                for (int i = 0; i <= Length - 8; i += 8)
+                {
+                    SetFloat64(i, v);
+                }
+                break;
+            }
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(sampleDataType), sampleDataType, null);
         }
-
-        SetByteRange(offset, x);
-    }
-
-    public UInt64 GetUint64(int offset, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.UInt64, true);
-        byte[]? x = stream.Skip(offset).Take(8).ToArray();
-
-        if (isLittleEndian is false)
-        {
-            x = x.Reverse().ToArray();
-        }
-
-        return BitConverter.ToUInt64(x);
-    }
-    
-
-    public int GetInt32(int offset, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.Int32, true);
-        byte[]? x = stream.Skip(offset).Take(4).ToArray();
-
-        if (isLittleEndian is false)
-        {
-            x = x.Reverse().ToArray();
-        }
-
-        return BitConverter.ToInt32(x);
-    }
-
-    public void SetInt32(int offset, int value, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.UInt32, false);
-        byte[]? x = BitConverter.GetBytes(value);
-        if (isLittleEndian is false)
-        {
-            x = x.Reverse().ToArray();
-        }
-
-        SetByteRange(offset, x);
-    }
-
-    public void SetInt16(int offset, short value, bool isLittleEndian = false)
-    {
-        CheckType(GeotiffSampleDataType.Int16, false);
-        byte[]? x = BitConverter.GetBytes(value);
-        if (isLittleEndian is false)
-        {
-            x = x.Reverse().ToArray();
-        }
-
-        SetByteRange(offset, x);
     }
 }

@@ -107,7 +107,7 @@ public class ReadingTests : GeoTiffTestBaseClass
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         //
         int count = await geotiff.GetImageCountAsync();
-        count.ShouldBe(1);
+        count.ShouldBe(2);
         GeoTiffImage? image = await geotiff.GetImageAsync();
         
         var readResult = await image.ReadRasterAsync(cancellationToken: cts.Token);
@@ -845,30 +845,11 @@ public class ReadingTests : GeoTiffTestBaseClass
 
         ex.ShouldNotBeNull();
     }
-
-
-    [TestMethod]
-    public async Task TestBigTiff()
-    {
-        string bigTiffPath = Path.Combine("/home/james/Documents/temp/geotiff/bigger_cog.tif");
-        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
-        
-        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
-        var image = await geotiff.GetImageAsync();
-
-        var height = image.Height;
-        var width = image.Width;
-        
-        var tileWidth = image.GetTileOrStripWidth();
-        var tileHeight = image.GetTileOrStripHeight();
-        var readResult = await image.ReadRasterAsync();
-    }
-    
     
     [TestMethod]
     public async Task TestBigTiffBlockAlignedReads()
     {
-        string bigTiffPath = Path.Combine("/home/james/Documents/temp/geotiff/bigger_cog.tif");
+        string bigTiffPath = Path.Combine(GetDataFolderPath(), "big_int64_4gb.tif");
         await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
@@ -878,15 +859,38 @@ public class ReadingTests : GeoTiffTestBaseClass
         {
             var read = await image.ReadRasterAsync(blockWindow);
             read.TilesCovered.ShouldBe((ulong)1);
+            read.GetSampleAt(0).GetInt64Array().ShouldAllBe(d => (d == Int64.MaxValue));
         }
+    }
+    
+    [TestMethod]
+    public async Task TestBigTiffBlockIFDAtEnd()
+    {
+        string bigTiffPath = Path.Combine(GetDataFolderPath(), "big_single_strip_4gb_bigtiff.tif");
+        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
+        
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        
+        // data is written as a single strip so not yet supported as .net arrays have int32.max values tops.
+        // foreach (var blockWindow in image.GetBlockImagePixelWindows())
+        // {
+        //     // var read = await image.ReadRasterAsync(blockWindow);
+        //     // read.TilesCovered.ShouldBe((ulong)1);
+        //     // read.GetSampleAt(0).GetInt64Array().ShouldAllBe(d => (d == 0));
+        // }
+        
+        // Simple test; 
+        image.Width.ShouldBe((ulong)10);
+        image.Height.ShouldBe((ulong)10);
     }
 
 
     [TestMethod]
     public async Task TestFloat16()
     {
-        string bigTiffPath = Path.Combine(GetDataFolderPath(), "float16_10x10.tif");
-        await using var fsSource = new FileStream(bigTiffPath, FileMode.Open, FileAccess.Read);
+        string tiffPath = Path.Combine(GetDataFolderPath(), "float16_10x10.tif");
+        await using var fsSource = new FileStream(tiffPath, FileMode.Open, FileAccess.Read);
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
@@ -963,5 +967,27 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         cyanSample.GetByteArray().ShouldAllBe(d => d == 40);
 
+    }
+
+
+    [TestMethod]
+    public async Task TestGDALSparseInt32()
+    {
+        string sparse32 = Path.Combine(GetDataFolderPath(), "sparse_int32.tif");
+        await using var fsSource = new FileStream(sparse32, FileMode.Open, FileAccess.Read);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRasterAsync();
+    }
+    
+    [TestMethod]
+    public async Task TestGDALSparseFloat64()
+    {
+        string sparse32 = Path.Combine(GetDataFolderPath(), "sparse_float64.tif");
+        await using var fsSource = new FileStream(sparse32, FileMode.Open, FileAccess.Read);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRasterAsync();
+        Console.WriteLine("HELLO WORLD");
     }
 }

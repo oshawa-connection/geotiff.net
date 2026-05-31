@@ -3,6 +3,11 @@ import rasterio
 from rasterio.transform import from_origin
 from rasterio.crs import CRS
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
+
 width = 50               # columns: longitudes 0 .. 50
 height = 50              # rows: latitudes 50 .. 0 (north -> south)
 pixel_size = 1           # 1 degree
@@ -41,8 +46,6 @@ profile = {
     "tiled": False
 }
 
-with rasterio.open("lat_lon_grid.tif", "w", **profile) as dst:
+with rasterio.open(outdir / "lat_lon_grid.tif", "w", **profile) as dst:
     dst.write(band1, 1)  # Band 1: latitude (int degrees)
     dst.write(band2, 2)  # Band 2: longitude (nearest int)
-
-print("Wrote lat_lon_grid.tif")

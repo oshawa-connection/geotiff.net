@@ -2,6 +2,10 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_origin
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Create 4x4 int32 data
 data = np.array(
     [
@@ -33,5 +37,5 @@ profile = {
     "predictor": 3,
 }
 
-with rasterio.open("tiny_4x4_deflate_predictor3.tif", "w", **profile) as dst:
+with rasterio.open(outdir / "tiny_4x4_deflate_predictor3.tif", "w", **profile) as dst:
     dst.write(data, 1)

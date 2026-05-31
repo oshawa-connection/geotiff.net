@@ -3,8 +3,12 @@ import rasterio
 from rasterio.enums import Resampling
 from rasterio.transform import from_origin
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Output path
-out_tif = "internal_overviews.tif"
+out_tif = outdir / "internal_overviews.tif"
 
 # Raster dimensions
 width = height = 256

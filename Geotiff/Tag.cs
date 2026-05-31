@@ -12,6 +12,11 @@ public class Tag
     public int Length =>  this.Value.Length;
 
     private GeoTiffTagValueResult Value { get; set; }
+    
+    /// <summary>
+    /// Strips off the string null terminator
+    /// </summary>
+    /// <returns></returns>
     public string GetString() {
         var s = Value.GetString();
         if (s.EndsWith("\0"))

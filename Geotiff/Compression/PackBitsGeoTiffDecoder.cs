@@ -16,7 +16,7 @@ public class PackBitsGeoTiffDecoder : GeoTiffDecoder
             sbyte header = dataView.GetInt8(i);
             if (header < 0)
             {
-                byte next = dataView.GetUint8(i + 1);
+                byte next = dataView.GetUInt8(i + 1);
                 header = (sbyte)(header * -1);
                 for (int j = 0; j <= header; ++j)
                 {
@@ -29,7 +29,7 @@ public class PackBitsGeoTiffDecoder : GeoTiffDecoder
             {
                 for (int j = 0; j <= header; ++j)
                 {
-                    outbytes.Add(dataView.GetUint8(i + j + 1));
+                    outbytes.Add(dataView.GetUInt8(i + j + 1));
                 }
 
                 i += header + 1;

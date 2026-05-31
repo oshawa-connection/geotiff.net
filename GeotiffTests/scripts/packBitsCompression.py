@@ -2,6 +2,10 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_origin
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Create a small 10x10 raster with a simple pattern
 width, height = 10, 10
 data = np.arange(width * height, dtype=np.uint8).reshape((height, width))
@@ -14,7 +18,7 @@ output_file = "packbits.tif"
 
 # Write GeoTIFF with PackBits compression
 with rasterio.open(
-    output_file,
+    outdir / output_file,
     "w",
     driver="GTiff",
     height=height,
@@ -26,5 +30,3 @@ with rasterio.open(
     compress="PACKBITS"
 ) as dst:
     dst.write(data, 1)
-
-print(f"GeoTIFF written to {output_file}")

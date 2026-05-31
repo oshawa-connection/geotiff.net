@@ -45,11 +45,11 @@ internal class GeoTiffTagValueResult
     public bool IsSRational => _resultSRational != null;
     
     public bool IsInteger =>
-        _resultSByte is not null
+        _resultByte is not null 
+        || _resultSByte is not null
         || _resultInt16 is not null  
         || _resultInt32 is not null 
         || _resultInt64 is not null 
-        || _resultByte is not null
         || _resultUInt16 is not null
         || _resultUInt32 is not null
         || _resultUInt64 is not null;

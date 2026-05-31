@@ -3,8 +3,12 @@ import rasterio
 from rasterio.enums import Resampling
 from rasterio.env import Env
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Output filename
-path = "example.tif"
+path = outdir / "example.tif"
 
 # Create some data
 data = np.arange(1000 * 1000, dtype=np.int32).reshape((1000, 1000))

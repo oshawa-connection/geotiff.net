@@ -1,6 +1,10 @@
 import numpy as np
 import rasterio
 
+import os
+from pathlib import Path
+outdir = Path(os.environ['TIF_OUTPUT_DIR'])
+
 # Create some dummy raster data
 width = 100
 height = 100
@@ -15,7 +19,7 @@ profile = {
     "dtype": "uint8"
 }
 
-output_path = "no_affine.tif"
+output_path = outdir / "no_affine.tif"
 
 with rasterio.open(output_path, "w", **profile) as dst:
     dst.write(data, 1)
