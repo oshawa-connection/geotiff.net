@@ -1,4 +1,3 @@
-using System;
 using System.Buffers.Binary;
 using Geotiff.Exceptions;
 
@@ -14,12 +13,7 @@ internal class DataView
         _buffer = buffer;
         Type = type;
     }
-
-    public DataView(int size, GeotiffSampleDataType? type = null)
-        : this(new byte[size], type)
-    {
-    }
-
+    
     public Span<byte> Span => _buffer;
     public ReadOnlySpan<byte> ReadOnlySpan => _buffer;
 
@@ -44,10 +38,7 @@ internal class DataView
 
     private static Span<byte> Slice(byte[] buffer, int offset, int size)
         => buffer.AsSpan(offset, size);
-
-    // -----------------------
-    // Int16
-    // -----------------------
+    
     public short GetInt16(int offset, bool? littleEndian = null)
     {
         CheckType(GeotiffSampleDataType.Int16, true);
@@ -66,14 +57,15 @@ internal class DataView
         var span = Span.Slice(offset, 2);
 
         if (IsLittleEndian(littleEndian))
+        {
             BinaryPrimitives.WriteInt16LittleEndian(span, value);
+        }
         else
+        {
             BinaryPrimitives.WriteInt16BigEndian(span, value);
+        }
     }
-
-    // -----------------------
-    // UInt16
-    // -----------------------
+    
     public ushort GetUInt16(int offset, bool? littleEndian = null)
     {
         CheckType(GeotiffSampleDataType.UInt16, true);
@@ -84,10 +76,23 @@ internal class DataView
             ? BinaryPrimitives.ReadUInt16LittleEndian(span)
             : BinaryPrimitives.ReadUInt16BigEndian(span);
     }
+    
+    public void SetUInt16(int offset, ushort value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.UInt16, false);
 
-    // -----------------------
-    // Int32
-    // -----------------------
+        var span = Span.Slice(offset, 2);
+
+        if (IsLittleEndian(littleEndian))
+        {
+            BinaryPrimitives.WriteUInt16LittleEndian(span, value);
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(span, value);
+        }
+    }
+    
     public int GetInt32(int offset, bool? littleEndian = null)
     {
         CheckType(GeotiffSampleDataType.Int32, true);
@@ -106,14 +111,15 @@ internal class DataView
         var span = Span.Slice(offset, 4);
 
         if (IsLittleEndian(littleEndian))
+        {
             BinaryPrimitives.WriteInt32LittleEndian(span, value);
+        }
         else
+        {
             BinaryPrimitives.WriteInt32BigEndian(span, value);
+        }
     }
-
-    // -----------------------
-    // UInt32
-    // -----------------------
+    
     public uint GetUInt32(int offset, bool? littleEndian = null)
     {
         CheckType(GeotiffSampleDataType.UInt32, true);
@@ -132,14 +138,15 @@ internal class DataView
         var span = Span.Slice(offset, 4);
 
         if (IsLittleEndian(littleEndian))
+        {
             BinaryPrimitives.WriteUInt32LittleEndian(span, value);
+        }
         else
+        {
             BinaryPrimitives.WriteUInt32BigEndian(span, value);
+        }
     }
 
-    // -----------------------
-    // Int64
-    // -----------------------
     public long GetInt64(int offset, bool? littleEndian = null)
     {
         CheckType(GeotiffSampleDataType.Int64, true);
@@ -158,14 +165,15 @@ internal class DataView
         var span = Span.Slice(offset, 8);
 
         if (IsLittleEndian(littleEndian))
+        {
             BinaryPrimitives.WriteInt64LittleEndian(span, value);
+        }
         else
+        {
             BinaryPrimitives.WriteInt64BigEndian(span, value);
+        }
     }
-
-    // -----------------------
-    // UInt64
-    // -----------------------
+    
     public ulong GetUInt64(int offset, bool? littleEndian = null)
     {
         CheckType(GeotiffSampleDataType.UInt64, true);
@@ -175,6 +183,22 @@ internal class DataView
         return IsLittleEndian(littleEndian)
             ? BinaryPrimitives.ReadUInt64LittleEndian(span)
             : BinaryPrimitives.ReadUInt64BigEndian(span);
+    }
+    
+    public void SetUInt64(int offset, ulong value, bool? littleEndian = null)
+    {
+        CheckType(GeotiffSampleDataType.UInt64, false);
+
+        var span = Span.Slice(offset, 8);
+
+        if (IsLittleEndian(littleEndian))
+        {
+            BinaryPrimitives.WriteUInt64LittleEndian(span, value);
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt64BigEndian(span, value);
+        }
     }
 
     
@@ -191,18 +215,21 @@ internal class DataView
         return BitConverter.Int64BitsToDouble(bits);
     }
 
-    public void SetFloat64(int offset, float value, bool? littleEndian = null)
+    public void SetFloat64(int offset, double value, bool? littleEndian = null)
     {
         CheckType(GeotiffSampleDataType.Float64, false);
 
         var span = Span.Slice(offset, 8);
-
-        int bits = BitConverter.SingleToInt32Bits(value);
+        long bits = BitConverter.DoubleToInt64Bits(value);
 
         if (IsLittleEndian(littleEndian))
-            BinaryPrimitives.WriteInt32LittleEndian(span, bits);
+        {
+            BinaryPrimitives.WriteInt64LittleEndian(span, bits);
+        }
         else
-            BinaryPrimitives.WriteInt32BigEndian(span, bits);
+        {
+            BinaryPrimitives.WriteInt64BigEndian(span, bits);
+        }
     }
     
 
@@ -302,11 +329,7 @@ internal class DataView
 
         return BitConverter.Int32BitsToSingle((int)f);
     }
-
-
-    // -----------------------
-    // Byte / Int8
-    // -----------------------
+    
     public byte GetUInt8(int offset)
     {
         CheckType(GeotiffSampleDataType.UInt8, true);
@@ -329,5 +352,138 @@ internal class DataView
     {
         CheckType(GeotiffSampleDataType.Int8, false);
         _buffer[offset] = unchecked((byte)value);
+    }
+
+
+    /// <summary>
+    /// Used pretty much only for GDAL no data + sparse 
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="sampleDataType"></param>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public void FillValue(string value, GeotiffSampleDataType sampleDataType)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Value cannot be null or empty.", nameof(value));
+        }
+        
+        switch (sampleDataType)
+        {
+            case GeotiffSampleDataType.Int8:
+            {
+                sbyte v = sbyte.Parse(value);
+
+                for (int i = 0; i < Length; i++)
+                    SetInt8(i, v);
+
+                break;
+            }
+
+            case GeotiffSampleDataType.UInt8:
+            {
+                byte v = byte.Parse(value);
+
+                for (int i = 0; i < Length; i++)
+                {
+                    SetUInt8(i, v);
+                }
+                
+                break;
+            }
+
+            case GeotiffSampleDataType.Int16:
+            {
+                short v = short.Parse(value);
+
+                for (int i = 0; i <= Length - 2; i += 2)
+                {
+                    SetInt16(i, v);
+                }
+
+                break;
+            }
+
+            case GeotiffSampleDataType.UInt16:
+            {
+                ushort v = ushort.Parse(value);
+
+                for (int i = 0; i <= Length - 2; i += 2)
+                {
+                    SetUInt16(i, v);
+                }
+
+                break;
+            }
+
+            case GeotiffSampleDataType.Int32:
+            {
+                int v = int.Parse(value);
+
+                for (int i = 0; i <= Length - 4; i += 4)
+                {
+                    SetInt32(i, v);
+                }
+
+                break;
+            }
+
+            case GeotiffSampleDataType.UInt32:
+            {
+                uint v = uint.Parse(value);
+
+                for (int i = 0; i <= Length - 4; i += 4)
+                    SetUInt32(i, v);
+
+                break;
+            }
+
+            case GeotiffSampleDataType.Int64:
+            {
+                long v = long.Parse(value);
+
+                for (int i = 0; i <= Length - 8; i += 8)
+                    SetInt64(i, v);
+
+                break;
+            }
+
+            case GeotiffSampleDataType.UInt64:
+            {
+                ulong v = ulong.Parse(value);
+
+                for (int i = 0; i <= Length - 8; i += 8)
+                {
+                    SetUInt64(i, v);
+                }
+                    
+
+                break;
+            }
+
+            case GeotiffSampleDataType.Float32:
+            {
+                float v = float.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+
+                for (int i = 0; i <= Length - 4; i += 4)
+                    SetFloat32(i, v);
+
+                break;
+            }
+
+            case GeotiffSampleDataType.Float64:
+            {
+                double v = double.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+                for (int i = 0; i <= Length - 8; i += 8)
+                {
+                    SetFloat64(i, v);
+                }
+                break;
+            }
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(sampleDataType), sampleDataType, null);
+        }
     }
 }

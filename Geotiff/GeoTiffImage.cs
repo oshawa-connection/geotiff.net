@@ -1224,20 +1224,14 @@ public class GeoTiffImage : IGetTagable
                 : GetNumberOfBytesPerPixel();
             
             var data = new byte[nPixels * bytesPerPixel];
-            // TODO: remove use of Array
-            Array view = GetArrayForSample(sampleToUse, data);
-
-            int valueToFill = 0;
-
+            
+            var sampleType = GetSampleType();
+            var view = new DataView(data, sampleType);
+            
             var gdalNoData = GetGdalNoData();
             if (gdalNoData is not null)
             {
-                valueToFill = int.Parse(gdalNoData);
-            }
-            
-            for (int i = 0; i < view.Length; i++)
-            {
-                view.SetValue(valueToFill, i);
+                view.FillValue(gdalNoData, sampleType);
             }
 
             return new TileOrStripResult { x = blockX, y = blockY, data = data};
@@ -1255,27 +1249,29 @@ public class GeoTiffImage : IGetTagable
             request = async () =>
             {
                 int sampleFormat = GetSampleFormat();
-                uint bitsForCurrentSample = GetBitsForSample(sampleToUse); 
+                uint bitsForCurrentSample = GetBitsForSample(sampleToUse);
                 byte[] data = await poolOrDecoder.DecodeAsync(this, sliceBytes, predictor);
-                
+
                 if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
                 {
                     if (bitsForCurrentSample == 1)
                     {
                         // The space needed to store your bits, rounded up to the nearest 8 bits.
-                        int NearestMultipleCeil(int value, int multiple) => ((value + multiple - 1) / multiple) * multiple;
+                        int NearestMultipleCeil(int value, int multiple) =>
+                            ((value + multiple - 1) / multiple) * multiple;
 
                         // Bits are arranged by row. However, they are byte-padded, so e.g. if your image width
                         // is 50, you'll have something like this:
                         //  11111111 11111111 11111111 11111111 11111111 11111111 11000000 row 1
                         //  11111111 11111111 11111111 11111111 11111111 11111111 11000000 row 2 
                         // with 50 valid bits + 6 padding bits for byte alignment
-                        
+
                         var bitsPerRow = NearestMultipleCeil((int)Width, 8);
-                        var nRows = data.Length * 8 / bitsPerRow; // doesn't have to be GetTileOrStripWidth(), could be less if it's an end strip
-                        
+                        var nRows = data.Length * 8 /
+                                    bitsPerRow; // doesn't have to be GetTileOrStripWidth(), could be less if it's an end strip
+
                         byte[] output = new byte[(int)Width * nRows];
-                        
+
                         int outputIndex = 0;
                         int rowBitIndex = 0;
 
@@ -1287,7 +1283,7 @@ public class GeoTiffImage : IGetTagable
                                 {
                                     output[outputIndex++] = (byte)((b >> n) & 1); // get nth bit from a byte
                                 }
-                                
+
                                 rowBitIndex++;
                                 if (rowBitIndex >= bitsPerRow)
                                 {
@@ -1298,7 +1294,9 @@ public class GeoTiffImage : IGetTagable
 
                         return output;
                     }
-                    throw new NotSupportedException($"Only bit data normalization is supported. SampleFormat is {sampleFormat}, bitsForCurrentSample is {(int)bitsForCurrentSample}");
+
+                    throw new NotSupportedException(
+                        $"Only bit data normalization is supported. SampleFormat is {sampleFormat}, bitsForCurrentSample is {(int)bitsForCurrentSample}");
                 }
 
                 return data;
