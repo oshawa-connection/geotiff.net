@@ -12,7 +12,7 @@ namespace Geotiff;
 /// </summary>
 public class GeoTiffImage : IGetTagable
 {
-    private readonly ImageFileDirectory FileDirectory;
+    private readonly ImageFileDirectory fileDirectory;
     
     private readonly bool littleEndian;
     private readonly bool cache;
@@ -20,7 +20,7 @@ public class GeoTiffImage : IGetTagable
     private readonly Dictionary<ulong, byte[]>? tileCache;
     private readonly bool isTiled;
     private readonly ushort planarConfiguration;
-    private ulong[]? StripOffsetsCached;
+    private ulong[]? stripOffsetsCached;
     private ulong[]? StripByteCountsCached;
     
     private ulong[]? TileOffsetsCached;
@@ -28,11 +28,11 @@ public class GeoTiffImage : IGetTagable
     
     private ushort[]? bitsPerSampleCached;
     
-    private byte[]? jpegTablesCached = null;
+    private byte[]? jpegTablesCached;
     
     public GeoTiffImage(ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {
-        this.FileDirectory = fileDirectory;
+        this.fileDirectory = fileDirectory;
         this.littleEndian = littleEndian;
         tileCache = cache ? new Dictionary<ulong, byte[]>() : null;
 
@@ -64,7 +64,7 @@ public class GeoTiffImage : IGetTagable
     /// <returns></returns>
     public bool HasValidTiePoints()
     {
-        var tiePoint = FileDirectory.GetTag(TagFields.ModelTiepoint);
+        var tiePoint = fileDirectory.GetTag(TagFields.ModelTiepoint);
         if (tiePoint is null)
         {
             return false;
@@ -128,7 +128,7 @@ public class GeoTiffImage : IGetTagable
     /// <returns></returns>
     public IEnumerable<Tag> GetAllRawTags()
     {
-        return this.FileDirectory.RawFileDirectory.Values;
+        return this.fileDirectory.RawFileDirectory.Values;
     }
     
     /// <summary>
@@ -138,7 +138,7 @@ public class GeoTiffImage : IGetTagable
     /// <returns></returns>
     public IEnumerable<Tag> GetAllKnownTags()
     {
-        return this.FileDirectory.TagDictionary.Values;
+        return this.fileDirectory.TagDictionary.Values;
     }
     
     
@@ -150,7 +150,7 @@ public class GeoTiffImage : IGetTagable
     /// <returns></returns>
     public Tag? GetTag(int id)
     {
-        return this.FileDirectory.GetTag(id);
+        return this.fileDirectory.GetTag(id);
     }
     
     /// <summary>
@@ -160,14 +160,34 @@ public class GeoTiffImage : IGetTagable
     /// <returns></returns>
     public Tag? GetTag(string name)
     {
-        return this.FileDirectory.GetTag(name);
+        return this.fileDirectory.GetTag(name);
+    }
+    
+    internal Tag GetTagRequired(string name)
+    {
+        var found = this.fileDirectory.GetTag(name);
+        if (found is null)
+        {
+            throw new InvalidGeoTiffException($"Tag '{name}' not found.");
+        }
+        return found;
     }
 
+    /// <summary>
+    /// Check for presence of tag by name
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
     public bool HasTag(string name)
     {
         return this.GetTag(name) is not null;
     }
 
+    /// <summary>
+    /// Check for presence of tag by id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     public bool HasTag(int id)
     {
         return this.GetTag(id) is not null;
@@ -175,7 +195,7 @@ public class GeoTiffImage : IGetTagable
 
     public Tag GetGeoTag(string name)
     {
-        return this.FileDirectory.GetGeoTag(name);
+        return this.fileDirectory.GetGeoTag(name);
     }
 
     /// <summary>
@@ -208,7 +228,7 @@ public class GeoTiffImage : IGetTagable
     {
         get
         {
-            var imageWidthTag = this.GetTag(TagFields.ImageWidth);
+            var imageWidthTag = this.GetTagRequired(TagFields.ImageWidth);
             return imageWidthTag.GetAsULong();
         }
     }
@@ -221,7 +241,7 @@ public class GeoTiffImage : IGetTagable
     {
         get
         {
-            var imageLengthTag = this.GetTag(TagFields.ImageLength);
+            var imageLengthTag = this.GetTagRequired(TagFields.ImageLength);
             return imageLengthTag.GetAsULong();    
         }
     }
@@ -367,7 +387,7 @@ public class GeoTiffImage : IGetTagable
     /// <returns></returns>
     public ushort GetBitsForSample(int sampleIndex)
     {
-        ushort[] bitsPerSample = GetTag(TagFields.BitsPerSample).GetUShortArray();
+        ushort[] bitsPerSample = GetTagRequired(TagFields.BitsPerSample).GetUShortArray();
         return bitsPerSample[sampleIndex];
     }
     
@@ -380,7 +400,7 @@ public class GeoTiffImage : IGetTagable
         {
             if (bitsPerSampleCached is null)
             {
-                var tag = GetTag(TagFields.BitsPerSample);
+                var tag = GetTagRequired(TagFields.BitsPerSample);
                 var bitsPerSampleArray = tag.GetUShortArray();
                 bitsPerSampleCached = bitsPerSampleArray;
             }
@@ -389,7 +409,7 @@ public class GeoTiffImage : IGetTagable
         }
     }
     
-    private ushort[]? sampleFormatCached = null;
+    private ushort[]? sampleFormatCached;
     
     /// <summary>
     /// Getter that is cached for performance reasons.
@@ -482,7 +502,7 @@ public class GeoTiffImage : IGetTagable
     /// </summary>
     public ulong GetSampleByteSize(int i)
     {
-        var bitsPerSample = GetTag(TagFields.BitsPerSample).GetAsULongArray();
+        var bitsPerSample = GetTagRequired(TagFields.BitsPerSample).GetAsULongArray();
         if (i >= bitsPerSample.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(i), $"Sample index {i} is out of range.");
@@ -515,7 +535,7 @@ public class GeoTiffImage : IGetTagable
     {
         if (isTiled)
         {
-            var tileLengthTag = GetTag(TagFields.TileLength);
+            var tileLengthTag = GetTagRequired(TagFields.TileLength);
             return tileLengthTag.GetAsULong();
         }
         
@@ -568,7 +588,7 @@ public class GeoTiffImage : IGetTagable
             return TileOffsetsCached;
         }
         
-        var stripOffsetsTag = GetTag(TagFields.TileOffsets);
+        var stripOffsetsTag = GetTagRequired(TagFields.TileOffsets);
         TileOffsetsCached = stripOffsetsTag.GetAsULongArray();
         return TileOffsetsCached;
     }
@@ -597,14 +617,14 @@ public class GeoTiffImage : IGetTagable
     /// <returns></returns>
     private ulong[] GetStripOffsets()
     {
-        if (StripOffsetsCached is not null)
+        if (stripOffsetsCached is not null)
         {
-            return StripOffsetsCached;
+            return stripOffsetsCached;
         }
         
-        var stripOffsetsTag = GetTag(TagFields.StripOffsets);
-        StripOffsetsCached = stripOffsetsTag.GetAsULongArray();
-        return StripOffsetsCached;
+        var stripOffsetsTag = GetTagRequired(TagFields.StripOffsets);
+        stripOffsetsCached = stripOffsetsTag.GetAsULongArray();
+        return stripOffsetsCached;
     }
 
     /// <summary>
@@ -671,8 +691,6 @@ public class GeoTiffImage : IGetTagable
                 }
 
                 break;
-            default:
-                break;
         }
         
         throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
@@ -729,61 +747,6 @@ public class GeoTiffImage : IGetTagable
 
                 break;
             default:
-                break;
-        }
-
-        throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
-    }
-
-
-    /// <summary>
-    /// TODO: Check why there are two overloads for this method.
-    /// TODO: this is inefficient as a copy happens, which doens't happen in JS. It only creates a typed view over the data.
-    /// </summary>
-    /// <param name="format"></param>
-    /// <param name="bitsPerSample"></param>
-    /// <param name="buffer"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    private DataView DataViewForType(int format, ulong bitsPerSample, int size)
-    {
-        switch (format)
-        {
-            case 1: // unsigned integer data
-                if (bitsPerSample <= 8)
-                {
-                    return new DataView(size, GeotiffSampleDataType.UInt8);
-                }
-                else if (bitsPerSample <= 16)
-                {
-                    return new DataView(size, GeotiffSampleDataType.UInt16);
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return new DataView(size, GeotiffSampleDataType.UInt32);
-                }
-                break;
-            case 2: // twos complement signed integer data
-                switch (bitsPerSample)
-                {
-                    case 8:
-                        return new DataView(size, GeotiffSampleDataType.Int8);
-                    case 16:
-                        return new DataView(size, GeotiffSampleDataType.Int16);
-                    case 32:
-                        return new DataView(size, GeotiffSampleDataType.Int32);
-                }
-                break;
-            case 3: // floating point data
-                switch (bitsPerSample)
-                {
-                    case 16:
-                    case 32:
-                        return new DataView(size, GeotiffSampleDataType.Float32);
-                    case 64:
-                        return new DataView(size,GeotiffSampleDataType.Float64);
-                }
-
                 break;
         }
 
@@ -910,7 +873,7 @@ public class GeoTiffImage : IGetTagable
         {
             for (ulong xTile = minXTile; xTile < maxXTile; ++xTile)
             {
-                Task<TileOrStripResult> getPromise = null;
+                Task<TileOrStripResult>? getPromise = null;
                 if (planarConfiguration == 1)
                 {
                     getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
@@ -1103,7 +1066,12 @@ public class GeoTiffImage : IGetTagable
         };
     }
 
-    public IEnumerable<ImagePixelWindow> GetBlockImagePixelWindows(ImagePixelWindow imageWindow = null)
+    /// <summary>
+    /// Get all block ImagePixelWindows that cover a bigger ImagePixelWindow
+    /// </summary>
+    /// <param name="imageWindow"></param>
+    /// <returns></returns>
+    public IEnumerable<ImagePixelWindow> GetBlockImagePixelWindows(ImagePixelWindow? imageWindow = null)
     {
         if (imageWindow == null)
         {
@@ -1421,7 +1389,7 @@ public class GeoTiffImage : IGetTagable
     public CoordinateReferenceSystemInfo? GetCoordinateReferenceSystemInfo()
     {
         var crsInfo = new CoordinateReferenceSystemInfo();
-        var modelTypeTag = FileDirectory.GetGeoTag("GTModelTypeGeoKey");
+        var modelTypeTag = fileDirectory.GetGeoTag("GTModelTypeGeoKey");
         if (modelTypeTag == null)
         {
             return null;
@@ -1435,8 +1403,8 @@ public class GeoTiffImage : IGetTagable
         
         if (crsInfo.ModelType == 1)//projected CS
         {
-            var projectedCSTypeGeoKey = FileDirectory.GetGeoTag("ProjectedCSTypeGeoKey");
-            var projectedCRSGeoKey = FileDirectory.GetGeoTag("ProjectedCRSGeoKey");
+            var projectedCSTypeGeoKey = fileDirectory.GetGeoTag("ProjectedCSTypeGeoKey");
+            var projectedCRSGeoKey = fileDirectory.GetGeoTag("ProjectedCRSGeoKey");
             //GeoTIFF v1.0
             if (projectedCSTypeGeoKey != null)
             {
@@ -1450,9 +1418,9 @@ public class GeoTiffImage : IGetTagable
         }
         else if (crsInfo.ModelType is 2 or 3)//geographic CS
         {
-            var geographicTypeGeoKey = FileDirectory.GetGeoTag("GeographicTypeGeoKey");
-            var geodeticCRSGeoKey = FileDirectory.GetGeoTag("GeodeticCRSGeoKey");
-            var geogGeodeticCRSGeoKey = FileDirectory.GetGeoTag("GeogGeodeticDatumGeoKey");
+            var geographicTypeGeoKey = fileDirectory.GetGeoTag("GeographicTypeGeoKey");
+            var geodeticCRSGeoKey = fileDirectory.GetGeoTag("GeodeticCRSGeoKey");
+            var geogGeodeticCRSGeoKey = fileDirectory.GetGeoTag("GeogGeodeticDatumGeoKey");
             if (geographicTypeGeoKey != null) //GeoTIFF v1.0
             {
                 crsInfo.GeographicCRS = geographicTypeGeoKey.GetUShort();   
@@ -1480,8 +1448,8 @@ public class GeoTiffImage : IGetTagable
             throw new GeoTiffException("Unsupported CRS model type");
         }
 
-        var verticalCSTypeGeoKey = FileDirectory.GetGeoTag("VerticalCSTypeGeoKey");
-        var verticalGeoKey = FileDirectory.GetGeoTag("VerticalGeoKey");
+        var verticalCSTypeGeoKey = fileDirectory.GetGeoTag("VerticalCSTypeGeoKey");
+        var verticalGeoKey = fileDirectory.GetGeoTag("VerticalGeoKey");
         if (verticalCSTypeGeoKey != null) //GeoTIFF v1.0
         {
             crsInfo.VerticalModelCRS = verticalCSTypeGeoKey.GetUShort();
