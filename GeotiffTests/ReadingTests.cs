@@ -968,4 +968,26 @@ public class ReadingTests : GeoTiffTestBaseClass
         cyanSample.GetByteArray().ShouldAllBe(d => d == 40);
 
     }
+
+
+    [TestMethod]
+    public async Task TestGDALSparseInt32()
+    {
+        string sparse32 = Path.Combine(GetDataFolderPath(), "sparse_int32.tif");
+        await using var fsSource = new FileStream(sparse32, FileMode.Open, FileAccess.Read);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRasterAsync();
+    }
+    
+    [TestMethod]
+    public async Task TestGDALSparseFloat64()
+    {
+        string sparse32 = Path.Combine(GetDataFolderPath(), "sparse_float64.tif");
+        await using var fsSource = new FileStream(sparse32, FileMode.Open, FileAccess.Read);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRasterAsync();
+        Console.WriteLine("HELLO WORLD");
+    }
 }

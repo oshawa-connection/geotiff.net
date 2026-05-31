@@ -46,9 +46,9 @@ public class MaskedGeoTiffReader
     public static async Task<MaskedGeoTiffReader> FromNoDataGeotiffAsync(GeoTiff tiff)
     {
         var firstImage = await tiff.GetImageAsync(0);
-        var noDataString = firstImage.GDAL_NODATA;
+        var noDataString = firstImage.GetGdalNoData();
         
-        if (firstImage.GDAL_NODATA == null)
+        if (noDataString == null)
         {
             throw new InvalidMaskedGeoTiffException("NO_DATA value was not set");
         }

@@ -457,17 +457,14 @@ public class GeoTiffImage : IGetTagable
     /// <summary>
     /// Returns the raw string value of GDAL_NODATA tag, or null if it is not set. 
     /// </summary>
-    public string? GDAL_NODATA
+    public string? GetGdalNoData()
     {
-        get
+        var gdalNoDataTag = GetTag("GDAL_NODATA");
+        if (gdalNoDataTag is null)
         {
-            var gdalNoDataTag = GetTag("GDAL_NODATA");
-            if (gdalNoDataTag is null)
-            {
-                return null;
-            }
-            return gdalNoDataTag.GetString();
+            return null;
         }
+        return gdalNoDataTag.GetString();
     }
     
     /// <summary>
@@ -1127,8 +1124,6 @@ public class GeoTiffImage : IGetTagable
     
     /// <summary>
     /// Check the sample types before reading them.
-    /// Technically TIFF does support different types for each sample, but almost no software/ tooling supports this.
-    /// (including geotiff.NET for that matter). If your use case requires this please file an issue on GitHub.
     /// </summary>
     /// <param name="sampleIndex"></param>
     /// <returns></returns>
@@ -1142,32 +1137,26 @@ public class GeoTiffImage : IGetTagable
         switch (format)
         {
             case 1: // unsigned integer data
-                if (bitsPerSample <= 8)
+                switch (bitsPerSample)
                 {
-                    return GeotiffSampleDataType.UInt8;
-                }
-                else if (bitsPerSample <= 16)
-                {
-                    return GeotiffSampleDataType.UInt16;
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return GeotiffSampleDataType.UInt32;
+                    case <= 8:
+                        return GeotiffSampleDataType.UInt8;
+                    case <= 16:
+                        return GeotiffSampleDataType.UInt16;
+                    case <= 32:
+                        return GeotiffSampleDataType.UInt32;
                 }
 
                 break;
             case 2: // twos complement signed integer data
-                if (bitsPerSample <= 8)
+                switch (bitsPerSample)
                 {
-                    return GeotiffSampleDataType.Int8;
-                }
-                else if (bitsPerSample <= 16)
-                {
-                    return GeotiffSampleDataType.Int16;
-                }
-                else if (bitsPerSample <= 32)
-                {
-                    return GeotiffSampleDataType.Int32;
+                    case <= 8:
+                        return GeotiffSampleDataType.Int8;
+                    case <= 16:
+                        return GeotiffSampleDataType.Int16;
+                    case <= 32:
+                        return GeotiffSampleDataType.Int32;
                 }
 
                 break;
@@ -1227,7 +1216,7 @@ public class GeoTiffImage : IGetTagable
             byteCount = GetStripByteCounts().ElementAt((int)index);
         }
 
-        if (byteCount == 0)
+        if (byteCount == 0) // for GDAL_SPARSE
         {
             ulong nPixels = GetBlockHeight(blockY) * GetTileOrStripWidth();
             ulong bytesPerPixel = planarConfiguration == 2
@@ -1239,12 +1228,11 @@ public class GeoTiffImage : IGetTagable
             Array view = GetArrayForSample(sampleToUse, data);
 
             int valueToFill = 0;
-            
-            
-            int? temp = GetGDALNoData(); // TODO: Do not fill this with an int
-            if (temp is not null)
+
+            var gdalNoData = GetGdalNoData();
+            if (gdalNoData is not null)
             {
-                valueToFill = (int)temp;
+                valueToFill = int.Parse(gdalNoData);
             }
 
             // TODO: Note that this will not actually set the values of the underlying ArrayBuffer.
@@ -1363,24 +1351,6 @@ public class GeoTiffImage : IGetTagable
             return Height - (y * GetTileOrStripHeight());
         }
     }
-    
-    
-    /// <summary>
-    /// TODO: remove
-    /// </summary>
-    /// <returns></returns>
-    [Obsolete]
-    private int? GetGDALNoData()
-    {
-        if (GDAL_NODATA == null)
-        {
-            return null;
-        }
-
-        string? str = GDAL_NODATA;
-        return int.Parse(str.Substring(0, str.Length - 1));
-    }
-    
     
     /// <summary>
     /// Experimental. Returns null if the CRS is not set. 

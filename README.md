@@ -1,14 +1,20 @@
 # geotiff.net
 
-A port of [geotiff.js](https://geotiffjs.github.io/) to .Net.
+An extended port of [geotiff.js](https://geotiffjs.github.io/) to .Net.
 
 This project adds native .Net handling of geotiff files, the benefits being:
 - Easier cross platform compatibility (over GDAL which requires native dependencies to be compiled on the target platform)
 - Asynchronous streamed reads from AWS, HTTP servers and filesystems.
 - Easier debugging
 - Extensibility in C# (e.g. define your own source types, decoders, sidecar file handlers)
+
+
+Some features of this library are:
 - Support for multi-image, multi-tile, multi-strip and compressed tiffs. Currently supported compression methods are Deflate, packbits, LZW and JPEG.
-- Support for `.ovr` and `.msk` sidecar files.
+- Support for `.ovr`, `.msk` and `.tfw` sidecar files.
+- Support for masked raster reading for external mask files, internal bit masks, and GDAL nodata.
+- Support for signed and unsigned byte, int16, int32, int64, rationals, float32 and float64.
+- Support for GDAL sparse rasters
 
 It also opens up the .Net ecosystem to GIS developers, for example, desktop applications, ASP.Net apps and game engines. Here's a cool screenshot of a geotiff visualised in 3D using Unity using this library:
 
