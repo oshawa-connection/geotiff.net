@@ -21,11 +21,37 @@ public class Raster : IGetTagable
         this.ParentImage = parentImage;
         this.TilesCovered = tilesCovered;
     }
-
+    
     public ulong? TilesCovered = null;
     public AffineTransformation? AffineTransformation { get; set; }
     public ulong Height { get; set; }
     public ulong Width { get; set; }
+    private MaskedGeoTiffStrategy _MaskStrategy = MaskedGeoTiffStrategy.IS_NOT_MASKED;
+    public MaskedGeoTiffStrategy MaskStrategy
+    {
+        get
+        {
+            return _MaskStrategy;
+        }
+        set
+        {
+            _MaskStrategy = value;
+        }
+    }
+    
+    private RasterSample? _MaskSample { get; set; }
+    
+    public RasterSample? MaskSample
+    {
+        get
+        {
+            return _MaskSample;
+        }
+        set
+        {
+            _MaskSample = value;
+        }
+    }
     
     public readonly GeoTiffImage ParentImage;
     /// <summary>
@@ -34,7 +60,7 @@ public class Raster : IGetTagable
     /// rest of the samples won't be present.
     /// </summary>
     private SparseList<RasterSample> SampleData { get; set; }
-
+    
     public int NumberOfSamples
     {
         get
@@ -48,9 +74,13 @@ public class Raster : IGetTagable
         return this.SampleData.GetIndices();
     }
 
-    public IEnumerable<RasterSample> GetSamples()
+    /// <summary>
+    /// Get all the samples, disregarding index, for operations such as looping.
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<RasterSample> GetAllReadSamples()
     {
-        return this.SampleData.ToList();
+        return this.SampleData.ToList(); // TODO: replace with IEnumerable
     }
     
     /// <summary>

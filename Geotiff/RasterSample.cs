@@ -1,4 +1,5 @@
 using Geotiff.Exceptions;
+using System.Collections;
 
 namespace Geotiff;
 
@@ -9,6 +10,8 @@ public class RasterSample
 {
     public ulong Height { get; set; }
     public ulong Width { get; set; }
+    
+    private BitArray MaskBits { get; set; }
     
     protected double[]? Float64Result { get; set; }
     protected float[]? Float32Result { get; set; }
@@ -26,13 +29,14 @@ public class RasterSample
     
     protected readonly GeoTiffImage ParentImage;
     public readonly GeotiffSampleDataType SampleType;
-
+    public readonly int Size;
 
     private RasterSample(ulong width, ulong height, GeoTiffImage parentImage)
     {
         this.Width = width;
         this.Height = height;
         this.ParentImage = parentImage;
+        this.Size = 0;
     }
     
     public RasterSample(uint width, uint height, GeoTiffImage parentImage,
@@ -508,5 +512,15 @@ public class RasterSample
         }
 
         return result;
+    }
+
+    public void SetMaskedAtIndex(int index, bool isMasked = true)
+    {
+        if (this.MaskBits is null)
+        {
+            this.MaskBits = new BitArray(this.Size); // all initially set to false
+        }
+
+        this.MaskBits[index] = isMasked;
     }
 }

@@ -46,7 +46,7 @@ public class MultiGeoTiff : GeoTiff
                 if (index == visited) {
                     var ifd = await imageFile.RequestIFDAsync(relativeIndex);
                     return new GeoTiffImage(
-                        ifd, this.IsLittleEndian, false,
+                        this, ifd, this.IsLittleEndian, false,
                         imageFile.Source
                     );
                 }

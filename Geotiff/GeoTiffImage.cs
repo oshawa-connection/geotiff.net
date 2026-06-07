@@ -13,7 +13,14 @@ namespace Geotiff;
 public class GeoTiffImage : IGetTagable
 {
     private readonly ImageFileDirectory fileDirectory;
+    // TODO: This breaks the open closed principle. Temporary implementation detail, can be re-worked later.
     
+    private double? noDataValue;
+    public const int ALPHA_BAND_NO_DATA = 0;
+    public const byte INTERNAL_MASK_YES_DATA_VALUE = 1;
+    public const byte EXTERNAL_MASK_YES_DATA_VALUE = 255;
+
+    private readonly GeoTiff parentFile;
     private readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
@@ -30,8 +37,11 @@ public class GeoTiffImage : IGetTagable
     
     private byte[]? jpegTablesCached;
     
-    public GeoTiffImage(ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
+    
+    
+    internal GeoTiffImage(GeoTiff parentFile, ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {
+        this.parentFile = parentFile;
         this.fileDirectory = fileDirectory;
         this.littleEndian = littleEndian;
         tileCache = cache ? new Dictionary<ulong, byte[]>() : null;
@@ -56,6 +66,8 @@ public class GeoTiffImage : IGetTagable
         this.source = source;
         var _ = this.JpegTables;// Populate this to cache it before decoding starts
     }
+    
+
     
     /// <summary>
     /// Checks the ModelTiepoint is set and valid. According to spec: The ModelTiepointTag SHALL have type = DOUBLE
@@ -720,7 +732,10 @@ public class GeoTiffImage : IGetTagable
     /// <returns></returns>
     /// <exception cref="GeoTiffException"></exception>
     /// <exception cref="InvalidGeoTiffException"></exception>
-    public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null, CancellationToken? cancellationToken = null)
+    public async Task<Raster> ReadRasterAsync(
+        ImagePixelWindow? window = null, 
+        IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
     {
         ulong[] imageWindow = new ulong[] { 0, 0, Width, Height };
 
@@ -754,7 +769,7 @@ public class GeoTiffImage : IGetTagable
         for (int i = 0; i < samples.Count(); ++i)
         {
             var sampleDataType = SampleDataTypeForSample(samples.ElementAt(i));
-            rasterSamples[samples.ElementAt(i)] = new RasterSample(imageWindowWidth, imageWindowHeight, this, sampleDataType, (int)numPixels);
+            rasterSamples[samples.ElementAt(i)] = new RasterSample(imageWindowWidth, imageWindowHeight, this,  sampleDataType, (int)numPixels);
         }
 
         var blockInfo = GetBlockInfo(imageWindow);
@@ -967,9 +982,88 @@ public class GeoTiffImage : IGetTagable
         }
 
         await Task.WhenAll(promises);
-        
         return new Raster(rasterSamples, this.GetOrCalculateAffineTransformation(), imageWindowWidth, imageWindowHeight, this, (maxYTile - minYTile) * (maxXTile - minXTile));
     }
+
+    
+    /// <summary>
+    /// Experimental
+    /// Consider masking, if the raster is masked. If it is not masked, this is the same as calling ReadRasterAsync
+    /// </summary>
+    /// <param name="window"></param>
+    /// <param name="sampleSelection"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public virtual async Task<Raster> ReadRasterMaskedAsync(
+        ImagePixelWindow? window = null,
+        IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        if (this.parentFile.IsMasked is false)
+        {
+            return await ReadRasterAsync(window, sampleSelection, cancellationToken);
+        }
+        
+        if (this.parentFile._strategy == MaskedGeoTiffStrategy.ALPHA_BAND)
+        {
+            if (sampleSelection?.Contains(3) is false)
+            {
+                throw new ArgumentException("When using alpha band masking, you must read the alpha band to consider masking");
+            }
+        }
+        
+        var readResult = await ReadRasterAsync(window, sampleSelection, cancellationToken);
+        readResult.MaskStrategy = this.parentFile._strategy;
+        
+        if (this.parentFile._strategy is MaskedGeoTiffStrategy.INTERNAL_MASK or MaskedGeoTiffStrategy.EXTERNAL_MSK_FILE)
+        {
+            var maskImage = await this.parentFile.GetImageAsync(1);
+            var maskRead = await maskImage.ReadRasterAsync(window, sampleSelection, cancellationToken);
+            readResult.MaskSample = maskRead.GetSampleAt(0);
+
+        }
+
+        if (this.parentFile._strategy == MaskedGeoTiffStrategy.NO_DATA_VALUE)
+        {
+            // TODO: Write this out fully with all types
+            var noDataValue = Double.Parse(this.GetGdalNoData());
+            foreach (RasterSample sample in readResult.GetAllReadSamples())
+            {
+                var doubles = sample.GetAsDoubleArray();
+                for (var i = 0; i < doubles.Length; i++)
+                {
+                    var sampleValue = doubles[i];
+                    if (doubles[i] == sampleValue)
+                    {
+                        sample.SetMaskedAtIndex(i);
+                    }
+                }
+            }
+        }
+
+        return readResult;
+    }
+    
+    // public async Task<Raster> ReadMaskedRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null,
+    //     CancellationToken? cancellationToken = null)
+    // {
+    //     if (this._strategy is MaskedGeoTiffStrategy.ALPHA_BAND or MaskedGeoTiffStrategy.NO_DATA_VALUE)
+    //     {
+    //         var readResult = await this.ReadRasterAsync(window, sampleSelection, cancellationToken);
+    //         return new MaskedRaster(
+    //             readResult, 
+    //             null, 
+    //             readResult.AffineTransformation, 
+    //             readResult.Width, 
+    //             readResult.Height, 
+    //             this,
+    //             this._strategy,
+    //             this.noDataValue
+    //         );
+    //     }
+    //     
+    //     throw new GeoTiffException("Exception occurred during reading of masked geotiff");
+    // }
 
 
     private GeoTiffBlockInfo GetBlockInfo(ulong[]? imageWindow = null)

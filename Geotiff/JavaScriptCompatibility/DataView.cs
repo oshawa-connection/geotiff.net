@@ -3,32 +3,37 @@ using Geotiff.Exceptions;
 
 namespace Geotiff.JavaScriptCompatibility;
 
+/// <summary>
+/// This is the .Net equivalent of JS DataView in .Net. A wrapper around Span that checks types when needed, and
+/// takes account of endianness
+/// DataViews can be typed or untyped.
+/// </summary>
 internal class DataView
 {
     private readonly byte[] _buffer;
-    public readonly GeotiffSampleDataType? Type;
+    private readonly GeotiffSampleDataType? _type;
 
     public DataView(byte[] buffer, GeotiffSampleDataType? type = null)
     {
         _buffer = buffer;
-        Type = type;
+        _type = type;
     }
     
-    public Span<byte> Span => _buffer;
-    public ReadOnlySpan<byte> ReadOnlySpan => _buffer;
+    private Span<byte> Span => _buffer;
+    private ReadOnlySpan<byte> ReadOnlySpan => _buffer;
 
     public int Length => _buffer.Length;
 
     private void CheckType(GeotiffSampleDataType expected, bool read)
     {
-        if (Type is null)
+        if (_type is null)
             return;
 
-        if (Type != expected)
+        if (_type != expected)
         {
             string op = read ? "read" : "write";
             throw new GeoTiffException(
-                $"Invalid operation, trying to {op} a {expected} on an array of type {Type}"
+                $"Invalid operation, trying to {op} a {expected} on an array of type {_type}"
             );
         }
     }

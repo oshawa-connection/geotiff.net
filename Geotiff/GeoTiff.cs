@@ -13,6 +13,9 @@ public class GeoTiff
     private readonly bool _bigTiff;
     protected internal readonly ulong FirstIFDOffset;
     public readonly bool IsLittleEndian;
+    
+    public MaskedGeoTiffStrategy _strategy;
+    
     /// <summary>
     /// Prevents us making read requests if GetImageCount is called multiple times
     /// </summary>
@@ -26,6 +29,7 @@ public class GeoTiff
         this._bigTiff = bigTiff;
         this.FirstIFDOffset = firstIFDOffset;
         this.finalImageCount = null;
+        this._strategy = MaskedGeoTiffStrategy.IS_NOT_MASKED;
     }
     
     private static bool GetBomMarker(DataView dv)
@@ -92,40 +96,41 @@ public class GeoTiff
     }
     
     
-    /// <summary>
-    /// If you provide a non-seekable stream, the entire stream will be read into memory.
-    /// </summary>
-    /// <param name="stream"></param>
-    /// <returns></returns>
-    public static GeoTiff FromStream(Stream stream)
-    {
-        Stream seekableStream;
-        if (stream.CanSeek)
-        {
-            seekableStream = stream;
-        }
-        else
-        {
-            seekableStream = new MemoryStream();
-            stream.CopyTo(seekableStream);
-            seekableStream.Position = 0;
-        }
-        
-        byte[] buffer = new byte[1024];
-        // having less bytes than requested is ok in this situation. Up to 1024, but less is ok.
-        seekableStream.Read(buffer, 0, buffer.Length);
-        
-        byte[]? arr = buffer.ToArray();
-        var dv = new DataView(arr);
-        bool isLittleEndian = GetBomMarker(dv);
-
-        bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
-        
-        var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
-        seekableStream.Position = 0;
-        var source = new FileSource(seekableStream);
-        return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
-    }
+    // /// <summary>
+    // /// Just an example for now, not fully featured.
+    // /// If you provide a non-seekable stream, the entire stream will be read into memory.
+    // /// </summary>
+    // /// <param name="stream"></param>
+    // /// <returns></returns>
+    // public static GeoTiff FromStream(Stream stream)
+    // {
+    //     Stream seekableStream;
+    //     if (stream.CanSeek)
+    //     {
+    //         seekableStream = stream;
+    //     }
+    //     else
+    //     {
+    //         seekableStream = new MemoryStream();
+    //         stream.CopyTo(seekableStream);
+    //         seekableStream.Position = 0;
+    //     }
+    //     
+    //     byte[] buffer = new byte[1024];
+    //     // having less bytes than requested is ok in this situation. Up to 1024, but less is ok.
+    //     seekableStream.Read(buffer, 0, buffer.Length);
+    //     
+    //     byte[]? arr = buffer.ToArray();
+    //     var dv = new DataView(arr);
+    //     bool isLittleEndian = GetBomMarker(dv);
+    //
+    //     bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
+    //     
+    //     var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
+    //     seekableStream.Position = 0;
+    //     var source = new FileSource(seekableStream);
+    //     return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
+    // }
     
     
     /// <summary>
@@ -133,7 +138,7 @@ public class GeoTiff
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    public static async Task<GeoTiff> FromStreamAsync(Stream stream, CancellationToken? cancellationToken = null)
+    public static async Task<GeoTiff> FromStreamAsync(Stream stream, bool detectMask = true, CancellationToken? cancellationToken = null)
     {
         Stream seekableStream;
         if (stream.CanSeek)
@@ -165,31 +170,77 @@ public class GeoTiff
         {
             await seekableStream.ReadAsync(buffer, 0, buffer.Length);
         }
-         
         
-        byte[]? arr = buffer.ToArray();
-        var dv = new DataView(arr);
-        ushort value = dv.GetUInt16(0, true);
+        var dv = new DataView(buffer);
         bool isLittleEndian = GetBomMarker(dv);
 
         bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
         
-        var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
+        var firstIfdOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
         seekableStream.Position = 0;
         var source = new FileSource(seekableStream);
-        return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
-    }
+        var tiff = new GeoTiff(source, isLittleEndian, isBigTiff, firstIfdOffset);
 
+        
+        // Detect mask type. In the rare case we detect it wrong, the user probably won't be reading 
+        // from a mask anyway.
+        if (detectMask)
+        {
+            var firstImage = await tiff.GetImageAsync(0);
+            var noDataString = firstImage.GetGdalNoData();
+            if (noDataString != null)
+            {
+                tiff._strategy = MaskedGeoTiffStrategy.NO_DATA_VALUE;
+                return tiff;
+            }
+            
+            
+            var nSamples = firstImage.GetNumberOfSamples();
+            if (nSamples == 4)
+            {
+                tiff._strategy = MaskedGeoTiffStrategy.ALPHA_BAND;
+                return tiff;
+            }
+            
+            
+            if (await tiff.GetImageCountAsync() == 2)
+            {
+                var maskImage = await tiff.GetImageAsync(1);
+
+                if (maskImage.GetNumberOfSamples() != 1)
+                {
+                    // mask image should have only one sample
+                    return tiff;
+                }
+        
+                var maskSampleType = maskImage.GetSampleType(0);
+        
+                if (maskSampleType == GeotiffSampleDataType.UInt8)
+                {
+                    tiff._strategy = MaskedGeoTiffStrategy.INTERNAL_MASK;
+                    // throw new InvalidMaskedGeoTiffException("Masked raster mask image sample should be an unsigned byte type");
+                }
+            }
+            
+            // External mask will have to be an edge case as we can't detect the other filestream.
+        }
+        
+
+        return tiff;
+    }
+    
+    public bool IsMasked => this._strategy != MaskedGeoTiffStrategy.IS_NOT_MASKED;
+    
     private async Task<DataSlice> GetSliceAsync(ulong offset, ulong? size = null)
     {
         ulong fallbackSize = _bigTiff ? 4048ul : 1024ul;
-        ulong sizeToUse = size is null ? fallbackSize : (ulong)size;
+        ulong sizeToUse = size ?? fallbackSize;
         var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
         IEnumerable<byte[]>? results = await Source.FetchAsync(slices);
 
         return new DataSlice(
-            results.Single(), // TODO: Double check this.  
+            results.Single(),
             offset,
             IsLittleEndian,
             _bigTiff
@@ -236,7 +287,7 @@ public class GeoTiff
                 
                 if (value.DataType == TagDataType.ASCII)
                 {
-                    valueToSet = new Tag((int)keyId, key, GeoTiffTagValueResult.FromString(value.GetString().JSSubString(offset, offset + count - 1)), false); // TODO: Introduce methods to set tag value
+                    valueToSet = new Tag((int)keyId, key, GeoTiffTagValueResult.FromString(value.GetString().JSSubString(offset, offset + count - 1)), false);
                 }
                 else if (value.IsArray)
                 {
@@ -433,7 +484,7 @@ public class GeoTiff
 
         ImageFileDirectory? ifd = await RequestIFDAsync(index);
         return new GeoTiffImage(
-            ifd, IsLittleEndian, false, Source
+            this, ifd, IsLittleEndian, false, Source
         );
     }
 
