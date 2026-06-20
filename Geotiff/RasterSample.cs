@@ -36,7 +36,7 @@ public class RasterSample
         this.Width = width;
         this.Height = height;
         this.ParentImage = parentImage;
-        this.Size = 0;
+        this.Size = (int) (width * height); // used for array indexing
     }
     
     public RasterSample(uint width, uint height, GeoTiffImage parentImage,
@@ -161,6 +161,16 @@ public class RasterSample
         }
     }
 
+    public bool IsMaskedAtIndex(int index)
+    {
+        return this.MaskBits[index];
+    }
+
+    public bool IsMaskedAtIndex2D(int colIndex, int rowIndex)
+    {
+        return this.MaskBits[rowIndex * (int)Width + colIndex];
+    }
+    
     #region SetMethods
     
     public void SetUInt8(byte value, int index)
@@ -404,6 +414,18 @@ public class RasterSample
         return array;
     }
 
+
+    public IEnumerable<MaskedSampleValue<T>> ConvertToMaskedSampleValues<T>(IEnumerable<T> array)
+    {
+        var list = new List<MaskedSampleValue<T>>();
+        for (int i = 0; i < array.Count(); i++)
+        {
+            list.Add(new MaskedSampleValue<T>(array.ElementAt(i), this.IsMaskedAtIndex(i)));
+        }
+
+        return list;
+    }
+
     public double[,] GetAs2DDoubleArray()
     {
         var doubles = this.GetAsDoubleArray();
@@ -465,29 +487,29 @@ public class RasterSample
         return array;
     }
     
-    /// <summary>
-    /// This rearranges the data into a 2D array, indexed by result[pixelColumn, pixelRow] (x, y)
-    /// </summary>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    private T[,] To2DArrayReversed<T>(T[] array)
-    {
-        if ((ulong)array.Length != Height * Width)
-        {
-            throw new InvalidOperationException("RawArrayData length does not match Height * Width.");    
-        }
-
-        var result = new T[Width, Height];
-        for (uint col = 0; col < Width; col++)
-        {
-            for (uint row = 0; row < Height; row++)
-            {
-                var x = array[row * Width + col];
-                result[col, row] = x;
-            }
-        }
-        return result;
-    }
+    // /// <summary>
+    // /// This rearranges the data into a 2D array, indexed by result[pixelColumn, pixelRow] (x, y)
+    // /// </summary>
+    // /// <returns></returns>
+    // /// <exception cref="InvalidOperationException"></exception>
+    // private T[,] To2DArrayReversed<T>(T[] array)
+    // {
+    //     if ((ulong)array.Length != Height * Width)
+    //     {
+    //         throw new InvalidOperationException("RawArrayData length does not match Height * Width.");    
+    //     }
+    //
+    //     var result = new T[Width, Height];
+    //     for (uint col = 0; col < Width; col++)
+    //     {
+    //         for (uint row = 0; row < Height; row++)
+    //         {
+    //             var x = array[row * Width + col];
+    //             result[col, row] = x;
+    //         }
+    //     }
+    //     return result;
+    // }
     
     
     /// <summary>

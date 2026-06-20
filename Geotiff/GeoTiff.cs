@@ -14,7 +14,7 @@ public class GeoTiff
     protected internal readonly ulong FirstIFDOffset;
     public readonly bool IsLittleEndian;
     
-    public MaskedGeoTiffStrategy _strategy;
+    public MaskedGeoTiffStrategy _strategy; // todo: make private + give setter?
     
     /// <summary>
     /// Prevents us making read requests if GetImageCount is called multiple times

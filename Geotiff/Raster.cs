@@ -41,18 +41,6 @@ public class Raster : IGetTagable
     
     private RasterSample? _MaskSample { get; set; }
     
-    public RasterSample? MaskSample
-    {
-        get
-        {
-            return _MaskSample;
-        }
-        set
-        {
-            _MaskSample = value;
-        }
-    }
-    
     public readonly GeoTiffImage ParentImage;
     /// <summary>
     /// A SparseList of samples. Samples are indexed by their index in the

@@ -1012,22 +1012,29 @@ public class GeoTiffImage : IGetTagable
             }
         }
         
-        var readResult = await ReadRasterAsync(window, sampleSelection, cancellationToken);
-        readResult.MaskStrategy = this.parentFile._strategy;
+        var mainReadResult = await ReadRasterAsync(window, sampleSelection, cancellationToken);
+        mainReadResult.MaskStrategy = this.parentFile._strategy;
         
         if (this.parentFile._strategy is MaskedGeoTiffStrategy.INTERNAL_MASK or MaskedGeoTiffStrategy.EXTERNAL_MSK_FILE)
         {
             var maskImage = await this.parentFile.GetImageAsync(1);
             var maskRead = await maskImage.ReadRasterAsync(window, sampleSelection, cancellationToken);
-            readResult.MaskSample = maskRead.GetSampleAt(0);
-
+            var maskSample = maskRead.GetSampleAt(0);
+            var byteArray = maskSample.GetByteArray();
+            for (int i = 0; i < byteArray.Length; i++)
+            {
+                foreach (var sample in mainReadResult.GetAllReadSamples())
+                {
+                    sample.SetMaskedAtIndex(i,byteArray[i] != 1); // todo move this 1 to a constant
+                }
+            }
         }
 
         if (this.parentFile._strategy == MaskedGeoTiffStrategy.NO_DATA_VALUE)
         {
             // TODO: Write this out fully with all types
             var noDataValue = Double.Parse(this.GetGdalNoData());
-            foreach (RasterSample sample in readResult.GetAllReadSamples())
+            foreach (RasterSample sample in mainReadResult.GetAllReadSamples())
             {
                 var doubles = sample.GetAsDoubleArray();
                 for (var i = 0; i < doubles.Length; i++)
@@ -1041,7 +1048,7 @@ public class GeoTiffImage : IGetTagable
             }
         }
 
-        return readResult;
+        return mainReadResult;
     }
     
     // public async Task<Raster> ReadMaskedRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null,

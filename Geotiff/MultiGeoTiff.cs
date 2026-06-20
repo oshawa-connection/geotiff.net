@@ -10,8 +10,15 @@ public class MultiGeoTiff : GeoTiff
     private readonly GeoTiff mainFile;
     private readonly IEnumerable<GeoTiff> sidecarFileSources;
     private IEnumerable<int>? imageCounts;
+    
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="mainFile"></param>
+    /// <param name="sidecarFileSources"></param>
     public MultiGeoTiff(GeoTiff mainFile, IEnumerable<GeoTiff> sidecarFileSources) : base(mainFile.Source, mainFile.IsLittleEndian,mainFile.IsBifTIFF,mainFile.FirstIFDOffset)
     {
+        // TODO: Some bad writers might write the main file as bigtiff and the sidecar file as small tiff or vice versa.
         this.mainFile = mainFile;
         this.sidecarFileSources = sidecarFileSources;
     }
