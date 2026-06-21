@@ -4,6 +4,7 @@ using Geotiff.JavaScriptCompatibility;
 namespace Geotiff.Compression;
 
 /// <summary>
+/// TODO: make static
 /// </summary>
 public class DecoderRegistry
 {

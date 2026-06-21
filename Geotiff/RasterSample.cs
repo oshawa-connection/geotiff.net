@@ -1,4 +1,5 @@
 using Geotiff.Exceptions;
+using System.Collections;
 
 namespace Geotiff;
 
@@ -9,6 +10,8 @@ public class RasterSample
 {
     public ulong Height { get; set; }
     public ulong Width { get; set; }
+    
+    private BitArray MaskBits { get; set; }
     
     protected double[]? Float64Result { get; set; }
     protected float[]? Float32Result { get; set; }
@@ -26,13 +29,14 @@ public class RasterSample
     
     protected readonly GeoTiffImage ParentImage;
     public readonly GeotiffSampleDataType SampleType;
-
+    public readonly int Size;
 
     private RasterSample(ulong width, ulong height, GeoTiffImage parentImage)
     {
         this.Width = width;
         this.Height = height;
         this.ParentImage = parentImage;
+        this.Size = (int) (width * height); // used for array indexing
     }
     
     public RasterSample(uint width, uint height, GeoTiffImage parentImage,
@@ -157,6 +161,24 @@ public class RasterSample
         }
     }
 
+    public bool IsMaskedAtIndex(int index)
+    {
+        if (this.MaskBits is null)
+        {
+            return false;
+        }
+        return this.MaskBits[index];
+    }
+
+    public bool IsMaskedAtIndex2D(int colIndex, int rowIndex)
+    {
+        if (this.MaskBits is null)
+        {
+            return false;
+        }
+        return this.MaskBits[rowIndex * (int)Width + colIndex];
+    }
+    
     #region SetMethods
     
     public void SetUInt8(byte value, int index)
@@ -400,6 +422,19 @@ public class RasterSample
         return array;
     }
 
+
+    public MaskedSampleValue<double>[] GetAsMaskedDoubleArray()
+    {
+        var doubleArray = this.GetAsDoubleArray();
+        var toReturn = new MaskedSampleValue<double>[doubleArray.Length];
+        for (int i = 0; i < doubleArray.Count(); i++)
+        {
+            toReturn[i] = new MaskedSampleValue<double>(doubleArray[i], this.IsMaskedAtIndex(i));
+        }
+
+        return toReturn;
+    }
+    
     public double[,] GetAs2DDoubleArray()
     {
         var doubles = this.GetAsDoubleArray();
@@ -461,29 +496,29 @@ public class RasterSample
         return array;
     }
     
-    /// <summary>
-    /// This rearranges the data into a 2D array, indexed by result[pixelColumn, pixelRow] (x, y)
-    /// </summary>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    private T[,] To2DArrayReversed<T>(T[] array)
-    {
-        if ((ulong)array.Length != Height * Width)
-        {
-            throw new InvalidOperationException("RawArrayData length does not match Height * Width.");    
-        }
-
-        var result = new T[Width, Height];
-        for (uint col = 0; col < Width; col++)
-        {
-            for (uint row = 0; row < Height; row++)
-            {
-                var x = array[row * Width + col];
-                result[col, row] = x;
-            }
-        }
-        return result;
-    }
+    // /// <summary>
+    // /// This rearranges the data into a 2D array, indexed by result[pixelColumn, pixelRow] (x, y)
+    // /// </summary>
+    // /// <returns></returns>
+    // /// <exception cref="InvalidOperationException"></exception>
+    // private T[,] To2DArrayReversed<T>(T[] array)
+    // {
+    //     if ((ulong)array.Length != Height * Width)
+    //     {
+    //         throw new InvalidOperationException("RawArrayData length does not match Height * Width.");    
+    //     }
+    //
+    //     var result = new T[Width, Height];
+    //     for (uint col = 0; col < Width; col++)
+    //     {
+    //         for (uint row = 0; row < Height; row++)
+    //         {
+    //             var x = array[row * Width + col];
+    //             result[col, row] = x;
+    //         }
+    //     }
+    //     return result;
+    // }
     
     
     /// <summary>
@@ -508,5 +543,15 @@ public class RasterSample
         }
 
         return result;
+    }
+
+    public void SetMaskedAtIndex(int index, bool isMasked = true)
+    {
+        if (this.MaskBits is null)
+        {
+            this.MaskBits = new BitArray(this.Size); // all initially set to false
+        }
+
+        this.MaskBits[index] = isMasked;
     }
 }

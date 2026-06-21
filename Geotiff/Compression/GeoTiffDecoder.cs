@@ -39,21 +39,16 @@ public abstract class GeoTiffDecoder
     private void AddInt32Bytes(Span<byte> a, Span<byte> b)
     {
         if (a.Length != 4 || b.Length != 4)
-        {
             throw new GeoTiffException("Both arrays must be 4 bytes long.");
-        }
-        
-        byte[] result = new byte[4];
+
         int carry = 0;
 
         for (int i = 0; i < 4; i++)
         {
             int sum = a[i] + b[i] + carry;
-            result[i] = (byte)(sum & 0xFF);
-            carry = sum >> 8;  // either 0 or 1
+            a[i] = (byte)sum;
+            carry = sum >> 8;
         }
-
-        result.CopyTo(a);
     }
     
     
@@ -193,6 +188,5 @@ public abstract class GeoTiffDecoder
       }
 
       return block;
-      //throw new GeoTiffDecodingException("Not supported or unrecognised predictor encountered during decoding");
    }
 }

@@ -1,25 +1,29 @@
 using Geotiff.Exceptions;
+using Geotiff.Interfaces;
 using Geotiff.JavaScriptCompatibility;
+using Geotiff.Masking;
 using Geotiff.RemoteClients;
 
 namespace Geotiff;
 
 /// <summary>
-/// hello world
+/// GeoTiff file class. Con contain multiple images.
 /// </summary>
-public class GeoTiff
+public class GeoTiff : IReadRasterable
 {
     protected internal readonly BaseSource Source;
     private readonly bool _bigTiff;
     protected internal readonly ulong FirstIFDOffset;
     public readonly bool IsLittleEndian;
+    public MaskStrategyABC? MaskStrategy;
+    
     /// <summary>
     /// Prevents us making read requests if GetImageCount is called multiple times
     /// </summary>
     protected internal int? finalImageCount = null;
     public bool IsBifTIFF => _bigTiff; 
     
-    public GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
+    protected GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
     {
         this.Source = source;
         this.IsLittleEndian = isLittleEndian;
@@ -91,49 +95,12 @@ public class GeoTiff
         return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
     
-    
     /// <summary>
     /// If you provide a non-seekable stream, the entire stream will be read into memory.
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    public static GeoTiff FromStream(Stream stream)
-    {
-        Stream seekableStream;
-        if (stream.CanSeek)
-        {
-            seekableStream = stream;
-        }
-        else
-        {
-            seekableStream = new MemoryStream();
-            stream.CopyTo(seekableStream);
-            seekableStream.Position = 0;
-        }
-        
-        byte[] buffer = new byte[1024];
-        // having less bytes than requested is ok in this situation. Up to 1024, but less is ok.
-        seekableStream.Read(buffer, 0, buffer.Length);
-        
-        byte[]? arr = buffer.ToArray();
-        var dv = new DataView(arr);
-        bool isLittleEndian = GetBomMarker(dv);
-
-        bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
-        
-        var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
-        seekableStream.Position = 0;
-        var source = new FileSource(seekableStream);
-        return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
-    }
-    
-    
-    /// <summary>
-    /// If you provide a non-seekable stream, the entire stream will be read into memory.
-    /// </summary>
-    /// <param name="stream"></param>
-    /// <returns></returns>
-    public static async Task<GeoTiff> FromStreamAsync(Stream stream, CancellationToken? cancellationToken = null)
+    public static async Task<GeoTiff> FromStreamAsync(Stream stream, bool detectMask = true, CancellationToken? cancellationToken = null)
     {
         Stream seekableStream;
         if (stream.CanSeek)
@@ -165,31 +132,76 @@ public class GeoTiff
         {
             await seekableStream.ReadAsync(buffer, 0, buffer.Length);
         }
-         
         
-        byte[]? arr = buffer.ToArray();
-        var dv = new DataView(arr);
-        ushort value = dv.GetUInt16(0, true);
+        var dv = new DataView(buffer);
         bool isLittleEndian = GetBomMarker(dv);
 
         bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
         
-        var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
+        var firstIfdOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
         seekableStream.Position = 0;
         var source = new FileSource(seekableStream);
-        return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
-    }
+        var tiff = new GeoTiff(source, isLittleEndian, isBigTiff, firstIfdOffset);
 
+        
+        // Detect mask type. In the rare case we detect it wrong, the user probably won't be reading 
+        // from a mask anyway.
+        if (detectMask)
+        {
+            var firstImage = await tiff.GetImageAsync(0);
+            var noDataString = firstImage.GetGdalNoData();
+            if (noDataString != null)
+            {
+                tiff.MaskStrategy = new NoDataValueMaskStrategy(double.Parse(noDataString));
+                return tiff;
+            }
+            
+            
+            var nSamples = firstImage.GetNumberOfSamples();
+            if (nSamples == 4)
+            {
+                tiff.MaskStrategy = new AlphaBandMaskStrategy();
+                return tiff;
+            }
+            
+            
+            if (await tiff.GetImageCountAsync() == 2)
+            {
+                var maskImage = await tiff.GetImageAsync(1);
+
+                if (maskImage.GetNumberOfSamples() != 1)
+                {
+                    // mask image should have only one sample
+                    return tiff;
+                }
+        
+                var maskSampleType = maskImage.GetSampleType(0);
+        
+                if (maskSampleType == GeotiffSampleDataType.UInt8)
+                {
+                    tiff.MaskStrategy = new MaskImageMaskStrategy(1, Constant.INTERNAL_MASK_YES_DATA_VALUE);
+                }
+            }
+            
+            // External mask will have to be an edge case as we can't detect the other filestream.
+        }
+        
+
+        return tiff;
+    }
+    
+    public bool IsMasked => this.MaskStrategy != null;
+    
     private async Task<DataSlice> GetSliceAsync(ulong offset, ulong? size = null)
     {
         ulong fallbackSize = _bigTiff ? 4048ul : 1024ul;
-        ulong sizeToUse = size is null ? fallbackSize : (ulong)size;
+        ulong sizeToUse = size ?? fallbackSize;
         var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
         IEnumerable<byte[]>? results = await Source.FetchAsync(slices);
 
         return new DataSlice(
-            results.Single(), // TODO: Double check this.  
+            results.Single(),
             offset,
             IsLittleEndian,
             _bigTiff
@@ -236,7 +248,7 @@ public class GeoTiff
                 
                 if (value.DataType == TagDataType.ASCII)
                 {
-                    valueToSet = new Tag((int)keyId, key, GeoTiffTagValueResult.FromString(value.GetString().JSSubString(offset, offset + count - 1)), false); // TODO: Introduce methods to set tag value
+                    valueToSet = new Tag((int)keyId, key, GeoTiffTagValueResult.FromString(value.GetString().JSSubString(offset, offset + count - 1)), false);
                 }
                 else if (value.IsArray)
                 {
@@ -336,7 +348,7 @@ public class GeoTiff
             nextIFDByteOffset
         );
     }
-
+    
     private SparseList<ImageFileDirectory> ImageFileDirectories = new();
     
     protected internal async Task<ImageFileDirectory?> RequestIFDAsync(int index)
@@ -433,7 +445,7 @@ public class GeoTiff
 
         ImageFileDirectory? ifd = await RequestIFDAsync(index);
         return new GeoTiffImage(
-            ifd, IsLittleEndian, false, Source
+            this, ifd, IsLittleEndian, false, Source
         );
     }
 
@@ -445,5 +457,38 @@ public class GeoTiff
             .Select(i => GetImageAsync(i));
 
         return await Task.WhenAll(tasks);
+    }
+    
+    public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        var first = await this.GetImageAsync();
+        return await first.ReadRasterAsync(window, sampleSelection, cancellationToken);
+    }
+
+    public virtual async Task<Raster> ReadRasterMaskedAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        var first = await this.GetImageAsync();
+        return await first.ReadRasterMaskedAsync(window, sampleSelection, cancellationToken);
+    }
+
+    public async Task<Raster> ReadRasterBoundingBoxAsync(BoundingBox boundingBox, IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        var first = await this.GetImageAsync();
+        return await first.ReadRasterBoundingBoxAsync(boundingBox, sampleSelection, cancellationToken);
+    }
+
+    public virtual async Task<Raster> ReadRasterMaskedBoundingBoxAsync(BoundingBox boundingBox, IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        var first = await this.GetImageAsync();
+        return await first.ReadRasterMaskedBoundingBoxAsync(boundingBox, sampleSelection, cancellationToken);
+    }
+
+    public void SetMaskStrategy(MaskStrategyABC maskStrategyAbc)
+    {
+        this.MaskStrategy = maskStrategyAbc;
     }
 }

@@ -1,5 +1,6 @@
 using Geotiff.Exceptions;
 using Geotiff.Interfaces;
+using Geotiff.Masking;
 
 namespace Geotiff;
 
@@ -12,7 +13,7 @@ namespace Geotiff;
 /// <param name="parentImage"></param>
 public class Raster : IGetTagable
 {
-    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, ulong width, ulong height, GeoTiffImage parentImage, ulong? tilesCovered = null)
+    internal Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, ulong width, ulong height, GeoTiffImage parentImage, ulong? tilesCovered = null)
     {
         this.SampleData = sampleData;
         this.AffineTransformation = affine;
@@ -21,12 +22,11 @@ public class Raster : IGetTagable
         this.ParentImage = parentImage;
         this.TilesCovered = tilesCovered;
     }
-
+    
     public ulong? TilesCovered = null;
     public AffineTransformation? AffineTransformation { get; set; }
     public ulong Height { get; set; }
     public ulong Width { get; set; }
-    
     public readonly GeoTiffImage ParentImage;
     /// <summary>
     /// A SparseList of samples. Samples are indexed by their index in the
@@ -34,7 +34,7 @@ public class Raster : IGetTagable
     /// rest of the samples won't be present.
     /// </summary>
     private SparseList<RasterSample> SampleData { get; set; }
-
+    
     public int NumberOfSamples
     {
         get
@@ -48,9 +48,18 @@ public class Raster : IGetTagable
         return this.SampleData.GetIndices();
     }
 
-    public IEnumerable<RasterSample> GetSamples()
+    /// <summary>
+    /// Get all the samples, disregarding index, for operations such as looping.
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<RasterSample> GetAllReadSamples()
     {
-        return this.SampleData.ToList();
+        return this.SampleData.ToList(); // TODO: replace with IEnumerable
+    }
+
+    public int GetSampleCount()
+    {
+        return this.SampleData.Count();
     }
     
     /// <summary>
