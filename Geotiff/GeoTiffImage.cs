@@ -1017,58 +1017,12 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         {
             return await ReadRasterAsync(window, sampleSelection, cancellationToken);
         }
-        
-        if (this.parentFile._strategy == MaskedGeoTiffStrategy.ALPHA_BAND)
-        {
-            if (sampleSelection?.Contains(3) is false)
-            {
-                throw new ArgumentException("When using alpha band masking, you must read the alpha band to consider masking");
-            }
-        }
+
+        this.parentFile.MaskStrategy.ValidateRasterReadArguments(window, sampleSelection);
         
         var mainReadResult = await ReadRasterAsync(window, sampleSelection, cancellationToken);
-        mainReadResult.MaskStrategy = this.parentFile._strategy;
-        
-        if (this.parentFile._strategy is MaskedGeoTiffStrategy.INTERNAL_MASK or MaskedGeoTiffStrategy.EXTERNAL_MSK_FILE)
-        {
-            var maskImage = await this.parentFile.GetImageAsync(this.parentFile.MaskImageIndex ?? 1);
-            var maskRead = await maskImage.ReadRasterAsync(window, sampleSelection, cancellationToken);
-            var maskSample = maskRead.GetSampleAt(0);
-            var byteArray = maskSample.GetByteArray();
-
-            var maskedValue = Constant.INTERNAL_MASK_YES_DATA_VALUE; 
-            if (this.parentFile._strategy == MaskedGeoTiffStrategy.EXTERNAL_MSK_FILE)
-            {
-                maskedValue = Constant.EXTERNAL_MASK_YES_DATA_VALUE;
-            }
-            
-            for (int i = 0; i < byteArray.Length; i++)
-            {
-                foreach (var sample in mainReadResult.GetAllReadSamples())
-                {
-                    sample.SetMaskedAtIndex(i,byteArray[i] != maskedValue);
-                }
-            }
-        }
-
-        if (this.parentFile._strategy == MaskedGeoTiffStrategy.NO_DATA_VALUE)
-        {
-            // TODO: Write this out fully with all types
-            var noDataValue = Double.Parse(this.GetGdalNoData());
-            foreach (RasterSample sample in mainReadResult.GetAllReadSamples())
-            {
-                var doubles = sample.GetAsDoubleArray();
-                for (var i = 0; i < doubles.Length; i++)
-                {
-                    var sampleValue = doubles[i];
-                    if (doubles[i] == sampleValue)
-                    {
-                        sample.SetMaskedAtIndex(i);
-                    }
-                }
-            }
-        }
-
+        await this.parentFile.MaskStrategy.SetMaskValues(this.parentFile, mainReadResult, window, sampleSelection,
+            cancellationToken);
         return mainReadResult;
     }
     

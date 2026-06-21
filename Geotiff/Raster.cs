@@ -1,5 +1,6 @@
 using Geotiff.Exceptions;
 using Geotiff.Interfaces;
+using Geotiff.Masking;
 
 namespace Geotiff;
 
@@ -26,21 +27,6 @@ public class Raster : IGetTagable
     public AffineTransformation? AffineTransformation { get; set; }
     public ulong Height { get; set; }
     public ulong Width { get; set; }
-    private MaskedGeoTiffStrategy _MaskStrategy = MaskedGeoTiffStrategy.IS_NOT_MASKED;
-    public MaskedGeoTiffStrategy MaskStrategy
-    {
-        get
-        {
-            return _MaskStrategy;
-        }
-        set
-        {
-            _MaskStrategy = value;
-        }
-    }
-    
-    private RasterSample? _MaskSample { get; set; }
-    
     public readonly GeoTiffImage ParentImage;
     /// <summary>
     /// A SparseList of samples. Samples are indexed by their index in the

@@ -1,3 +1,4 @@
+using Geotiff.Masking;
 using Geotiff.RemoteClients;
 
 namespace Geotiff;
@@ -10,12 +11,8 @@ public class GeoTiffBuilder
     private Stream? _tfwFileStream;
     private double? _noDataValue;
     private AffineTransformation? _affineTransformation;
+    private MaskStrategyABC maskStrategy;
     
-    public GeoTiffBuilder()
-    {
-        
-    }
-
     public static GeoTiffBuilder FromStream(Stream stream)
     {
         return new GeoTiffBuilder() { _mainFileStream = stream };
@@ -46,6 +43,17 @@ public class GeoTiffBuilder
         return this;
     }
 
+    /// <summary>
+    /// Override auto-detected masking strategy or set a custom one.
+    /// </summary>
+    /// <param name="maskStrategy"></param>
+    /// <returns></returns>
+    public GeoTiffBuilder SetMaskStrategy(MaskStrategyABC maskStrategy)
+    {
+        this.maskStrategy = maskStrategy;
+        return this;
+    }
+
     public async Task<GeoTiff> Build()
     {
         GeoTiff tiff;
@@ -62,8 +70,13 @@ public class GeoTiffBuilder
         {
             GeoTiff mskStream = await GeoTiff.FromStreamAsync(this._externalMaskStream);
             tiff = new MultiGeoTiff(tiff, [mskStream]);
-            tiff._strategy = MaskedGeoTiffStrategy.EXTERNAL_MSK_FILE;
-            tiff.MaskImageIndex = 1;
+            var strat = new MaskImageMaskStrategy(1, Constant.EXTERNAL_MASK_YES_DATA_VALUE);
+            tiff.SetMaskStrategy(strat);
+        }
+
+        if (this.maskStrategy is not null)
+        {
+            tiff.SetMaskStrategy(this.maskStrategy);
         }
         
         return tiff;

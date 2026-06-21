@@ -1,12 +1,13 @@
 using Geotiff.Exceptions;
 using Geotiff.Interfaces;
 using Geotiff.JavaScriptCompatibility;
+using Geotiff.Masking;
 using Geotiff.RemoteClients;
 
 namespace Geotiff;
 
 /// <summary>
-/// hello world
+/// GeoTiff file class. Con contain multiple images.
 /// </summary>
 public class GeoTiff : IReadRasterable
 {
@@ -14,9 +15,7 @@ public class GeoTiff : IReadRasterable
     private readonly bool _bigTiff;
     protected internal readonly ulong FirstIFDOffset;
     public readonly bool IsLittleEndian;
-    public int? MaskImageIndex { get; set; }
-    
-    public MaskedGeoTiffStrategy _strategy; // todo: make private + give setter?
+    public MaskStrategyABC? MaskStrategy;
     
     /// <summary>
     /// Prevents us making read requests if GetImageCount is called multiple times
@@ -24,14 +23,13 @@ public class GeoTiff : IReadRasterable
     protected internal int? finalImageCount = null;
     public bool IsBifTIFF => _bigTiff; 
     
-    public GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
+    protected GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
     {
         this.Source = source;
         this.IsLittleEndian = isLittleEndian;
         this._bigTiff = bigTiff;
         this.FirstIFDOffset = firstIFDOffset;
         this.finalImageCount = null;
-        this._strategy = MaskedGeoTiffStrategy.IS_NOT_MASKED;
     }
     
     private static bool GetBomMarker(DataView dv)
@@ -97,44 +95,6 @@ public class GeoTiff : IReadRasterable
         return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
     
-    
-    // /// <summary>
-    // /// Just an example for now, not fully featured.
-    // /// If you provide a non-seekable stream, the entire stream will be read into memory.
-    // /// </summary>
-    // /// <param name="stream"></param>
-    // /// <returns></returns>
-    // public static GeoTiff FromStream(Stream stream)
-    // {
-    //     Stream seekableStream;
-    //     if (stream.CanSeek)
-    //     {
-    //         seekableStream = stream;
-    //     }
-    //     else
-    //     {
-    //         seekableStream = new MemoryStream();
-    //         stream.CopyTo(seekableStream);
-    //         seekableStream.Position = 0;
-    //     }
-    //     
-    //     byte[] buffer = new byte[1024];
-    //     // having less bytes than requested is ok in this situation. Up to 1024, but less is ok.
-    //     seekableStream.Read(buffer, 0, buffer.Length);
-    //     
-    //     byte[]? arr = buffer.ToArray();
-    //     var dv = new DataView(arr);
-    //     bool isLittleEndian = GetBomMarker(dv);
-    //
-    //     bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
-    //     
-    //     var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
-    //     seekableStream.Position = 0;
-    //     var source = new FileSource(seekableStream);
-    //     return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
-    // }
-    
-    
     /// <summary>
     /// If you provide a non-seekable stream, the entire stream will be read into memory.
     /// </summary>
@@ -192,7 +152,7 @@ public class GeoTiff : IReadRasterable
             var noDataString = firstImage.GetGdalNoData();
             if (noDataString != null)
             {
-                tiff._strategy = MaskedGeoTiffStrategy.NO_DATA_VALUE;
+                tiff.MaskStrategy = new NoDataValueMaskStrategy(double.Parse(noDataString));
                 return tiff;
             }
             
@@ -200,7 +160,7 @@ public class GeoTiff : IReadRasterable
             var nSamples = firstImage.GetNumberOfSamples();
             if (nSamples == 4)
             {
-                tiff._strategy = MaskedGeoTiffStrategy.ALPHA_BAND;
+                tiff.MaskStrategy = new AlphaBandMaskStrategy();
                 return tiff;
             }
             
@@ -219,8 +179,7 @@ public class GeoTiff : IReadRasterable
         
                 if (maskSampleType == GeotiffSampleDataType.UInt8)
                 {
-                    tiff._strategy = MaskedGeoTiffStrategy.INTERNAL_MASK;
-                    // throw new InvalidMaskedGeoTiffException("Masked raster mask image sample should be an unsigned byte type");
+                    tiff.MaskStrategy = new MaskImageMaskStrategy(1, Constant.INTERNAL_MASK_YES_DATA_VALUE);
                 }
             }
             
@@ -231,7 +190,7 @@ public class GeoTiff : IReadRasterable
         return tiff;
     }
     
-    public bool IsMasked => this._strategy != MaskedGeoTiffStrategy.IS_NOT_MASKED;
+    public bool IsMasked => this.MaskStrategy != null;
     
     private async Task<DataSlice> GetSliceAsync(ulong offset, ulong? size = null)
     {
@@ -526,5 +485,10 @@ public class GeoTiff : IReadRasterable
     {
         var first = await this.GetImageAsync();
         return await first.ReadRasterMaskedBoundingBoxAsync(boundingBox, sampleSelection, cancellationToken);
+    }
+
+    public void SetMaskStrategy(MaskStrategyABC maskStrategyAbc)
+    {
+        this.MaskStrategy = maskStrategyAbc;
     }
 }
