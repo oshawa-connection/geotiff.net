@@ -1,4 +1,5 @@
 using Geotiff.Exceptions;
+using Geotiff.Interfaces;
 using Geotiff.JavaScriptCompatibility;
 using Geotiff.RemoteClients;
 
@@ -7,12 +8,13 @@ namespace Geotiff;
 /// <summary>
 /// hello world
 /// </summary>
-public class GeoTiff
+public class GeoTiff : IReadRasterable
 {
     protected internal readonly BaseSource Source;
     private readonly bool _bigTiff;
     protected internal readonly ulong FirstIFDOffset;
     public readonly bool IsLittleEndian;
+    public int? MaskImageIndex { get; set; }
     
     public MaskedGeoTiffStrategy _strategy; // todo: make private + give setter?
     
@@ -387,7 +389,7 @@ public class GeoTiff
             nextIFDByteOffset
         );
     }
-
+    
     private SparseList<ImageFileDirectory> ImageFileDirectories = new();
     
     protected internal async Task<ImageFileDirectory?> RequestIFDAsync(int index)
@@ -496,5 +498,33 @@ public class GeoTiff
             .Select(i => GetImageAsync(i));
 
         return await Task.WhenAll(tasks);
+    }
+    
+    public async Task<Raster> ReadRasterAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        var first = await this.GetImageAsync();
+        return await first.ReadRasterAsync(window, sampleSelection, cancellationToken);
+    }
+
+    public virtual async Task<Raster> ReadRasterMaskedAsync(ImagePixelWindow? window = null, IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        var first = await this.GetImageAsync();
+        return await first.ReadRasterMaskedAsync(window, sampleSelection, cancellationToken);
+    }
+
+    public async Task<Raster> ReadRasterBoundingBoxAsync(BoundingBox boundingBox, IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        var first = await this.GetImageAsync();
+        return await first.ReadRasterBoundingBoxAsync(boundingBox, sampleSelection, cancellationToken);
+    }
+
+    public virtual async Task<Raster> ReadRasterMaskedBoundingBoxAsync(BoundingBox boundingBox, IEnumerable<int>? sampleSelection = null,
+        CancellationToken? cancellationToken = null)
+    {
+        var first = await this.GetImageAsync();
+        return await first.ReadRasterMaskedBoundingBoxAsync(boundingBox, sampleSelection, cancellationToken);
     }
 }

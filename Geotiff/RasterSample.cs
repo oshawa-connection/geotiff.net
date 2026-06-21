@@ -163,11 +163,19 @@ public class RasterSample
 
     public bool IsMaskedAtIndex(int index)
     {
+        if (this.MaskBits is null)
+        {
+            return false;
+        }
         return this.MaskBits[index];
     }
 
     public bool IsMaskedAtIndex2D(int colIndex, int rowIndex)
     {
+        if (this.MaskBits is null)
+        {
+            return false;
+        }
         return this.MaskBits[rowIndex * (int)Width + colIndex];
     }
     
@@ -415,17 +423,18 @@ public class RasterSample
     }
 
 
-    public IEnumerable<MaskedSampleValue<T>> ConvertToMaskedSampleValues<T>(IEnumerable<T> array)
+    public MaskedSampleValue<double>[] GetAsMaskedDoubleArray()
     {
-        var list = new List<MaskedSampleValue<T>>();
-        for (int i = 0; i < array.Count(); i++)
+        var doubleArray = this.GetAsDoubleArray();
+        var toReturn = new MaskedSampleValue<double>[doubleArray.Length];
+        for (int i = 0; i < doubleArray.Count(); i++)
         {
-            list.Add(new MaskedSampleValue<T>(array.ElementAt(i), this.IsMaskedAtIndex(i)));
+            toReturn[i] = new MaskedSampleValue<double>(doubleArray[i], this.IsMaskedAtIndex(i));
         }
 
-        return list;
+        return toReturn;
     }
-
+    
     public double[,] GetAs2DDoubleArray()
     {
         var doubles = this.GetAsDoubleArray();

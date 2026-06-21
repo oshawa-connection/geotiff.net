@@ -12,7 +12,7 @@ namespace Geotiff;
 /// <param name="parentImage"></param>
 public class Raster : IGetTagable
 {
-    public Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, ulong width, ulong height, GeoTiffImage parentImage, ulong? tilesCovered = null)
+    internal Raster(SparseList<RasterSample> sampleData, AffineTransformation? affine, ulong width, ulong height, GeoTiffImage parentImage, ulong? tilesCovered = null)
     {
         this.SampleData = sampleData;
         this.AffineTransformation = affine;
@@ -69,6 +69,11 @@ public class Raster : IGetTagable
     public IEnumerable<RasterSample> GetAllReadSamples()
     {
         return this.SampleData.ToList(); // TODO: replace with IEnumerable
+    }
+
+    public int GetSampleCount()
+    {
+        return this.SampleData.Count();
     }
     
     /// <summary>

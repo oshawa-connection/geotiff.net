@@ -6,7 +6,7 @@ namespace Geotiff;
 /// Store sample read results here to preserve their indices when no all samples are selected. 
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class SparseList<T> : IEnumerable<T>
+internal class SparseList<T> : IEnumerable<T>
 {
     private readonly Dictionary<int, T> _dict = new();
 
@@ -15,6 +15,10 @@ public class SparseList<T> : IEnumerable<T>
         _dict[index] = value;
     }
 
+    /// <summary>
+    /// Returns null if no element found. This is fine so long as this class is internal only.
+    /// </summary>
+    /// <param name="index"></param>
     public T this[int index]
     {
         get => _dict.TryGetValue(index, out T? value) ? value : default;

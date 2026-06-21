@@ -63,6 +63,7 @@ public class GeoTiffBuilder
             GeoTiff mskStream = await GeoTiff.FromStreamAsync(this._externalMaskStream);
             tiff = new MultiGeoTiff(tiff, [mskStream]);
             tiff._strategy = MaskedGeoTiffStrategy.EXTERNAL_MSK_FILE;
+            tiff.MaskImageIndex = 1;
         }
         
         return tiff;

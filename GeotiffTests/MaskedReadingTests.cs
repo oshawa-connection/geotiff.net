@@ -54,21 +54,19 @@ public class MaskedReadingTests : GeoTiffTestBaseClass
         
         var leftReadResult = await image.ReadRasterMaskedAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 0, MaxColumn = 24});
         var leftSample = leftReadResult.GetSampleAt(0);
-        var leftPixelArray = leftSample.GetAsDoubleArray();
+        var leftPixelArray = leftSample.GetAsMaskedDoubleArray();
 
         for (int i = 0; i < leftPixelArray.Length; i++)
         {
             leftSample.IsMaskedAtIndex(i).ShouldBe(false);
         }
-
-        var maskedSampleValues = leftSample.ConvertToMaskedSampleValues(leftPixelArray);
-        maskedSampleValues.ShouldAllBe(d => d.IsMasked == false);
+        
+        leftPixelArray.ShouldAllBe(d => d.IsMasked == false);
         
         var rightReadResult = await image.ReadRasterMaskedAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 25, MaxColumn = 50});
         
         var rightSample = rightReadResult.GetSampleAt(0);
-        var rightPixelArray = rightSample.GetAsDoubleArray();
-        var rightMaskedSampleValues = rightSample.ConvertToMaskedSampleValues(rightPixelArray);
+        var rightMaskedSampleValues = rightSample.GetAsMaskedDoubleArray();
         rightMaskedSampleValues.ShouldAllBe(d => d.IsMasked == true);
     }
 
@@ -83,8 +81,50 @@ public class MaskedReadingTests : GeoTiffTestBaseClass
         
         var readResult = await image.ReadRasterMaskedAsync();
         var sample = readResult.GetSampleAt(0);
-        var doubleArray = sample.GetAsDoubleArray();
-        var maskedDoubleArray = sample.ConvertToMaskedSampleValues(doubleArray);
+        var maskedDoubleArray = sample.GetAsMaskedDoubleArray();
         maskedDoubleArray.ShouldAllBe(d => d.IsMasked == true);
+    }
+
+
+    [TestMethod]
+    public async Task ExternalMaskReading()
+    {
+        await using var mainStream = File.OpenRead(Path.Combine(GetDataFolderPath(), "masked_image.tif"));
+        await using var mskStream = File.OpenRead(Path.Combine(GetDataFolderPath(), "masked_image.tif.msk"));
+
+        var file = await GeoTiffBuilder
+            .FromStream(mainStream)
+            .AddExternalMaskStream(mskStream)
+            .Build();
+        
+        file.IsMasked.ShouldBeTrue();
+        
+        var leftReadResult = await file.ReadRasterMaskedAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 0, MaxColumn = 24});
+        var rightReadResult = await file.ReadRasterMaskedAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 25, MaxColumn = 50});
+        
+        leftReadResult.GetSampleAt(0).GetAsMaskedDoubleArray().ShouldAllBe(d => d.IsMasked == false);
+        rightReadResult.GetSampleAt(0).GetAsMaskedDoubleArray().ShouldAllBe(d => d.IsMasked == true);
+    }
+    
+    
+    /// <summary>
+    /// Case where user thinks its masked, but it's not.
+    /// </summary>
+    [TestMethod]
+    public async Task MaskedReadingOfNonMaskedRaster()
+    {
+        await using var mainStream = File.OpenRead(Path.Combine(GetDataFolderPath(), "masked_image.tif"));
+        
+        var file = await GeoTiffBuilder
+            .FromStream(mainStream)
+            .Build();
+        
+        file.IsMasked.ShouldBeFalse();
+        
+        var leftReadResult = await file.ReadRasterMaskedAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 0, MaxColumn = 24});
+        var rightReadResult = await file.ReadRasterMaskedAsync(new ImagePixelWindow() {MinRow = 0, MaxRow = 50, MinColumn = 25, MaxColumn = 50});
+        
+        leftReadResult.GetSampleAt(0).GetAsMaskedDoubleArray().ShouldAllBe(d => d.IsMasked == false);
+        rightReadResult.GetSampleAt(0).GetAsMaskedDoubleArray().ShouldAllBe(d => d.IsMasked == false);
     }
 }

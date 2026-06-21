@@ -10,6 +10,11 @@ public static class Constant
     public const ushort LittleTifMagicValue = 42;
     public const ushort BigTifMagicValue = 43;
     public const int WGS84_EPSG_CODE = 4326;
+    
+    
+    public const int ALPHA_BAND_NO_DATA = 0;
+    public const byte INTERNAL_MASK_YES_DATA_VALUE = 1;
+    public const byte EXTERNAL_MASK_YES_DATA_VALUE = 255;
 }
 
 public enum GeotiffSampleDataType
