@@ -13,4 +13,9 @@ public class RawGeoTiffDecoder : GeoTiffDecoder
     {
         return buffer;
     }
+
+    protected override byte[] DecodeBlock(byte[] buffer, GeoTiffImage image)
+    {
+        return buffer;
+    }
 }

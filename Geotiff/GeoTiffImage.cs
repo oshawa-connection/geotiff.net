@@ -1000,6 +1000,252 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         return new Raster(rasterSamples, this.GetOrCalculateAffineTransformation(), imageWindowWidth, imageWindowHeight, this, (maxYTile - minYTile) * (maxXTile - minXTile));
     }
 
+    public Raster ReadRaster(
+        ImagePixelWindow? window = null,
+        IEnumerable<int>? sampleSelection = null)
+    {
+        ulong[] imageWindow = new ulong[] { 0, 0, Width, Height };
+
+        if (window is not null)
+        {
+            imageWindow = window.ToArray();
+        }
+
+        if (imageWindow[0] > imageWindow[2] || imageWindow[1] > imageWindow[3])
+        {
+            throw new GeoTiffException("Invalid image window");
+        }
+
+        ulong imageWindowWidth = imageWindow[2] - imageWindow[0];
+        ulong imageWindowHeight = imageWindow[3] - imageWindow[1];
+
+        ulong numPixels = imageWindowWidth * imageWindowHeight;
+
+        IEnumerable<int> samples = Enumerable.Range(0, (int)SamplesPerPixel).ToArray();
+
+        if (sampleSelection is not null)
+        {
+            samples = sampleSelection.ToArray();
+        }
+
+        SparseList<RasterSample> rasterSamples = new();
+
+        for (int i = 0; i < samples.Count(); ++i)
+        {
+            var sampleIndex = samples.ElementAt(i);
+            var sampleDataType = SampleDataTypeForSample(sampleIndex);
+
+            rasterSamples[sampleIndex] = new RasterSample(
+                imageWindowWidth,
+                imageWindowHeight,
+                this,
+                sampleDataType,
+                (int)numPixels);
+        }
+
+        var blockInfo = GetBlockInfo(imageWindow);
+
+        var tileWidth = GetTileOrStripWidth();
+        var tileHeight = GetTileOrStripHeight();
+
+        ulong minXTile = blockInfo.MinXTile;
+        ulong maxXTile = blockInfo.MaxXTile;
+        ulong minYTile = blockInfo.MinYTile;
+        ulong maxYTile = blockInfo.MaxYTile;
+
+        var imageWidth = Width;
+        var imageHeight = Height;
+        var windowWidth = imageWindow[2] - imageWindow[0];
+
+        ulong bytesPerPixel = GetNumberOfBytesPerPixel();
+
+        SparseList<int> srcSampleOffsets = new();
+
+        for (int i = 0; i < samples.Count(); ++i)
+        {
+            int sample = samples.ElementAt(i);
+
+            if (planarConfiguration == 1)
+            {
+                srcSampleOffsets.Add(sample, sum(BitsPerSample, 0, sample) / 8);
+            }
+            else
+            {
+                srcSampleOffsets.Add(sample, 0);
+            }
+        }
+
+        if (!isTiled)
+        {
+            GetStripOffsets();
+            GetStripByteCounts();
+        }
+        else
+        {
+            GetTileOffsets();
+            GetTileByteCounts();
+        }
+
+        for (ulong yTile = minYTile; yTile < maxYTile; ++yTile)
+        {
+            for (ulong xTile = minXTile; xTile < maxXTile; ++xTile)
+            {
+                for (int sampleIndex = 0; sampleIndex < samples.Count(); ++sampleIndex)
+                {
+                    int si = samples.ElementAt(sampleIndex);
+
+                    TileOrStripResult tile;
+
+                    if (planarConfiguration == 1)
+                    {
+                        tile = GetTileOrStrip(xTile, yTile, 0, new DecoderRegistry());
+                    }
+                    else
+                    {
+                        tile = GetTileOrStrip(xTile, yTile, si, new DecoderRegistry());
+                    }
+
+                    byte[] buffer = tile.data;
+                    var dataView = new DataView(buffer);
+
+                    ulong blockHeight = GetBlockHeight(tile.y);
+                    ulong firstLine = tile.y * tileHeight;
+                    ulong firstCol = tile.x * tileWidth;
+
+                    ulong lastLine = firstLine + blockHeight;
+                    ulong lastCol = (tile.x + 1) * tileWidth;
+
+                    ulong ymax = JSMath.JSMin(
+                        blockHeight,
+                        blockHeight - (lastLine - imageWindow[3]),
+                        imageHeight - firstLine);
+
+                    ulong xmax = JSMath.JSMin(
+                        (ulong)tileWidth,
+                        (ulong)(tileWidth - (lastCol - imageWindow[2])),
+                        (ulong)(imageWidth - firstCol));
+
+                    ulong startY = imageWindow[1] > firstLine
+                        ? imageWindow[1] - firstLine
+                        : 0;
+
+                    ulong startX = imageWindow[0] > firstCol
+                        ? imageWindow[0] - firstCol
+                        : 0;
+
+                    for (ulong y = startY; y < ymax; ++y)
+                    {
+                        for (ulong x = startX; x < xmax; ++x)
+                        {
+                            ulong bytesPerPixelToUse = planarConfiguration == 2
+                                ? GetSampleByteSize(si)
+                                : bytesPerPixel;
+
+                            ulong pixelOffset = ((y * tileWidth) + x) * bytesPerPixelToUse;
+
+                            ulong windowCoordinate =
+                                ((y + firstLine - imageWindow[1]) * windowWidth)
+                                + x + firstCol - imageWindow[0];
+
+                            ushort format = SampleFormat is not null
+                                ? SampleFormat[si]
+                                : (ushort)1;
+
+                            ushort bitsPerSample = GetBitsForSample(si);
+
+                            var currentSample = rasterSamples[si];
+
+                            switch (format)
+                            {
+                                case 1: // unsigned
+                                    if (bitsPerSample <= 8)
+                                    {
+                                        var v = dataView.GetUInt8((int)pixelOffset + srcSampleOffsets[si]);
+                                        currentSample.SetUInt8(v, (int)windowCoordinate);
+                                    }
+                                    else if (bitsPerSample <= 16)
+                                    {
+                                        var v = dataView.GetUInt16((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        currentSample.SetUInt16(v, (int)windowCoordinate);
+                                    }
+                                    else if (bitsPerSample <= 32)
+                                    {
+                                        var v = dataView.GetUInt32((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        currentSample.SetUInt32(v, (int)windowCoordinate);
+                                    }
+                                    else
+                                    {
+                                        var v = dataView.GetUInt64((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        currentSample.SetUInt64(v, (int)windowCoordinate);
+                                    }
+                                    break;
+
+                                case 2: // signed
+                                    if (bitsPerSample <= 8)
+                                    {
+                                        var v = dataView.GetInt8((int)pixelOffset + srcSampleOffsets[si]);
+                                        currentSample.SetInt8(v, (int)windowCoordinate);
+                                    }
+                                    else if (bitsPerSample <= 16)
+                                    {
+                                        var v = dataView.GetInt16((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        currentSample.SetInt16(v, (int)windowCoordinate);
+                                    }
+                                    else if (bitsPerSample <= 32)
+                                    {
+                                        var v = dataView.GetInt32((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        currentSample.SetInt32(v, (int)windowCoordinate);
+                                    }
+                                    else
+                                    {
+                                        var v = dataView.GetInt64((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        currentSample.SetInt64(v, (int)windowCoordinate);
+                                    }
+                                    break;
+
+                                case 3: // float
+                                    switch (bitsPerSample)
+                                    {
+                                        case 16:
+                                            currentSample.SetFloat16(
+                                                dataView.GetFloat16((int)pixelOffset + srcSampleOffsets[si], littleEndian),
+                                                (int)windowCoordinate);
+                                            break;
+
+                                        case 32:
+                                            currentSample.SetFloat32(
+                                                dataView.GetFloat32((int)pixelOffset + srcSampleOffsets[si], littleEndian),
+                                                (int)windowCoordinate);
+                                            break;
+
+                                        case 64:
+                                            currentSample.SetDouble(
+                                                dataView.GetFloat64((int)pixelOffset + srcSampleOffsets[si], littleEndian),
+                                                (int)windowCoordinate);
+                                            break;
+
+                                        default:
+                                            throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
+                                    }
+                                    break;
+
+                                default:
+                                    throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return new Raster(
+            rasterSamples,
+            GetOrCalculateAffineTransformation(),
+            imageWindowWidth,
+            imageWindowHeight,
+            this,
+            (maxYTile - minYTile) * (maxXTile - minXTile));
+    }
     
     /// <summary>
     /// Read the raster and consider masking, if the raster is masked. If it is not masked, this is the same as calling ReadRasterAsync
@@ -1292,6 +1538,137 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                 return data;
             };
             finalData = await request();
+            // set the cache
+            if (tileCache != null)
+            {
+                tileCache[index] = finalData;
+            }
+        }
+        else
+        {
+            // get from the cache
+            finalData = tileCache[index];
+        }
+
+        // cache the tile request
+        return new TileOrStripResult() { x = blockX, y = blockY, data = finalData};
+    }
+    
+    
+    private TileOrStripResult GetTileOrStrip(ulong blockX, ulong blockY, int sample, DecoderRegistry poolOrDecoder)
+    {
+        ulong numTilesPerRow = (ulong)Math.Ceiling((double)Width / (double)GetTileOrStripWidth());
+        ulong numTilesPerCol = (ulong)Math.Ceiling((double)Height / (double)GetTileOrStripHeight());
+        ulong index = 0;
+        var sampleToUse = 0;
+        if (planarConfiguration == 1)
+        {
+            index = (blockY * numTilesPerRow) + blockX;
+        }
+        else if (planarConfiguration == 2)
+        {
+            sampleToUse = sample;
+            index = ((ulong)sampleToUse * numTilesPerRow * numTilesPerCol) + (blockY * numTilesPerRow) + blockX;
+        }
+
+        ulong offset;
+        ulong byteCount;
+        if (isTiled)
+        {
+            offset = GetTileOffsets().ElementAt((int)index);
+            byteCount = GetTileByteCounts().ElementAt((int)index);
+        }
+        else
+        {
+            offset = GetStripOffsets().ElementAt((int)index);
+            byteCount = GetStripByteCounts().ElementAt((int)index);
+        }
+
+        if (byteCount == 0) // for GDAL_SPARSE
+        {
+            ulong nPixels = GetBlockHeight(blockY) * GetTileOrStripWidth();
+            ulong bytesPerPixel = planarConfiguration == 2
+                ? GetSampleByteSize(sampleToUse)
+                : GetNumberOfBytesPerPixel();
+            
+            var data = new byte[nPixels * bytesPerPixel];
+            
+            var sampleType = GetSampleType();
+            var view = new DataView(data, sampleType);
+            
+            var gdalNoData = GetGdalNoData();
+            if (gdalNoData is not null)
+            {
+                view.FillValue(gdalNoData, sampleType);
+            }
+
+            return new TileOrStripResult { x = blockX, y = blockY, data = data};
+        }
+
+        byte[] sliceBytes = (source.Fetch(new List<Slice>() { new(offset, byteCount) })).First();
+
+        Func<Task<byte[]>> request;
+        byte[] finalData;
+        if (tileCache == null || tileCache.ContainsKey(index) is false)
+        {
+            var predictor = this.GetPredictor();
+            // resolve each request by potentially applying array normalization
+
+            int sampleFormat = GetSampleFormat();
+            uint bitsForCurrentSample = GetBitsForSample(sampleToUse);
+            byte[] data = poolOrDecoder.Decode(this, sliceBytes, predictor);
+
+            if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
+            {
+                if (bitsForCurrentSample == 1)
+                {
+                    // The space needed to store your bits, rounded up to the nearest 8 bits.
+                    int NearestMultipleCeil(int value, int multiple) =>
+                        ((value + multiple - 1) / multiple) * multiple;
+
+                    // Bits are arranged by row. However, they are byte-padded, so e.g. if your image width
+                    // is 50, you'll have something like this:
+                    //  11111111 11111111 11111111 11111111 11111111 11111111 11000000 row 1
+                    //  11111111 11111111 11111111 11111111 11111111 11111111 11000000 row 2 
+                    // with 50 valid bits + 6 padding bits for byte alignment
+
+                    var bitsPerRow = NearestMultipleCeil((int)Width, 8);
+                    var nRows = data.Length * 8 /
+                                bitsPerRow; // doesn't have to be GetTileOrStripWidth(), could be less if it's an end strip
+
+                    byte[] output = new byte[(int)Width * nRows];
+
+                    int outputIndex = 0;
+                    int rowBitIndex = 0;
+
+                    foreach (byte b in data)
+                    {
+                        for (int n = 7; n >= 0; n--) // MSB → LSB
+                        {
+                            if (rowBitIndex < (int)Width)
+                            {
+                                output[outputIndex++] = (byte)((b >> n) & 1); // get nth bit from a byte
+                            }
+
+                            rowBitIndex++;
+                            if (rowBitIndex >= bitsPerRow)
+                            {
+                                rowBitIndex = 0;
+                            }
+                        }
+                    }
+
+                    finalData = output;
+                }
+
+                throw new NotSupportedException(
+                    $"Only bit data normalization is supported. SampleFormat is {sampleFormat}, bitsForCurrentSample is {(int)bitsForCurrentSample}");
+            }
+            else
+            {
+                finalData = data;    
+            }
+
             // set the cache
             if (tileCache != null)
             {

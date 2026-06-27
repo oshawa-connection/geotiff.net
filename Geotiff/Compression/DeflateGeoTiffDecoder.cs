@@ -33,4 +33,18 @@ public class DeflateGeoTiffDecoder : GeoTiffDecoder
         var outArray = outputFileStream.ToArray();
         return outArray;
     }
+
+    protected override byte[] DecodeBlock(byte[] buffer, GeoTiffImage image)
+    {
+        using var ms = new MemoryStream(buffer);
+        
+        using var outputFileStream = new MemoryStream();
+        using (var decompressor = new ZlibStream(ms, CompressionMode.Decompress))
+        {
+            decompressor.CopyTo(outputFileStream);
+        }
+
+        var outArray = outputFileStream.ToArray();
+        return outArray;
+    }
 }

@@ -7,10 +7,25 @@ public abstract class GeoTiffDecoder
 {
     public abstract IEnumerable<int> codes { get; }
     protected abstract Task<byte[]> DecodeBlockAsync(byte[] buffer, GeoTiffImage image);
+    protected abstract byte[] DecodeBlock(byte[] buffer, GeoTiffImage image);
 
-    public async Task<byte[]> Decode(byte[] buffer, GeoTiffImage image, int predictor)
+    public async Task<byte[]> DecodeAsync(byte[] buffer, GeoTiffImage image, int predictor)
     {
         var decoded = await this.DecodeBlockAsync(buffer, image);
+        
+        if (predictor != 1) {
+            var tileWidth = image.GetTileOrStripWidth();
+            var tileHeight = image.GetTileOrStripHeight();
+            var bitsPerSample = image.BitsPerSample;
+            var planarConfiguration = image.GetPlanarConfiguration();
+            return ApplyPredictor(decoded, (int)tileWidth, (int)tileHeight, predictor, bitsPerSample, planarConfiguration, image);
+        }
+        return decoded;
+    }
+    
+    public byte[] Decode(byte[] buffer, GeoTiffImage image, int predictor)
+    {
+        var decoded = this.DecodeBlock(buffer, image);
         
         if (predictor != 1) {
             var tileWidth = image.GetTileOrStripWidth();
