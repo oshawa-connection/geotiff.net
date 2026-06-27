@@ -839,14 +839,14 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                 Task<TileOrStripResult>? getPromise = null;
                 if (planarConfiguration == 1)
                 {
-                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, new DecoderRegistry(), cancellationToken);
+                    getPromise = GetTileOrStripAsync(xTile, yTile, 0, cancellationToken);
                 }
                 for (int sampleIndex = 0; sampleIndex < samples.Count(); ++sampleIndex)
                 {
                     int sample = samples.ElementAt(sampleIndex);
                     if (planarConfiguration == 2)
                     {
-                        getPromise = GetTileOrStripAsync(xTile, yTile, sample, new DecoderRegistry(),
+                        getPromise = GetTileOrStripAsync(xTile, yTile, sample,
                             cancellationToken);
                     }
 
@@ -1098,11 +1098,11 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
 
                     if (planarConfiguration == 1)
                     {
-                        tile = GetTileOrStrip(xTile, yTile, 0, new DecoderRegistry());
+                        tile = GetTileOrStrip(xTile, yTile, 0);
                     }
                     else
                     {
-                        tile = GetTileOrStrip(xTile, yTile, si, new DecoderRegistry());
+                        tile = GetTileOrStrip(xTile, yTile, si);
                     }
 
                     byte[] buffer = tile.data;
@@ -1422,7 +1422,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <param name="poolOrDecoder"></param>
     /// <param name="signal"></param>
     /// <returns></returns>
-    private async Task<TileOrStripResult> GetTileOrStripAsync(ulong blockX, ulong blockY, int sample, DecoderRegistry poolOrDecoder,
+    private async Task<TileOrStripResult> GetTileOrStripAsync(ulong blockX, ulong blockY, int sample,
         CancellationToken? signal)
     {
         ulong numTilesPerRow = (ulong)Math.Ceiling((double)Width / (double)GetTileOrStripWidth());
@@ -1486,7 +1486,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
             {
                 int sampleFormat = GetSampleFormat();
                 uint bitsForCurrentSample = GetBitsForSample(sampleToUse);
-                byte[] data = await poolOrDecoder.DecodeAsync(this, sliceBytes, predictor);
+                byte[] data = await DecoderRegistry.DecodeAsync(this, sliceBytes, predictor);
 
                 if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
                 {
@@ -1555,7 +1555,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     }
     
     
-    private TileOrStripResult GetTileOrStrip(ulong blockX, ulong blockY, int sample, DecoderRegistry poolOrDecoder)
+    private TileOrStripResult GetTileOrStrip(ulong blockX, ulong blockY, int sample)
     {
         ulong numTilesPerRow = (ulong)Math.Ceiling((double)Width / (double)GetTileOrStripWidth());
         ulong numTilesPerCol = (ulong)Math.Ceiling((double)Height / (double)GetTileOrStripHeight());
@@ -1616,7 +1616,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
 
             int sampleFormat = GetSampleFormat();
             uint bitsForCurrentSample = GetBitsForSample(sampleToUse);
-            byte[] data = poolOrDecoder.Decode(this, sliceBytes, predictor);
+            byte[] data = DecoderRegistry.Decode(this, sliceBytes, predictor);
 
             if (NeedsNormalization(sampleFormat, (int)bitsForCurrentSample))
             {
