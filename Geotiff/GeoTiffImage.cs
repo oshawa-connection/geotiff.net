@@ -878,114 +878,103 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                             startX = imageWindow[0] - firstCol;
                         }
                         
+                        var sampleSetCallback = RasterSample.SetUInt8DataView;
+                        
+                        ulong bytesPerPixelToUse = bytesPerPixel;
+                        if (planarConfiguration == 2)
+                        {
+                            bytesPerPixelToUse = GetSampleByteSize(si);
+                        }
+                        
+                        ushort bitsPerSample = GetBitsForSample(si);
+                        
+                        ushort format = SampleFormat is not null
+                            ? SampleFormat[si]
+                            : (ushort)1;
+                        
+                        switch (format)
+                        {
+                            case 1: // unsigned integer data
+                                if (bitsPerSample <= 8)
+                                {
+                                    sampleSetCallback = RasterSample.SetUInt8DataView;
+                                }
+                                else if (bitsPerSample <= 16)
+                                {
+                                    sampleSetCallback = RasterSample.SetUInt16DataView;
+                                }
+                                else if (bitsPerSample <= 32)
+                                {
+                                    sampleSetCallback = RasterSample.SetUInt32DataView;
+                                }
+                                else if (bitsPerSample <= 64)
+                                {
+                                    sampleSetCallback = RasterSample.SetUInt64DataView;
+                                }
+                                else
+                                {
+                                    throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
+                                }
+
+                                break;
+                            case 2: // twos complement signed integer data
+                                if (bitsPerSample <= 8)
+                                {
+                                    sampleSetCallback = RasterSample.SetInt8DataView;
+                                }
+                                else if (bitsPerSample <= 16)
+                                {
+                                    sampleSetCallback = RasterSample.SetInt16DataView;
+                                }
+                                else if (bitsPerSample <= 32)
+                                {
+                                    sampleSetCallback = RasterSample.SetInt32DataView;
+                                }
+                                else if (bitsPerSample <= 64)
+                                {
+                                    sampleSetCallback = RasterSample.SetInt64DataView;
+                                }
+                                else
+                                {
+                                    throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
+                                }
+
+                                break;
+                            case 3:
+                                switch (bitsPerSample)
+                                {
+                                    case 16: 
+                                        sampleSetCallback = RasterSample.SetFloat16DataView;
+                                        break;
+                                    case 32:
+                                        sampleSetCallback = RasterSample.SetFloat32DataView;
+                                        break;
+                                    case 64:
+                                        sampleSetCallback = RasterSample.SetFloat64DataView;
+                                        break;
+                                    default:
+                                        throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
+                                }
+
+                                break;
+                            default:
+                                throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
+                        }
+
+                        var currentSample = rasterSamples[si];
+                        
                         for (ulong y = startY; y < ymax; ++y)
                         {
                             for (ulong x = startX; x < xmax; ++x)
                             {
-                                ulong bytesPerPixelToUse = bytesPerPixel;
-                                if (planarConfiguration == 2)
-                                {
-                                    bytesPerPixelToUse = GetSampleByteSize(si);
-                                }
                                 ulong pixelOffset = ((y * tileWidth) + x) * bytesPerPixelToUse;
                                 ulong windowCoordinate = (
                                     (y + firstLine - imageWindow[1]) * windowWidth
                                 ) + x + firstCol - imageWindow[0];
 
-                                ushort format = SampleFormat is not null
-                                    ? SampleFormat[si]
-                                    : (ushort)1;
                                 
-                                ushort bitsPerSample = GetBitsForSample(si);
-
-                                var currentSample = rasterSamples[si];
                                 var dv = dataView;
-                                
-                                switch (format)
-                                {
-                                    case 1: // unsigned integer data
-                                        if (bitsPerSample <= 8)
-                                        {
-                                            var read = dv.GetUInt8((int)pixelOffset + srcSampleOffsets[si]);
-                                            currentSample.SetUInt8(read, (int)windowCoordinate);
-                                        }
-                                        else if (bitsPerSample <= 16)
-                                        {
-                                            var read = dv.GetUInt16((int)pixelOffset + srcSampleOffsets[si],
-                                                littleEndian);
-                                            currentSample.SetUInt16(read, (int)windowCoordinate);
-                                        }
-                                        else if (bitsPerSample <= 32)
-                                        {
-                                            var read = dv.GetUInt32((int)pixelOffset + srcSampleOffsets[si],
-                                                littleEndian);
-                                            currentSample.SetUInt32(read, (int)windowCoordinate);
-                                        }
-                                        else if (bitsPerSample <= 64)
-                                        {
-                                            var read = dv.GetUInt64((int)pixelOffset + srcSampleOffsets[si],
-                                                littleEndian);
-                                            currentSample.SetUInt64(read, (int)windowCoordinate);
-                                        }
-                                        else
-                                        {
-                                            throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
-                                        }
-
-                                        break;
-                                    case 2: // twos complement signed integer data
-                                        if (bitsPerSample <= 8)
-                                        {
-                                            var read = dv.GetInt8((int)pixelOffset + srcSampleOffsets[si]);
-                                            currentSample.SetInt8(read, (int)windowCoordinate);
-                                        }
-                                        else if (bitsPerSample <= 16)
-                                        {
-                                            var read = dv.GetInt16((int)pixelOffset + srcSampleOffsets[si], littleEndian);
-                                            currentSample.SetInt16(read, (int)windowCoordinate);
-                                        }
-                                        else if (bitsPerSample <= 32)
-                                        {
-                                            var read = dv.GetInt32((int)pixelOffset + srcSampleOffsets[si], littleEndian);
-                                            currentSample.SetInt32(read, (int)windowCoordinate);
-                                        }
-                                        else if (bitsPerSample <= 64)
-                                        {
-                                            var read = dv.GetInt64((int)pixelOffset + srcSampleOffsets[si], littleEndian);
-                                            currentSample.SetInt64(read, (int)windowCoordinate);
-                                        }
-                                        else
-                                        {
-                                            throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
-                                        }
-
-                                        break;
-                                    case 3:
-                                        switch (bitsPerSample)
-                                        {
-                                            case 16: 
-                                                var read0 = dv.GetFloat16((int)pixelOffset +
-                                                                          srcSampleOffsets[si], littleEndian);
-                                                currentSample.SetFloat16(read0, (int)windowCoordinate);
-                                                break;
-                                            case 32:
-                                                var read1 = dv.GetFloat32((int)pixelOffset +
-                                                                          srcSampleOffsets[si], littleEndian);
-                                                currentSample.SetFloat32(read1, (int)windowCoordinate);
-                                                break;
-                                            case 64:
-                                                var read2 = dv.GetFloat64((int)pixelOffset +
-                                                                          srcSampleOffsets[si], littleEndian);
-                                                currentSample.SetDouble(read2, (int)windowCoordinate);
-                                                break;
-                                            default:
-                                                throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
-                                        }
-
-                                        break;
-                                    default:
-                                        throw new InvalidGeoTiffException("Unsupported data format/bitsPerSample");
-                                }
+                                sampleSetCallback(currentSample, dv, (int)pixelOffset + srcSampleOffsets[si], windowCoordinate, littleEndian);
                             }
                         }
 
@@ -1219,7 +1208,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                                             break;
 
                                         case 64:
-                                            currentSample.SetDouble(
+                                            currentSample.SetFloat64(
                                                 dataView.GetFloat64((int)pixelOffset + srcSampleOffsets[si], littleEndian),
                                                 (int)windowCoordinate);
                                             break;
