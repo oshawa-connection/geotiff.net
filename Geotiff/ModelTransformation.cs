@@ -1,5 +1,6 @@
 namespace Geotiff;
 
+[Obsolete("Replace with AffineTransformation")]
 public class ModelTransformation
 {
     public double a { get; set; }

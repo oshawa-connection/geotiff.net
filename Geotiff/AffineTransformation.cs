@@ -209,4 +209,23 @@ public class AffineTransformation
             p = p
         };
     }
+
+    public static AffineTransformation FromTFWString(string str)
+    {
+        var lines = str.Split('\n');
+        if (lines.Length < 6)
+        {
+            throw new GeoTiffException("Invalid TFW file. TFW file must contain at least 6 elements");
+        }
+        
+        return new AffineTransformation()
+        {
+            a = double.Parse(lines[0]),
+            d = double.Parse(lines[1]),
+            b = double.Parse(lines[2]),
+            e = double.Parse(lines[3]),
+            c = double.Parse(lines[4]),
+            f = double.Parse(lines[5])
+        };
+    }
 }

@@ -13,8 +13,6 @@ namespace Geotiff;
 public class GeoTiffImage : IGetTagable, IReadRasterable
 {
     private readonly ImageFileDirectory fileDirectory;
-    // TODO: This breaks the open closed principle. Temporary implementation detail, can be re-worked later.
-    
     private double? noDataValue;
     private readonly GeoTiff parentFile;
     private readonly bool littleEndian;

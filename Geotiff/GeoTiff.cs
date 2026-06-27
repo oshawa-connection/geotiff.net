@@ -12,24 +12,34 @@ namespace Geotiff;
 public class GeoTiff : IReadRasterable
 {
     protected internal readonly BaseSource Source;
-    private readonly bool _bigTiff;
     protected internal readonly ulong FirstIFDOffset;
     public readonly bool IsLittleEndian;
     public MaskStrategyABC? MaskStrategy;
-    
+    private SparseList<ImageFileDirectory> ImageFileDirectories = new();
     /// <summary>
     /// Prevents us making read requests if GetImageCount is called multiple times
     /// </summary>
     protected internal int? finalImageCount = null;
-    public bool IsBifTIFF => _bigTiff; 
+
+    public AffineTransformation? AffineTransformation
+    {
+        get;
+        private set;
+    }
+
+    public bool IsBifTIFF
+    {
+        get;
+        private set;
+    }
     
-    protected GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
+    protected GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset, AffineTransformation? affineTransformation = null)
     {
         this.Source = source;
         this.IsLittleEndian = isLittleEndian;
-        this._bigTiff = bigTiff;
+        this.IsBifTIFF = bigTiff;
         this.FirstIFDOffset = firstIFDOffset;
-        this.finalImageCount = null;
+        this.AffineTransformation = affineTransformation;
     }
     
     private static bool GetBomMarker(DataView dv)
@@ -194,7 +204,7 @@ public class GeoTiff : IReadRasterable
     
     private async Task<DataSlice> GetSliceAsync(ulong offset, ulong? size = null)
     {
-        ulong fallbackSize = _bigTiff ? 4048ul : 1024ul;
+        ulong fallbackSize = IsBifTIFF ? 4048ul : 1024ul;
         ulong sizeToUse = size ?? fallbackSize;
         var slice = new Slice(offset, sizeToUse, false);
         var slices = new List<Slice>() { slice };
@@ -204,7 +214,7 @@ public class GeoTiff : IReadRasterable
             results.Single(),
             offset,
             IsLittleEndian,
-            _bigTiff
+            IsBifTIFF
         );
     }
 
@@ -268,17 +278,17 @@ public class GeoTiff : IReadRasterable
 
     protected internal async Task<ImageFileDirectory> ParseFileDirectoryAtAsync(ulong offset)
     {
-        ulong entrySize = _bigTiff ? 20ul : 12ul;
-        ulong offsetSize = _bigTiff ? 8ul : 2ul;
+        ulong entrySize = IsBifTIFF ? 20ul : 12ul;
+        ulong offsetSize = IsBifTIFF ? 8ul : 2ul;
 
         DataSlice? dataSlice = await GetSliceAsync(offset);
 
-        int numDirEntries = _bigTiff
+        int numDirEntries = IsBifTIFF
             ? (int)dataSlice.ReadUInt64(offset)
             : dataSlice.ReadUInt16(offset);
 
         // Ensure the slice covers the whole IFD
-        int byteSize = ((int)numDirEntries * (int)entrySize) + (_bigTiff ? 16 : 6);
+        int byteSize = ((int)numDirEntries * (int)entrySize) + (IsBifTIFF ? 16 : 6);
         if (!dataSlice.Covers(offset, (ulong)byteSize))
         {
             dataSlice = await GetSliceAsync((ulong)offset, (ulong?)byteSize);
@@ -287,21 +297,21 @@ public class GeoTiff : IReadRasterable
         var fileDirectory = new Dictionary<string, Tag>();
         var rawFileDirectory = new Dictionary<int, Tag>();
 
-        ulong i = offset + (ulong)(_bigTiff ? 8 : 2);
+        ulong i = offset + (ulong)(IsBifTIFF ? 8 : 2);
         for (long entryCount = 0; entryCount < numDirEntries; i += (ulong)entrySize, ++entryCount)
         {
             ushort fieldTagId = dataSlice.ReadUInt16(i);
             ushort fieldType = dataSlice.ReadUInt16(i + 2);
-            int typeCount = _bigTiff
+            int typeCount = IsBifTIFF
                 ? (int)dataSlice.ReadUInt64(i + 4)
                 : (int)dataSlice.ReadUInt32(i + 4);
 
             GeoTiffTagValueResult fieldValues;
             int fieldTypeLength = TagFields.GetFieldTypeLength(fieldType);
             GeotiffFieldDataType fieldTypeName = TagFields.FieldTypeLookup[fieldType];
-            ulong valueOffset = i + (ulong)(_bigTiff ? 12 : 8);
+            ulong valueOffset = i + (ulong)(IsBifTIFF ? 12 : 8);
             // Check if the value is directly encoded or refers to another byte range
-            if (fieldTypeLength * typeCount <= (_bigTiff ? 8 : 4))
+            if (fieldTypeLength * typeCount <= (IsBifTIFF ? 8 : 4))
             {
                 fieldValues = dataSlice.GetValues(fieldType, typeCount, valueOffset);
             }
@@ -348,8 +358,6 @@ public class GeoTiff : IReadRasterable
             nextIFDByteOffset
         );
     }
-    
-    private SparseList<ImageFileDirectory> ImageFileDirectories = new();
     
     protected internal async Task<ImageFileDirectory?> RequestIFDAsync(int index)
     {

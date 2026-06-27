@@ -78,6 +78,14 @@ public class GeoTiffBuilder
         {
             tiff.SetMaskStrategy(this.maskStrategy);
         }
+
+        if (this._tfwFileStream is not null)
+        {
+            using var sr = new StreamReader(this._tfwFileStream);
+            var tfwStr = await sr.ReadToEndAsync();
+            var affine = AffineTransformation.FromTFWString(tfwStr);
+            
+        }
         
         return tiff;
     }
