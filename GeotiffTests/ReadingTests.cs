@@ -854,10 +854,13 @@ public class ReadingTests : GeoTiffTestBaseClass
         
         GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
+        var compression = image.GetTag(TagFields.Compression);
+        Console.WriteLine(compression.GetAsInt());
         
         foreach (var blockWindow in image.GetBlockImagePixelWindows())
         {
-            var read = await image.ReadRasterAsync(blockWindow);
+            var read = image.ReadRaster(blockWindow);
+            
             read.TilesCovered.ShouldBe((ulong)1);
             read.GetSampleAt(0).GetInt64Array().ShouldAllBe(d => (d == Int64.MaxValue));
         }

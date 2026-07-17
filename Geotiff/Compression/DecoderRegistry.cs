@@ -4,9 +4,9 @@ using Geotiff.JavaScriptCompatibility;
 namespace Geotiff.Compression;
 
 /// <summary>
-/// TODO: make static
+
 /// </summary>
-public class DecoderRegistry
+public static class DecoderRegistry
 {
     private static List<GeoTiffDecoder> _register = new()
     {
@@ -21,7 +21,7 @@ public class DecoderRegistry
     /// If user passes a code that already exists, replace it.
     /// </summary>
     /// <param name="geoTiffDecoder"></param>
-    public void AddDecoder(GeoTiffDecoder geoTiffDecoder)
+    public static void AddDecoder(GeoTiffDecoder geoTiffDecoder)
     {
         if (geoTiffDecoder == null)
         {
@@ -38,7 +38,7 @@ public class DecoderRegistry
         _register.Add(geoTiffDecoder);
     }
 
-    public GeoTiffDecoder GetDecoder(GeoTiffImage image)
+    public static GeoTiffDecoder GetDecoder(GeoTiffImage image)
     {
         var compressionTag = image.GetTag(TagFields.Compression);
         if (compressionTag is null)
@@ -58,9 +58,15 @@ public class DecoderRegistry
         return found;
     }
 
-    public async Task<byte[]> DecodeAsync(GeoTiffImage image, byte[] buffer, int predictor)
+    public static async Task<byte[]> DecodeAsync(GeoTiffImage image, byte[] buffer, int predictor)
     {
         GeoTiffDecoder? decoder = GetDecoder(image);
-        return await decoder.Decode(buffer, image, predictor);
+        return await decoder.DecodeAsync(buffer, image, predictor);
+    }
+
+    public static byte[] Decode(GeoTiffImage image, byte[] buffer, int predictor)
+    {
+        GeoTiffDecoder? decoder = GetDecoder(image);
+        return decoder.Decode(buffer, image, predictor);
     }
 }

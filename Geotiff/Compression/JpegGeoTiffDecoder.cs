@@ -90,4 +90,9 @@ public class JpegGeoTiffDecoder : GeoTiffDecoder
         
         return output;
     }
+
+    protected override byte[] DecodeBlock(byte[] buffer, GeoTiffImage image)
+    {
+        throw new NotImplementedException();
+    }
 }

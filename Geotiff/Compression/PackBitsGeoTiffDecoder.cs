@@ -38,4 +38,9 @@ public class PackBitsGeoTiffDecoder : GeoTiffDecoder
 
         return outbytes.ToArray();
     }
+
+    protected override byte[] DecodeBlock(byte[] buffer, GeoTiffImage image)
+    {
+        throw new NotImplementedException();
+    }
 }

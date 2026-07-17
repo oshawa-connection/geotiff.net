@@ -9,7 +9,13 @@ public abstract class BaseSource
     {
         IEnumerable<Task<byte[]>>? taskList = slices.Select(slice => FetchSliceAsync(slice, cancellationToken));
         byte[][]? completedTasks = await Task.WhenAll(taskList);
-        return completedTasks.Select(d => d);
+        return completedTasks;
+    }
+
+    public virtual IEnumerable<byte[]> Fetch(IEnumerable<Slice> slices)
+    {
+        IEnumerable<byte[]>? taskList = slices.Select(slice => FetchSlice(slice));
+        return taskList;
     }
 
     /**

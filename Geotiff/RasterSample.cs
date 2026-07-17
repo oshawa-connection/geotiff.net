@@ -1,4 +1,5 @@
 using Geotiff.Exceptions;
+using Geotiff.JavaScriptCompatibility;
 using System.Collections;
 
 namespace Geotiff;
@@ -180,6 +181,86 @@ public class RasterSample
     }
     
     #region SetMethods
+
+
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetUInt8DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetUInt8(pixelOffset);
+            sample.SetUInt8(value, (int)windowCoordinate);
+        };
+    
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetInt8DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetInt8(pixelOffset);
+            sample.SetInt8(value, (int)windowCoordinate);
+        };
+    
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetInt16DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetInt16(pixelOffset, littleEndian);
+            sample.SetInt16(value, (int)windowCoordinate);
+        };
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetUInt16DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetUInt16(pixelOffset, littleEndian);
+            sample.SetUInt16(value, (int)windowCoordinate);
+        };
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetInt32DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetInt32(pixelOffset, littleEndian);
+            sample.SetInt32(value, (int)windowCoordinate);
+        };
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetUInt32DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetUInt32(pixelOffset, littleEndian);
+            sample.SetUInt32(value, (int)windowCoordinate);
+        };
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetUInt64DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetUInt64(pixelOffset, littleEndian);
+            sample.SetUInt64(value, (int)windowCoordinate);
+        };
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetInt64DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetInt64(pixelOffset, littleEndian);
+            sample.SetInt64(value, (int)windowCoordinate);
+        };
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetFloat16DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetFloat16(pixelOffset, littleEndian);
+            sample.SetFloat16(value, (int)windowCoordinate);
+        };
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetFloat32DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetFloat32(pixelOffset, littleEndian);
+            sample.SetFloat32(value, (int)windowCoordinate);
+        };
+    
+    internal static Action<RasterSample, DataView, int, ulong, bool> SetFloat64DataView =
+        (sample, dv, pixelOffset, windowCoordinate, littleEndian) =>
+        {
+            var value = dv.GetFloat64(pixelOffset, littleEndian);
+            sample.SetFloat64(value, (int)windowCoordinate);
+        };
     
     public void SetUInt8(byte value, int index)
     {
@@ -201,27 +282,26 @@ public class RasterSample
         CheckType(GeotiffSampleDataType.UInt16);
         this.UInt16Result[index] = value;
     }   
+    public void SetInt32(int value, int index)
+    {
+        CheckType(GeotiffSampleDataType.Int32);
+        this.Int32Result[index] = value;
+    }   
     public void SetUInt32(uint value, int index)
     {
         CheckType(GeotiffSampleDataType.UInt32);
         this.UInt32Result[index] = value;
+    }
+    public void SetInt64(long value, int index)
+    {
+        CheckType(GeotiffSampleDataType.Int64);
+        this.Int64Result[index] = value;
     }
     public void SetUInt64(ulong value, int index)
     {
         CheckType(GeotiffSampleDataType.UInt64);
         this.UInt64Result[index] = value;
     }
-    
-    public void SetInt32(int value, int index)
-    {
-        CheckType(GeotiffSampleDataType.Int32);
-        this.Int32Result[index] = value;
-    }   
-    public void SetInt64(long value, int index)
-    {
-        CheckType(GeotiffSampleDataType.Int64);
-        this.Int64Result[index] = value;
-    }   
     public void SetFloat16(float value, int index)
     {
         CheckType(GeotiffSampleDataType.Float16);
@@ -232,7 +312,7 @@ public class RasterSample
         CheckType(GeotiffSampleDataType.Float32);
         this.Float32Result[index] = value;
     }   
-    public void SetDouble(double value, int index)
+    public void SetFloat64(double value, int index)
     {
         CheckType(GeotiffSampleDataType.Float64);
         this.Float64Result[index] = value;

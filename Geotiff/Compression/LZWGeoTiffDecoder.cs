@@ -201,6 +201,11 @@ public class LZWGeoTiffDecoder: GeoTiffDecoder
         var decompressed = Decompress(bytes);
         return decompressed;
     }
+
+    protected override byte[] DecodeBlock(byte[] buffer, GeoTiffImage image)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 
