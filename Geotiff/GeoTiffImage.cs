@@ -16,7 +16,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     // TODO: This breaks the open closed principle. Temporary implementation detail, can be re-worked later.
     
     private double? noDataValue;
-    private readonly GeoTiff parentFile;
+    private readonly GeoTiffReader parentFile;
     private readonly bool littleEndian;
     private readonly bool cache;
     private readonly BaseSource source;
@@ -35,7 +35,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     
     
     
-    internal GeoTiffImage(GeoTiff parentFile, ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
+    internal GeoTiffImage(GeoTiffReader parentFile, ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {
         this.parentFile = parentFile;
         this.fileDirectory = fileDirectory;

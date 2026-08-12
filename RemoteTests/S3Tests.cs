@@ -39,7 +39,7 @@ public class S3Tests
         using var client =
             new AmazonS3Client(new AmazonS3Config { ServiceURL = "http://127.0.0.1:8085", ForcePathStyle = true });
         var gtAWSClient = new GeoTiffAmazonClient("testbucket", "cea.tif", client);
-        GeoTiff? geotiff = await GeoTiff.FromRemoteClientAsync(gtAWSClient);
+        GeoTiffReader? geotiff = await GeoTiffReader.FromRemoteClientAsync(gtAWSClient);
         Console.WriteLine(geotiff.GetImageCountAsync());
     }
 }
