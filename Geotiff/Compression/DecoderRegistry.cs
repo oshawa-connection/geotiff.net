@@ -10,11 +10,12 @@ public static class DecoderRegistry
 {
     private static List<GeoTiffDecoder> _register = new()
     {
-        new DeflateGeoTiffDecoder(), 
-        new RawGeoTiffDecoder(), 
-        new LZWGeoTiffDecoder(), 
+        new DeflateGeoTiffDecoder(),
+        new RawGeoTiffDecoder(),
+        new LZWGeoTiffDecoder(),
         new PackBitsGeoTiffDecoder(),
-        new JpegGeoTiffDecoder()
+        new JpegGeoTiffDecoder(),
+        new ZSTDGeoTiffDecoder()
     };
 
     /// <summary>

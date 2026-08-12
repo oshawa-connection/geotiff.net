@@ -993,4 +993,23 @@ public class ReadingTests : GeoTiffTestBaseClass
         var readResult = await image.ReadRasterAsync();
         Console.WriteLine("HELLO WORLD");
     }
+
+    [TestMethod]
+    public async Task TestZStdCompression()
+    {
+        string sparse32 = Path.Combine(GetDataFolderPath(), "tiny_4x4_zstd_float.tif");
+        await using var fsSource = new FileStream(sparse32, FileMode.Open, FileAccess.Read);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
+        var image = await geotiff.GetImageAsync();
+        var readResult = await image.ReadRasterAsync();
+        var twoDArray = readResult.GetSampleAt(0).Get2DIntArray();
+
+        for (uint i = 0; i < readResult.Width; i++)
+        {
+            for (uint j = 0; j < readResult.Height; j++)
+            {
+                twoDArray[i,j].ShouldBe((int)j + 1);
+            }
+        }
+    }
 }
