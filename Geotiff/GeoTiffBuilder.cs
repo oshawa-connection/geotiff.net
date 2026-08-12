@@ -54,31 +54,31 @@ public class GeoTiffBuilder
         return this;
     }
 
-    public async Task<GeoTiff> Build()
+    public async Task<GeoTiffReader> Build()
     {
-        GeoTiff tiff;
+        GeoTiffReader tiffReader;
         if (this._remoteClient is not null)
         {
-            tiff = await GeoTiff.FromRemoteClientAsync(this._remoteClient);
+            tiffReader = await GeoTiffReader.FromRemoteClientAsync(this._remoteClient);
         }
         else
         {
-            tiff = await GeoTiff.FromStreamAsync(this._mainFileStream);
+            tiffReader = await GeoTiffReader.FromStreamAsync(this._mainFileStream);
         }
 
         if (this._externalMaskStream is not null)
         {
-            GeoTiff mskStream = await GeoTiff.FromStreamAsync(this._externalMaskStream);
-            tiff = new MultiGeoTiff(tiff, [mskStream]);
+            GeoTiffReader mskStream = await GeoTiffReader.FromStreamAsync(this._externalMaskStream);
+            tiffReader = new MultiGeoTiffReader(tiffReader, [mskStream]);
             var strat = new MaskImageMaskStrategy(1, Constant.EXTERNAL_MASK_YES_DATA_VALUE);
-            tiff.SetMaskStrategy(strat);
+            tiffReader.SetMaskStrategy(strat);
         }
 
         if (this.maskStrategy is not null)
         {
-            tiff.SetMaskStrategy(this.maskStrategy);
+            tiffReader.SetMaskStrategy(this.maskStrategy);
         }
         
-        return tiff;
+        return tiffReader;
     }
 }
