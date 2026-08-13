@@ -5,7 +5,7 @@ namespace Geotiff;
 
 public class Tag
 {
-    public int RawId { get; }
+    public ushort RawId { get; }
     public string? TagName { get; }
     public bool IsArray { get; }
 
@@ -336,7 +336,7 @@ public class Tag
 
     
 
-    internal Tag(int rawId, string? tagName, GeoTiffTagValueResult value, bool isArray)
+    internal Tag(ushort rawId, string? tagName, GeoTiffTagValueResult value, bool isArray)
     {
         this.RawId = rawId;
         this.TagName = tagName;

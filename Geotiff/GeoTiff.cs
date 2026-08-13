@@ -235,7 +235,7 @@ public class GeoTiff : IReadRasterable
             Tag? valueToSet = null;
             if (location is null)
             {
-                valueToSet = new Tag((int)keyId, key, GeoTiffTagValueResult.FromUInt16(new[] { offset }), false);
+                valueToSet = new Tag(keyId, key, GeoTiffTagValueResult.FromUInt16(new[] { offset }), false);
             }
             else
             {
@@ -248,7 +248,7 @@ public class GeoTiff : IReadRasterable
                 
                 if (value.DataType == TagDataType.ASCII)
                 {
-                    valueToSet = new Tag((int)keyId, key, GeoTiffTagValueResult.FromString(value.GetString().JSSubString(offset, offset + count - 1)), false);
+                    valueToSet = new Tag(keyId, key, GeoTiffTagValueResult.FromString(value.GetString().JSSubString(offset, offset + count - 1)), false);
                 }
                 else if (value.IsArray)
                 {
@@ -298,7 +298,7 @@ public class GeoTiff : IReadRasterable
 
             GeoTiffTagValueResult fieldValues;
             int fieldTypeLength = TagFields.GetFieldTypeLength(fieldType);
-            GeotiffFieldDataType fieldTypeName = TagFields.FieldTypeLookup[fieldType];
+            GeotiffFieldDataType fieldTypeName = TagFields.FieldTypeLookup.GetByKey(fieldType);
             ulong valueOffset = i + (ulong)(_bigTiff ? 12 : 8);
             // Check if the value is directly encoded or refers to another byte range
             if (fieldTypeLength * typeCount <= (_bigTiff ? 8 : 4))

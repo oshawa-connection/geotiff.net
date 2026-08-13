@@ -122,7 +122,7 @@ internal class DataSlice
         GeoTiffTagValueResult finalResult;
 
         int fieldTypeLength = TagFields.GetFieldTypeLength(fieldType);
-        GeotiffFieldDataType fieldTypeStr = TagFields.FieldTypeLookup[fieldType];
+        GeotiffFieldDataType fieldTypeStr = TagFields.FieldTypeLookup.GetByKey(fieldType);
 
         switch (fieldTypeStr)
         {

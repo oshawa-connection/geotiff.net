@@ -36,30 +36,28 @@ public enum GeotiffSampleDataType
 }
 
 
-internal enum GeotiffFieldDataType
-{
-    BYTE,
-    ASCII,
-    SHORT,
-    LONG,
-    RATIONAL,
-    SBYTE,
-    UNDEFINED,
-    SSHORT,
-    SLONG,
-    SRATIONAL,
-    FLOAT,
-    DOUBLE,
-    IFD,
-    LONG8,
-    SLONG8,
-    IFD8
-}
+// internal enum GeotiffFieldDataType
+// {
+//     BYTE,
+//     ASCII,
+//     SHORT,
+//     LONG,
+//     RATIONAL,
+//     SBYTE,
+//     UNDEFINED,
+//     SSHORT,
+//     SLONG,
+//     SRATIONAL,
+//     FLOAT,
+//     DOUBLE,
+//     IFD,
+//     LONG8,
+//     SLONG8,
+//     IFD8
+// }
 
 public enum TagDataType
-{
-    [Description("Undefined")]
-    UNDEFINED,
+{ 
     [Description("short")]
     SHORT,
     [Description("sbyte")]
@@ -115,7 +113,7 @@ public enum TagDataType
 
 public static class TagFields
 {
-    internal static Dictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
+    internal static BiDirectionalDictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
     {
         { 0x0001, GeotiffFieldDataType.BYTE },
         { 0x0002, GeotiffFieldDataType.ASCII },
@@ -459,7 +457,11 @@ public static class TagFields
         { 0xA214, SubjectLocation },
         { 0xA40B, DeviceSettingDescription }
     };
-
+    
+    /// <summary>
+    /// The list of which tags are arrays; there is no other
+    /// way to know if they are arrays or not; you just have to know!
+    /// </summary>
     public static List<ushort> ArrayTypeFields = new()
     {
         FieldTags.GetByValue(BitsPerSample),
@@ -631,7 +633,7 @@ public static class TagFields
 
     public static int GetFieldTypeLength(int fieldTypea)
     {
-        GeotiffFieldDataType fieldType = FieldTypeLookup[fieldTypea];
+        GeotiffFieldDataType fieldType = FieldTypeLookup.GetByKey(fieldTypea);
         switch (fieldType)
         {
             case GeotiffFieldDataType.BYTE:
