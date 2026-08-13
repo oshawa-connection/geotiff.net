@@ -5,16 +5,16 @@ namespace Geotiff;
 /// <summary>
 /// Any kind of streamed source, e.g. file streams, memory streams.
 /// </summary>
-public class FileSource : BaseSource
+public class StreamSource : BaseSource
 {
     private readonly Stream stream;
 
-    public FileSource(Stream stream)
+    public StreamSource(Stream stream)
     {
         this.stream = stream;
     }
 
-    public override async Task<byte[]> FetchSliceAsync(Slice slice, CancellationToken? cancellationToken)
+    public override async Task<byte[]> FetchSliceAsync(Slice slice, CancellationToken? cancellationToken = null)
     {
         byte[]? x = new byte[slice.Length];
         

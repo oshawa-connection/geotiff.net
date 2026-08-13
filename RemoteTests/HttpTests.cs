@@ -13,7 +13,7 @@ public class HttpTests
         using var client = new HttpClient();
         string baseURL = "http://localhost:8002/TCI.tif";
         var httpClient = new GeoTiffHTTPClient(baseURL, client);
-        GeoTiffReader? cog = await GeoTiffReader.FromRemoteClientAsync(httpClient);
+        GeoTiff? cog = await GeoTiff.FromRemoteClientAsync(httpClient);
         
         var hasOverviews = await cog.HasOverviewsAsync();
         hasOverviews.ShouldBeTrue();
@@ -36,7 +36,7 @@ public class HttpTests
         using var client = new HttpClient();
         string baseURL = "http://localhost:8000/TCI.tif";
         var httpClient = new GeoTiffHTTPClient(baseURL, client, true);
-        GeoTiffReader? cog = await GeoTiffReader.FromRemoteClientAsync(httpClient);
+        GeoTiff? cog = await GeoTiff.FromRemoteClientAsync(httpClient);
         GeoTiffImage? image = await cog.GetImageAsync();
     }
 
@@ -47,7 +47,7 @@ public class HttpTests
         using var client = new HttpClient();
 
         var httpClient = new GeoTiffHTTPClient(baseURL, client, true);
-        GeoTiffReader? cog = await GeoTiffReader.FromRemoteClientAsync(httpClient);
+        GeoTiff? cog = await GeoTiff.FromRemoteClientAsync(httpClient);
         GeoTiffImage? image = await cog.GetImageAsync();
     }
 }

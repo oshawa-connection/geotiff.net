@@ -15,7 +15,7 @@ public class MaskedReadingTests : GeoTiffTestBaseClass
     {
         var tifPath = Path.Combine(GetDataFolderPath(), "internal_masked_image.tif");
         await using var mainStream = File.OpenRead(tifPath);
-        var file = await GeoTiffReader.FromStreamAsync(mainStream);
+        var file = await GeoTiff.FromStreamAsync(mainStream);
         file.IsMasked.ShouldBeTrue();
         var image = await file.GetImageAsync();
         
@@ -43,7 +43,7 @@ public class MaskedReadingTests : GeoTiffTestBaseClass
     {
         var tifPath = Path.Combine(GetDataFolderPath(), "no_data_outline_float32.tif");
         await using var mainStream = File.OpenRead(tifPath);
-        var file = await GeoTiffReader.FromStreamAsync(mainStream);
+        var file = await GeoTiff.FromStreamAsync(mainStream);
         var image = await file.GetImageAsync(0);
         
         var readResult = await image.ReadRasterMaskedAsync();

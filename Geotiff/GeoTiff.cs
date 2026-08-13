@@ -9,7 +9,7 @@ namespace Geotiff;
 /// <summary>
 /// GeoTiff file class. Con contain multiple images.
 /// </summary>
-public class GeoTiffReader : IReadRasterable
+public class GeoTiff : IReadRasterable
 {
     protected internal readonly BaseSource Source;
     private readonly bool _bigTiff;
@@ -23,7 +23,7 @@ public class GeoTiffReader : IReadRasterable
     protected internal int? finalImageCount = null;
     public bool IsBifTIFF => _bigTiff; 
     
-    protected GeoTiffReader(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
+    protected GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
     {
         this.Source = source;
         this.IsLittleEndian = isLittleEndian;
@@ -81,7 +81,7 @@ public class GeoTiffReader : IReadRasterable
             : dv.GetUInt32(4, isLittleEndian);
     }
     
-    public static async Task<GeoTiffReader> FromRemoteClientAsync(IGeoTiffRemoteClient client)
+    public static async Task<GeoTiff> FromRemoteClientAsync(IGeoTiffRemoteClient client)
     {
         var source = new RemoteSource(client, int.MaxValue, false);
         IEnumerable<byte[]>? slices = await source.FetchAsync(new Slice[] { new(0, 1024) });
@@ -92,7 +92,7 @@ public class GeoTiffReader : IReadRasterable
         bool isBigTiff = GetBigTiffMarker(dv, isLittleEndian);
 
         var firstIDFOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
-        return new GeoTiffReader(source, isLittleEndian, isBigTiff, firstIDFOffset);
+        return new GeoTiff(source, isLittleEndian, isBigTiff, firstIDFOffset);
     }
     
     /// <summary>
@@ -100,7 +100,7 @@ public class GeoTiffReader : IReadRasterable
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    public static async Task<GeoTiffReader> FromStreamAsync(Stream stream, bool detectMask = true, CancellationToken? cancellationToken = null)
+    public static async Task<GeoTiff> FromStreamAsync(Stream stream, bool detectMask = true, CancellationToken? cancellationToken = null)
     {
         Stream seekableStream;
         if (stream.CanSeek)
@@ -140,8 +140,8 @@ public class GeoTiffReader : IReadRasterable
         
         var firstIfdOffset= GetFirstIFDOffset(dv, isLittleEndian, isBigTiff);
         seekableStream.Position = 0;
-        var source = new FileSource(seekableStream);
-        var tiff = new GeoTiffReader(source, isLittleEndian, isBigTiff, firstIfdOffset);
+        var source = new StreamSource(seekableStream);
+        var tiff = new GeoTiff(source, isLittleEndian, isBigTiff, firstIfdOffset);
 
         
         // Detect mask type. In the rare case we detect it wrong, the user probably won't be reading 

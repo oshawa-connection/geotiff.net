@@ -8,7 +8,7 @@ public class NoDataValueMaskStrategy : MaskStrategyABC
         this.NoDataValue = noDataValue;
     }
 
-    public override async Task SetMaskValues(GeoTiffReader parentFile,Raster mainReadResult, ImagePixelWindow? window = null,
+    public override async Task SetMaskValues(GeoTiff parentFile,Raster mainReadResult, ImagePixelWindow? window = null,
         IEnumerable<int>? sampleSelection = null,
         CancellationToken? cancellationToken = null)
     {

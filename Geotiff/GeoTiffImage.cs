@@ -8,58 +8,51 @@ namespace Geotiff;
 
 /// <summary>
 /// A GeoTiff comprises multiple GeoTiffImage's (called sub-datasets). Most of the time, there is just one sub-dataset.
-///  
 /// </summary>
 public class GeoTiffImage : IGetTagable, IReadRasterable
 {
-    private readonly ImageFileDirectory fileDirectory;
-    // TODO: This breaks the open closed principle. Temporary implementation detail, can be re-worked later.
+    private readonly ImageFileDirectory _fileDirectory;
+    private readonly GeoTiff _parentFile;
+    private readonly bool _littleEndian;
+    private readonly BaseSource _source;
+    private readonly Dictionary<ulong, byte[]>? _tileCache;
+    private readonly bool _isTiled;
+    private readonly ushort _planarConfiguration;
+    private ulong[]? _stripOffsetsCached;
+    private ulong[]? _stripByteCountsCached;
     
-    private double? noDataValue;
-    private readonly GeoTiffReader parentFile;
-    private readonly bool littleEndian;
-    private readonly bool cache;
-    private readonly BaseSource source;
-    private readonly Dictionary<ulong, byte[]>? tileCache;
-    private readonly bool isTiled;
-    private readonly ushort planarConfiguration;
-    private ulong[]? stripOffsetsCached;
-    private ulong[]? StripByteCountsCached;
+    private ulong[]? _tileOffsetsCached;
+    private ulong[]? _tileByteCountsCached;
     
-    private ulong[]? TileOffsetsCached;
-    private ulong[]? TileByteCountsCached;
+    private ushort[]? _bitsPerSampleCached;
     
-    private ushort[]? bitsPerSampleCached;
+    private byte[]? _jpegTablesCached;
     
-    private byte[]? jpegTablesCached;
-    
-    
-    
-    internal GeoTiffImage(GeoTiffReader parentFile, ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
+    internal GeoTiffImage(GeoTiff parentFile, ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {
-        this.parentFile = parentFile;
-        this.fileDirectory = fileDirectory;
-        this.littleEndian = littleEndian;
-        tileCache = cache ? new Dictionary<ulong, byte[]>() : null;
+        this._parentFile = parentFile;
+        this._fileDirectory = fileDirectory;
+        this._littleEndian = littleEndian;
+        _tileCache = cache ? new Dictionary<ulong, byte[]>() : null;
 
-        isTiled = fileDirectory.TagDictionary.ContainsKey("StripOffsets") is false;
+        _isTiled = fileDirectory.TagDictionary.ContainsKey("StripOffsets") is false;
         var planarConfigurationTag = GetTag(TagFields.PlanarConfiguration);
         
         if (planarConfigurationTag is null)
         {
-            this.planarConfiguration = 1;
+            this._planarConfiguration = 1;
         }
         else
         {
-            this.planarConfiguration = (ushort)planarConfigurationTag.GetUShort();
+            this._planarConfiguration = (ushort)planarConfigurationTag.GetUShort();
         }
 
-        if (this.planarConfiguration != 1 && this.planarConfiguration != 2)
+        if (this._planarConfiguration != 1 && this._planarConfiguration != 2)
         {
             throw new InvalidGeoTiffException("Invalid planar configuration.");
         }
 
-        this.source = source;
+        this._source = source;
         var _ = this.JpegTables;// Populate this to cache it before decoding starts
     }
     
@@ -72,7 +65,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     public bool HasValidTiePoints()
     {
-        var tiePoint = fileDirectory.GetTag(TagFields.ModelTiepoint);
+        var tiePoint = _fileDirectory.GetTag(TagFields.ModelTiepoint);
         if (tiePoint is null)
         {
             return false;
@@ -136,7 +129,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     public IEnumerable<Tag> GetAllRawTags()
     {
-        return this.fileDirectory.RawFileDirectory.Values;
+        return this._fileDirectory.RawFileDirectory.Values;
     }
     
     /// <summary>
@@ -146,7 +139,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     public IEnumerable<Tag> GetAllKnownTags()
     {
-        return this.fileDirectory.TagDictionary.Values;
+        return this._fileDirectory.TagDictionary.Values;
     }
     
     
@@ -158,7 +151,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     public Tag? GetTag(int id)
     {
-        return this.fileDirectory.GetTag(id);
+        return this._fileDirectory.GetTag(id);
     }
     
     /// <summary>
@@ -168,12 +161,12 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     public Tag? GetTag(string name)
     {
-        return this.fileDirectory.GetTag(name);
+        return this._fileDirectory.GetTag(name);
     }
     
     internal Tag GetTagRequired(string name)
     {
-        var found = this.fileDirectory.GetTag(name);
+        var found = this._fileDirectory.GetTag(name);
         if (found is null)
         {
             throw new InvalidGeoTiffException($"Tag '{name}' not found.");
@@ -203,7 +196,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
 
     public Tag GetGeoTag(string name)
     {
-        return this.fileDirectory.GetGeoTag(name);
+        return this._fileDirectory.GetGeoTag(name);
     }
 
     /// <summary>
@@ -406,14 +399,14 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     {
         get
         {
-            if (bitsPerSampleCached is null)
+            if (_bitsPerSampleCached is null)
             {
                 var tag = GetTagRequired(TagFields.BitsPerSample);
                 var bitsPerSampleArray = tag.GetUShortArray();
-                bitsPerSampleCached = bitsPerSampleArray;
+                _bitsPerSampleCached = bitsPerSampleArray;
             }
 
-            return bitsPerSampleCached;
+            return _bitsPerSampleCached;
         }
     }
     
@@ -447,7 +440,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     {
         get
         {
-            if (jpegTablesCached is null)
+            if (_jpegTablesCached is null)
             {
                 var tag = GetTag("JPEGTables");
                 if (tag is null)
@@ -455,10 +448,10 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                     return null;
                 }
                 
-                jpegTablesCached = tag.GetByteArray();
+                _jpegTablesCached = tag.GetByteArray();
             }
 
-            return jpegTablesCached;
+            return _jpegTablesCached;
         }
     }
     
@@ -484,7 +477,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     public ushort GetPlanarConfiguration()
     {
-        return this.planarConfiguration;
+        return this._planarConfiguration;
     }
 
     /// <summary>
@@ -538,7 +531,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns>The height of each tile</returns>
     public ulong GetTileOrStripHeight()
     {
-        if (isTiled)
+        if (_isTiled)
         {
             var tileLengthTag = GetTagRequired(TagFields.TileLength);
             return tileLengthTag.GetAsULong();
@@ -588,14 +581,14 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     private ulong[] GetTileOffsets()
     {
-        if (TileOffsetsCached is not null)
+        if (_tileOffsetsCached is not null)
         {
-            return TileOffsetsCached;
+            return _tileOffsetsCached;
         }
         
         var stripOffsetsTag = GetTagRequired(TagFields.TileOffsets);
-        TileOffsetsCached = stripOffsetsTag.GetAsULongArray();
-        return TileOffsetsCached;
+        _tileOffsetsCached = stripOffsetsTag.GetAsULongArray();
+        return _tileOffsetsCached;
     }
     
     /// <summary>
@@ -604,14 +597,14 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     private ulong[] GetTileByteCounts()
     {
-        if (TileByteCountsCached is not null)
+        if (_tileByteCountsCached is not null)
         {
-            return TileByteCountsCached;
+            return _tileByteCountsCached;
         }
         
         var tileByteCountsTag = GetTag(TagFields.TileByteCounts);
-        TileByteCountsCached = tileByteCountsTag.GetAsULongArray();
-        return TileByteCountsCached;
+        _tileByteCountsCached = tileByteCountsTag.GetAsULongArray();
+        return _tileByteCountsCached;
     }
     
     
@@ -622,14 +615,14 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     private ulong[] GetStripOffsets()
     {
-        if (stripOffsetsCached is not null)
+        if (_stripOffsetsCached is not null)
         {
-            return stripOffsetsCached;
+            return _stripOffsetsCached;
         }
         
         var stripOffsetsTag = GetTagRequired(TagFields.StripOffsets);
-        stripOffsetsCached = stripOffsetsTag.GetAsULongArray();
-        return stripOffsetsCached;
+        _stripOffsetsCached = stripOffsetsTag.GetAsULongArray();
+        return _stripOffsetsCached;
     }
 
     /// <summary>
@@ -638,14 +631,14 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     /// <returns></returns>
     private ulong[] GetStripByteCounts()
     {
-        if (StripByteCountsCached is not null)
+        if (_stripByteCountsCached is not null)
         {
-            return StripByteCountsCached;
+            return _stripByteCountsCached;
         }
         
         var stripByteCountsTag = GetTag(TagFields.StripByteCounts);
-        StripByteCountsCached = stripByteCountsTag.GetAsULongArray();
-        return StripByteCountsCached;
+        _stripByteCountsCached = stripByteCountsTag.GetAsULongArray();
+        return _stripByteCountsCached;
     }
 
     
@@ -807,7 +800,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         SparseList<int> srcSampleOffsets = new();
         for (int i = 0; i < samples.Count(); ++i)
         {
-            if (planarConfiguration == 1)
+            if (_planarConfiguration == 1)
             {
                 srcSampleOffsets.Add(samples.ElementAt(i),sum(BitsPerSample, 0, samples.ElementAt(i)) / 8);
             }
@@ -819,7 +812,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
 
         // Setup cached values for either strips or tiles.
         // Long term todo item would be to not read the entire array; for particularly large tiffs the offsets will be giant.
-        if (isTiled is false)
+        if (_isTiled is false)
         {
             GetStripOffsets();
             GetStripByteCounts();
@@ -837,14 +830,14 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
             for (ulong xTile = minXTile; xTile < maxXTile; ++xTile)
             {
                 Task<TileOrStripResult>? getPromise = null;
-                if (planarConfiguration == 1)
+                if (_planarConfiguration == 1)
                 {
                     getPromise = GetTileOrStripAsync(xTile, yTile, 0, cancellationToken);
                 }
                 for (int sampleIndex = 0; sampleIndex < samples.Count(); ++sampleIndex)
                 {
                     int sample = samples.ElementAt(sampleIndex);
-                    if (planarConfiguration == 2)
+                    if (_planarConfiguration == 2)
                     {
                         getPromise = GetTileOrStripAsync(xTile, yTile, sample,
                             cancellationToken);
@@ -881,7 +874,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                         var sampleSetCallback = RasterSample.SetUInt8DataView;
                         
                         ulong bytesPerPixelToUse = bytesPerPixel;
-                        if (planarConfiguration == 2)
+                        if (_planarConfiguration == 2)
                         {
                             bytesPerPixelToUse = GetSampleByteSize(si);
                         }
@@ -974,7 +967,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
 
                                 
                                 var dv = dataView;
-                                sampleSetCallback(currentSample, dv, (int)pixelOffset + srcSampleOffsets[si], windowCoordinate, littleEndian);
+                                sampleSetCallback(currentSample, dv, (int)pixelOffset + srcSampleOffsets[si], windowCoordinate, _littleEndian);
                             }
                         }
 
@@ -1054,7 +1047,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         {
             int sample = samples.ElementAt(i);
 
-            if (planarConfiguration == 1)
+            if (_planarConfiguration == 1)
             {
                 srcSampleOffsets.Add(sample, sum(BitsPerSample, 0, sample) / 8);
             }
@@ -1064,7 +1057,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
             }
         }
 
-        if (!isTiled)
+        if (!_isTiled)
         {
             GetStripOffsets();
             GetStripByteCounts();
@@ -1085,7 +1078,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
 
                     TileOrStripResult tile;
 
-                    if (planarConfiguration == 1)
+                    if (_planarConfiguration == 1)
                     {
                         tile = GetTileOrStrip(xTile, yTile, 0);
                     }
@@ -1126,7 +1119,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                     {
                         for (ulong x = startX; x < xmax; ++x)
                         {
-                            ulong bytesPerPixelToUse = planarConfiguration == 2
+                            ulong bytesPerPixelToUse = _planarConfiguration == 2
                                 ? GetSampleByteSize(si)
                                 : bytesPerPixel;
 
@@ -1154,17 +1147,17 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                                     }
                                     else if (bitsPerSample <= 16)
                                     {
-                                        var v = dataView.GetUInt16((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        var v = dataView.GetUInt16((int)pixelOffset + srcSampleOffsets[si], _littleEndian);
                                         currentSample.SetUInt16(v, (int)windowCoordinate);
                                     }
                                     else if (bitsPerSample <= 32)
                                     {
-                                        var v = dataView.GetUInt32((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        var v = dataView.GetUInt32((int)pixelOffset + srcSampleOffsets[si], _littleEndian);
                                         currentSample.SetUInt32(v, (int)windowCoordinate);
                                     }
                                     else
                                     {
-                                        var v = dataView.GetUInt64((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        var v = dataView.GetUInt64((int)pixelOffset + srcSampleOffsets[si], _littleEndian);
                                         currentSample.SetUInt64(v, (int)windowCoordinate);
                                     }
                                     break;
@@ -1177,17 +1170,17 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                                     }
                                     else if (bitsPerSample <= 16)
                                     {
-                                        var v = dataView.GetInt16((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        var v = dataView.GetInt16((int)pixelOffset + srcSampleOffsets[si], _littleEndian);
                                         currentSample.SetInt16(v, (int)windowCoordinate);
                                     }
                                     else if (bitsPerSample <= 32)
                                     {
-                                        var v = dataView.GetInt32((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        var v = dataView.GetInt32((int)pixelOffset + srcSampleOffsets[si], _littleEndian);
                                         currentSample.SetInt32(v, (int)windowCoordinate);
                                     }
                                     else
                                     {
-                                        var v = dataView.GetInt64((int)pixelOffset + srcSampleOffsets[si], littleEndian);
+                                        var v = dataView.GetInt64((int)pixelOffset + srcSampleOffsets[si], _littleEndian);
                                         currentSample.SetInt64(v, (int)windowCoordinate);
                                     }
                                     break;
@@ -1197,19 +1190,19 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
                                     {
                                         case 16:
                                             currentSample.SetFloat16(
-                                                dataView.GetFloat16((int)pixelOffset + srcSampleOffsets[si], littleEndian),
+                                                dataView.GetFloat16((int)pixelOffset + srcSampleOffsets[si], _littleEndian),
                                                 (int)windowCoordinate);
                                             break;
 
                                         case 32:
                                             currentSample.SetFloat32(
-                                                dataView.GetFloat32((int)pixelOffset + srcSampleOffsets[si], littleEndian),
+                                                dataView.GetFloat32((int)pixelOffset + srcSampleOffsets[si], _littleEndian),
                                                 (int)windowCoordinate);
                                             break;
 
                                         case 64:
                                             currentSample.SetFloat64(
-                                                dataView.GetFloat64((int)pixelOffset + srcSampleOffsets[si], littleEndian),
+                                                dataView.GetFloat64((int)pixelOffset + srcSampleOffsets[si], _littleEndian),
                                                 (int)windowCoordinate);
                                             break;
 
@@ -1248,15 +1241,15 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         IEnumerable<int>? sampleSelection = null,
         CancellationToken? cancellationToken = null)
     {
-        if (this.parentFile.IsMasked is false)
+        if (this._parentFile.IsMasked is false)
         {
             return await ReadRasterAsync(window, sampleSelection, cancellationToken);
         }
 
-        this.parentFile.MaskStrategy.ValidateRasterReadArguments(window, sampleSelection);
+        this._parentFile.MaskStrategy.ValidateRasterReadArguments(window, sampleSelection);
         
         var mainReadResult = await ReadRasterAsync(window, sampleSelection, cancellationToken);
-        await this.parentFile.MaskStrategy.SetMaskValues(this.parentFile, mainReadResult, window, sampleSelection,
+        await this._parentFile.MaskStrategy.SetMaskValues(this._parentFile, mainReadResult, window, sampleSelection,
             cancellationToken);
         return mainReadResult;
     }
@@ -1418,11 +1411,11 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         ulong numTilesPerCol = (ulong)Math.Ceiling((double)Height / (double)GetTileOrStripHeight());
         ulong index = 0;
         var sampleToUse = 0;
-        if (planarConfiguration == 1)
+        if (_planarConfiguration == 1)
         {
             index = (blockY * numTilesPerRow) + blockX;
         }
-        else if (planarConfiguration == 2)
+        else if (_planarConfiguration == 2)
         {
             sampleToUse = sample;
             index = ((ulong)sampleToUse * numTilesPerRow * numTilesPerCol) + (blockY * numTilesPerRow) + blockX;
@@ -1430,7 +1423,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
 
         ulong offset;
         ulong byteCount;
-        if (isTiled)
+        if (_isTiled)
         {
             offset = GetTileOffsets().ElementAt((int)index);
             byteCount = GetTileByteCounts().ElementAt((int)index);
@@ -1444,7 +1437,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         if (byteCount == 0) // for GDAL_SPARSE
         {
             ulong nPixels = GetBlockHeight(blockY) * GetTileOrStripWidth();
-            ulong bytesPerPixel = planarConfiguration == 2
+            ulong bytesPerPixel = _planarConfiguration == 2
                 ? GetSampleByteSize(sampleToUse)
                 : GetNumberOfBytesPerPixel();
             
@@ -1463,11 +1456,11 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         }
 
         byte[] sliceBytes =
-            (await source.FetchAsync(new List<Slice>() { new(offset, byteCount) }, signal)).First();
+            (await _source.FetchAsync(new List<Slice>() { new(offset, byteCount) }, signal)).First();
 
         Func<Task<byte[]>> request;
         byte[] finalData;
-        if (tileCache == null || tileCache.ContainsKey(index) is false)
+        if (_tileCache == null || _tileCache.ContainsKey(index) is false)
         {
             var predictor = this.GetPredictor();
             // resolve each request by potentially applying array normalization
@@ -1528,15 +1521,15 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
             };
             finalData = await request();
             // set the cache
-            if (tileCache != null)
+            if (_tileCache != null)
             {
-                tileCache[index] = finalData;
+                _tileCache[index] = finalData;
             }
         }
         else
         {
             // get from the cache
-            finalData = tileCache[index];
+            finalData = _tileCache[index];
         }
 
         // cache the tile request
@@ -1550,11 +1543,11 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         ulong numTilesPerCol = (ulong)Math.Ceiling((double)Height / (double)GetTileOrStripHeight());
         ulong index = 0;
         var sampleToUse = 0;
-        if (planarConfiguration == 1)
+        if (_planarConfiguration == 1)
         {
             index = (blockY * numTilesPerRow) + blockX;
         }
-        else if (planarConfiguration == 2)
+        else if (_planarConfiguration == 2)
         {
             sampleToUse = sample;
             index = ((ulong)sampleToUse * numTilesPerRow * numTilesPerCol) + (blockY * numTilesPerRow) + blockX;
@@ -1562,7 +1555,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
 
         ulong offset;
         ulong byteCount;
-        if (isTiled)
+        if (_isTiled)
         {
             offset = GetTileOffsets().ElementAt((int)index);
             byteCount = GetTileByteCounts().ElementAt((int)index);
@@ -1576,7 +1569,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         if (byteCount == 0) // for GDAL_SPARSE
         {
             ulong nPixels = GetBlockHeight(blockY) * GetTileOrStripWidth();
-            ulong bytesPerPixel = planarConfiguration == 2
+            ulong bytesPerPixel = _planarConfiguration == 2
                 ? GetSampleByteSize(sampleToUse)
                 : GetNumberOfBytesPerPixel();
             
@@ -1594,11 +1587,11 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
             return new TileOrStripResult { x = blockX, y = blockY, data = data};
         }
 
-        byte[] sliceBytes = (source.Fetch(new List<Slice>() { new(offset, byteCount) })).First();
+        byte[] sliceBytes = (_source.Fetch(new List<Slice>() { new(offset, byteCount) })).First();
 
         Func<Task<byte[]>> request;
         byte[] finalData;
-        if (tileCache == null || tileCache.ContainsKey(index) is false)
+        if (_tileCache == null || _tileCache.ContainsKey(index) is false)
         {
             var predictor = this.GetPredictor();
             // resolve each request by potentially applying array normalization
@@ -1659,15 +1652,15 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
             }
 
             // set the cache
-            if (tileCache != null)
+            if (_tileCache != null)
             {
-                tileCache[index] = finalData;
+                _tileCache[index] = finalData;
             }
         }
         else
         {
             // get from the cache
-            finalData = tileCache[index];
+            finalData = _tileCache[index];
         }
 
         // cache the tile request
@@ -1695,7 +1688,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
 
     private ulong GetBlockHeight(ulong y)
     {
-        if (isTiled || (y + 1) * GetTileOrStripHeight() <= Height)
+        if (_isTiled || (y + 1) * GetTileOrStripHeight() <= Height)
         {
             return GetTileOrStripHeight();
         }
@@ -1712,7 +1705,7 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     public CoordinateReferenceSystemInfo? GetCoordinateReferenceSystemInfo()
     {
         var crsInfo = new CoordinateReferenceSystemInfo();
-        var modelTypeTag = fileDirectory.GetGeoTag("GTModelTypeGeoKey");
+        var modelTypeTag = _fileDirectory.GetGeoTag("GTModelTypeGeoKey");
         if (modelTypeTag == null)
         {
             return null;
@@ -1726,8 +1719,8 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         
         if (crsInfo.ModelType == 1)//projected CS
         {
-            var projectedCSTypeGeoKey = fileDirectory.GetGeoTag("ProjectedCSTypeGeoKey");
-            var projectedCRSGeoKey = fileDirectory.GetGeoTag("ProjectedCRSGeoKey");
+            var projectedCSTypeGeoKey = _fileDirectory.GetGeoTag("ProjectedCSTypeGeoKey");
+            var projectedCRSGeoKey = _fileDirectory.GetGeoTag("ProjectedCRSGeoKey");
             //GeoTIFF v1.0
             if (projectedCSTypeGeoKey != null)
             {
@@ -1741,9 +1734,9 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
         }
         else if (crsInfo.ModelType is 2 or 3)//geographic CS
         {
-            var geographicTypeGeoKey = fileDirectory.GetGeoTag("GeographicTypeGeoKey");
-            var geodeticCRSGeoKey = fileDirectory.GetGeoTag("GeodeticCRSGeoKey");
-            var geogGeodeticCRSGeoKey = fileDirectory.GetGeoTag("GeogGeodeticDatumGeoKey");
+            var geographicTypeGeoKey = _fileDirectory.GetGeoTag("GeographicTypeGeoKey");
+            var geodeticCRSGeoKey = _fileDirectory.GetGeoTag("GeodeticCRSGeoKey");
+            var geogGeodeticCRSGeoKey = _fileDirectory.GetGeoTag("GeogGeodeticDatumGeoKey");
             if (geographicTypeGeoKey != null) //GeoTIFF v1.0
             {
                 crsInfo.GeographicCRS = geographicTypeGeoKey.GetUShort();   
@@ -1771,8 +1764,8 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
             throw new GeoTiffException("Unsupported CRS model type");
         }
 
-        var verticalCSTypeGeoKey = fileDirectory.GetGeoTag("VerticalCSTypeGeoKey");
-        var verticalGeoKey = fileDirectory.GetGeoTag("VerticalGeoKey");
+        var verticalCSTypeGeoKey = _fileDirectory.GetGeoTag("VerticalCSTypeGeoKey");
+        var verticalGeoKey = _fileDirectory.GetGeoTag("VerticalGeoKey");
         if (verticalCSTypeGeoKey != null) //GeoTIFF v1.0
         {
             crsInfo.VerticalModelCRS = verticalCSTypeGeoKey.GetUShort();

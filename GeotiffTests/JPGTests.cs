@@ -12,7 +12,7 @@ public class JPGTests : GeoTiffTestBaseClass
         string jpgTiffPath = Path.Combine(GetDataFolderPath(), "test_10x10_ycbcr_jpeg.tif");
         await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
         
-        GeoTiffReader? geotiff = await GeoTiffReader.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         image.GetPlanarConfiguration().ShouldBe((ushort)1);
         image.GetTag(TagFields.Compression).GetAsInt().ShouldBe(7);
@@ -35,7 +35,7 @@ public class JPGTests : GeoTiffTestBaseClass
         string jpgTiffPath = Path.Combine(GetDataFolderPath(), "test_10x10_grayscale_jpeg.tif");
         await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
         
-        GeoTiffReader? geotiff = await GeoTiffReader.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         image.GetTag(TagFields.Compression).GetUShort().ShouldBe((ushort)7);
         var readResult = await image.ReadRasterAsync();
@@ -53,7 +53,7 @@ public class JPGTests : GeoTiffTestBaseClass
         
         await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
         
-        GeoTiffReader? geotiff = await GeoTiffReader.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         image.GetTag(TagFields.Compression).GetUShort().ShouldBe((ushort)7);
 
@@ -82,7 +82,7 @@ public class JPGTests : GeoTiffTestBaseClass
         string jpgTiffPath = Path.Combine(GetDataFolderPath(), "test_10x10_cmyk_jpeg.tif");
         await using var fsSource = new FileStream(jpgTiffPath, FileMode.Open, FileAccess.Read);
         
-        GeoTiffReader? geotiff = await GeoTiffReader.FromStreamAsync(fsSource);
+        GeoTiff? geotiff = await GeoTiff.FromStreamAsync(fsSource);
         var image = await geotiff.GetImageAsync();
         
         var readResult = await image.ReadRasterAsync();

@@ -5,10 +5,10 @@ namespace Geotiff;
 /// <summary>
 /// This is taken from geotiff.js implementation, however, it can also be used for other sidecar files.
 /// </summary>
-public class MultiGeoTiffReader : GeoTiffReader
+public class MultiGeoTiff : GeoTiff
 {
-    private readonly GeoTiffReader mainFile;
-    private readonly IEnumerable<GeoTiffReader> sidecarFileSources;
+    private readonly GeoTiff mainFile;
+    private readonly IEnumerable<GeoTiff> sidecarFileSources;
     private IEnumerable<int>? imageCounts;
     
     /// <summary>
@@ -16,20 +16,20 @@ public class MultiGeoTiffReader : GeoTiffReader
     /// </summary>
     /// <param name="mainFile"></param>
     /// <param name="sidecarFileSources"></param>
-    public MultiGeoTiffReader(GeoTiffReader mainFile, IEnumerable<GeoTiffReader> sidecarFileSources) : base(mainFile.Source, mainFile.IsLittleEndian,mainFile.IsBifTIFF,mainFile.FirstIFDOffset)
+    public MultiGeoTiff(GeoTiff mainFile, IEnumerable<GeoTiff> sidecarFileSources) : base(mainFile.Source, mainFile.IsLittleEndian,mainFile.IsBifTIFF,mainFile.FirstIFDOffset)
     {
         // TODO: Some bad writers might write the main file as bigtiff and the sidecar file as small tiff or vice versa.
         this.mainFile = mainFile;
         this.sidecarFileSources = sidecarFileSources;
     }
 
-    public static async Task<MultiGeoTiffReader> FromStreams(Stream mainStream, IEnumerable<Stream> otherStreams)
+    public static async Task<MultiGeoTiff> FromStreams(Stream mainStream, IEnumerable<Stream> otherStreams)
     {
-        var mainTiff = await GeoTiffReader.FromStreamAsync(mainStream);
-        var x = otherStreams.Select(async d => await GeoTiffReader.FromStreamAsync(d));
+        var mainTiff = await GeoTiff.FromStreamAsync(mainStream);
+        var x = otherStreams.Select(async d => await GeoTiff.FromStreamAsync(d));
         var r = await Task.WhenAll(x);
 
-        return new MultiGeoTiffReader(mainTiff, r);
+        return new MultiGeoTiff(mainTiff, r);
     }
     
     private async Task ParseFileDirectoriesForAllFiles()
@@ -45,7 +45,7 @@ public class MultiGeoTiffReader : GeoTiffReader
         await this.ParseFileDirectoriesForAllFiles();
         var visited = 0;
         var relativeIndex = 0;
-        var imageFiles = new List<GeoTiffReader>() {this.mainFile};
+        var imageFiles = new List<GeoTiff>() {this.mainFile};
         imageFiles.AddRange(this.sidecarFileSources);
         for (var i = 0; i < imageFiles.Count; i++) {
             var imageFile = imageFiles[i];

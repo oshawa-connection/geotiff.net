@@ -14,7 +14,7 @@ public abstract class MaskStrategyABC
 
     }
 
-    public abstract Task SetMaskValues(GeoTiffReader parentFile,Raster mainReadResult, ImagePixelWindow? window = null,
+    public abstract Task SetMaskValues(GeoTiff parentFile,Raster mainReadResult, ImagePixelWindow? window = null,
         IEnumerable<int>? sampleSelection = null,
         CancellationToken? cancellationToken = null);
 }
