@@ -36,25 +36,25 @@ public enum GeotiffSampleDataType
 }
 
 
-// internal enum GeotiffFieldDataType
-// {
-//     BYTE,
-//     ASCII,
-//     SHORT,
-//     LONG,
-//     RATIONAL,
-//     SBYTE,
-//     UNDEFINED,
-//     SSHORT,
-//     SLONG,
-//     SRATIONAL,
-//     FLOAT,
-//     DOUBLE,
-//     IFD,
-//     LONG8,
-//     SLONG8,
-//     IFD8
-// }
+internal enum GeotiffFieldDataType
+{
+    BYTE,
+    ASCII,
+    SHORT,
+    LONG,
+    RATIONAL,
+    SBYTE,
+    UNDEFINED,
+    SSHORT,
+    SLONG,
+    SRATIONAL,
+    FLOAT,
+    DOUBLE,
+    IFD,
+    LONG8,
+    SLONG8,
+    IFD8
+}
 
 public enum TagDataType
 { 

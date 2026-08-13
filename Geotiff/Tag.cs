@@ -343,4 +343,13 @@ public class Tag
         this.Value = value;
         this.IsArray = isArray;
     }
+
+    public static Tag FromUShort(string tagName, ushort value)
+    {
+        var tagId = TagFields.FieldTags.GetByValue(tagName);
+        var valueToSet = GeoTiffTagValueResult.FromUInt16([value]);
+        return new Tag(tagId, tagName, valueToSet, false);
+    }
+    
+    // public Tag(string tagName, GeoTiffTagValueResult value, bool isArray)
 }
