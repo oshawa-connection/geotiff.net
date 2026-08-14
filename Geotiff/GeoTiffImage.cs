@@ -27,6 +27,12 @@ public class GeoTiffImage : IGetTagable, IReadRasterable
     private ushort[]? _bitsPerSampleCached;
     
     private byte[]? _jpegTablesCached;
+
+    public GeoTiffImage(ImageFileDirectory fileDirectory)
+    {
+        this._fileDirectory = fileDirectory;
+        this._littleEndian = true;
+    }
     
     internal GeoTiffImage(GeoTiff parentFile, ImageFileDirectory fileDirectory, bool littleEndian, bool cache, BaseSource source)
     {

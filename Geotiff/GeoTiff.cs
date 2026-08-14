@@ -21,7 +21,14 @@ public class GeoTiff : IReadRasterable
     /// Prevents us making read requests if GetImageCount is called multiple times
     /// </summary>
     protected internal int? finalImageCount = null;
-    public bool IsBifTIFF => _bigTiff; 
+    public bool IsBifTIFF => _bigTiff;
+
+    public GeoTiff(Stream stream, bool isLittleEndian, bool bigTiff)
+    {
+        this.Source = new StreamSource(stream);
+        this.IsLittleEndian = isLittleEndian;
+        this._bigTiff = bigTiff;
+    }
     
     protected GeoTiff(BaseSource source, bool isLittleEndian, bool bigTiff, ulong firstIFDOffset)
     {

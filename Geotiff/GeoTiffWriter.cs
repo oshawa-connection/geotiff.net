@@ -15,13 +15,25 @@ public class GeoTiffWriter
     /// </summary>
     /// <returns></returns>
     private int numberOfImages;
-    public GeoTiffWriter(Stream output, bool littleEndian, int numberOfImages)
+
+    private GeoTiff _geoTiff;
+    public GeoTiffWriter(Stream output, bool littleEndian, GeoTiff geotiff)
     {
         this.output = output;
-        this.numberOfImages = numberOfImages;
+        this._geoTiff =  geotiff;
     }
 
-    public void WriteMagicHeader()
+    public async Task Write()
+    {
+        this.WriteMagicHeader();
+        foreach (var image in await this._geoTiff.GetAllImagesAsync())
+        {
+            var tags = image.GetAllRawTags();
+            WriteIFD(tags);
+        }
+    }
+
+    private void WriteMagicHeader()
     {
         byte[] buffer = new byte[8];
         Span<byte> span = buffer;
@@ -36,18 +48,23 @@ public class GeoTiffWriter
         
     }
 
-    public void WriteIFD()
+    private void WriteIFD(IEnumerable<Tag> tags)
     {
         byte[] buffer = new byte[2];
         Span<byte> span = buffer;
         // Number of entries in IFD
-        BinaryPrimitives.WriteUInt16LittleEndian(span[..2], 17);
+        BinaryPrimitives.WriteUInt16LittleEndian(span[..2], (ushort)tags.Count());
         output.Write(buffer);
-        var imageLength = Tag.FromUShort("ImageLength", 0);
-        WriteTag(imageLength);
+
+
+        foreach (var tag in tags)
+        {
+            // var tag = Tag.FromUShort(TagFields.ImageLength, 0);
+            WriteTag(tag);
+        }
     }
 
-    public void WriteTag(Tag tag)
+    private void WriteTag(Tag tag)
     {
         byte[] buffer = new byte[12]; // Always 12 for alignment.
         Span<byte> span = buffer;
@@ -59,7 +76,7 @@ public class GeoTiffWriter
         // Count -> uint32
         BinaryPrimitives.WriteUInt32LittleEndian(span[4..8], 1);
         // Value -> defined by Tag data type
-        BinaryPrimitives.WriteUInt16LittleEndian(span[8..10], 16);
+        BinaryPrimitives.WriteUInt16LittleEndian(span[8..10], tag.GetUShort());
         output.Write(buffer);
     }
 }
