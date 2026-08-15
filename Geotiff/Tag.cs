@@ -6,7 +6,23 @@ namespace Geotiff;
 public class Tag
 {
     public ushort RawId { get; }
+    /// <summary>
+    /// Gets the tag name if it is a known tag, otherwise null. See also TagNameOrId getter
+    /// </summary>
     public string? TagName { get; }
+    /// <summary>
+    /// Gets the tag name if it is a known tag, otherwise returns the tag id as a string
+    /// </summary>
+    public string TagNameOrId {
+        get
+        {
+            if (TagName is not null)
+            {
+                return TagName;
+            }
+            return RawId.ToString();
+        } 
+    }
     public bool IsArray { get; }
 
     public int Length =>  this.Value.Length;
@@ -14,6 +30,7 @@ public class Tag
     private GeoTiffTagValueResult Value { get; set; }
     
     /// <summary>
+    /// Gets the string value of an ASCII tag.
     /// Strips off the string null terminator
     /// </summary>
     /// <returns></returns>
@@ -28,7 +45,7 @@ public class Tag
 
     public override string ToString()
     {
-        return $"{this.TagName}: {this.Value}";
+        return $"{this.TagNameOrId}: {this.Value}";
     }
     
     /// <summary>
