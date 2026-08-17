@@ -23,8 +23,12 @@ public class Tag
             return RawId.ToString();
         } 
     }
-    public bool IsArray { get; }
 
+    /// <summary>
+    /// This is determined by the tag ID, not the number of elements.
+    /// </summary>
+    public bool IsArray { get; }
+    
     public int Length =>  this.Value.Length;
 
     private GeoTiffTagValueResult Value { get; set; }
@@ -41,6 +45,11 @@ public class Tag
             s = s.Substring(0, s.Length - 1);
         }
         return s;
+    }
+
+    public string GetRawString()
+    {
+        return Value.GetString();
     }
 
     public override string ToString()
@@ -83,7 +92,7 @@ public class Tag
 
     public double GetDouble()
     {
-        return this.Value.GetFloat64();  
+        return this.Value.GetFloat64();
     } 
     public float[] GetFloatArray()=> this.Value.GetFloat32Array();
     public float GetFloat()=> this.Value.GetFloat32();
@@ -310,6 +319,28 @@ public class Tag
         throw new GeoTiffException("Tag does not contain a numeric array value.");
     }
 
+
+    public TagDataType NonArrayDataType
+    {
+        get
+        {
+            if (this.Value.IsString) return TagDataType.ASCII;
+            if (this.Value.IsShort) return TagDataType.SHORT;
+            if (this.Value.IsSByte) return TagDataType.SBYTE;
+            if (this.Value.IsLong) return TagDataType.LONG;
+            if (this.Value.IsByte) return TagDataType.BYTE;
+            if (this.Value.IsDouble) return TagDataType.DOUBLE;
+            if (this.Value.IsFloat) return TagDataType.FLOAT;
+            if (this.Value.IsUShort) return TagDataType.USHORT;
+            if (this.Value.IsULong) return TagDataType.ULONG;
+            if (this.Value.IsUInt) return TagDataType.UINT;
+            if (this.Value.IsInt) return TagDataType.INT;
+            if (this.Value.IsRational) return TagDataType.RATIONAL;
+            if (this.Value.IsSRational) return TagDataType.SRATIONAL;
+            throw new GeoTiffException("Unrecognised tag type");
+        }
+    }
+    
 
     public TagDataType DataType
     {

@@ -110,9 +110,42 @@ public enum TagDataType
     ASCII
 }
 
-
 public static class TagFields
 {
+    
+    public static Dictionary<TagDataType, int> TagDataTypeToBytes = new Dictionary<TagDataType, int>()
+    {
+        { TagDataType.SHORT, 2 },
+        { TagDataType.SBYTE, 1 },
+        { TagDataType.BYTE, 1 },
+        { TagDataType.DOUBLE, 8 },
+        { TagDataType.FLOAT, 4 },
+        { TagDataType.USHORT, 2 },
+        { TagDataType.LONG, 4 },
+        { TagDataType.ULONG, 4 },
+        { TagDataType.UINT, 4 },
+        { TagDataType.INT, 4 },
+        { TagDataType.RATIONAL, 8 },
+        { TagDataType.SRATIONAL, 8 },
+        { TagDataType.ASCII, 1 },
+    };
+    
+    
+    internal static BiDirectionalDictionary<int, TagDataType> TagTypeLookup = new()
+    {
+        { 0x0001, TagDataType.BYTE },
+        { 0x0002, TagDataType.ASCII },
+        { 0x0003, TagDataType.USHORT },
+        // { 0x0004, TagDataType.ULONG },
+        { 0x0004, TagDataType.UINT },
+        { 0x0005, TagDataType.RATIONAL },
+        { 0x0006, TagDataType.SBYTE },
+        { 0x000A, TagDataType.SRATIONAL },
+        { 0x000B, TagDataType.FLOAT },
+        { 0x000C, TagDataType.DOUBLE },
+    };
+    
+    
     internal static BiDirectionalDictionary<int, GeotiffFieldDataType> FieldTypeLookup = new()
     {
         { 0x0001, GeotiffFieldDataType.BYTE },
